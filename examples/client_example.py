@@ -7,9 +7,17 @@
 # [ ] Compute all the things
 
 import json
+import os
+import sys
 import uuid
 
-from sparfa_server.client import Client
+from os.path import dirname, abspath
+
+sys.path.append(dirname(dirname(abspath(__file__))))
+sys.path.append(os.getcwd())
+
+
+from sparfa_server.client import BiglearnAPI
 
 
 def create_ecosystem_event_request(ecosystem_uuid):
@@ -37,24 +45,28 @@ def write_json_file(filename, data):
 
 def main():
     # Zend in ze Client!
-    api = Client()
+    api = BiglearnAPI()
 
-    # retrieve all the ecosystems
-    ecosystem_metadata = api.post('/fetch_ecosystem_metadatas')
+    # Enable if you don't have any ecosystem files in output.
+    fetch_ecosystem_files = False
 
-    # parse out the ecosystem uuids
-    ecosystem_uuids = [id['uuid'] for id in
-                       ecosystem_metadata['ecosystem_responses']]
+    if fetch_ecosystem_files:
 
-    # make a request for ecosystem events for each ecosystem uuid
-    for ecosystem_uuid in ecosystem_uuids:
-        event_request = create_ecosystem_event_request(ecosystem_uuid)
+        # retrieve all the ecosystems
+        ecosystem_metadata = api.fetch_ecosystem_metadatas()
 
-        ecosystem_events = api.post('/fetch_ecosystem_events', **event_request)
-        print(ecosystem_events)
+        # parse out the ecosystem uuids
+        ecosystem_uuids = [id['uuid'] for id in
+                           ecosystem_metadata['ecosystem_responses']]
 
-        write_json_file('output/ecosystem_{}'.format(ecosystem_uuid),
-                        ecosystem_events)
+        # make a request for ecosystem events for each ecosystem uuid
+        for ecosystem_uuid in ecosystem_uuids:
+            ecosystem_events = api.fetch_ecosystem_events(ecosystem_uuid)
+
+            write_json_file('output/ecosystem_{}'.format(ecosystem_uuid),
+                            ecosystem_events)
+
+
 
 
 if __name__ == '__main__':

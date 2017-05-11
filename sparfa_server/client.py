@@ -12,7 +12,7 @@ API_URL = 'https://biglearn-dev.openstax.org'
 HTTP_USER_AGENT = 'Biglearn-API Python API client {0}'.format(__version__)
 
 
-class Client(object):
+class BaseClient(object):
     """Base API client"""
 
     def __init__(self, url=None, version=__version__):
@@ -65,3 +65,46 @@ class Client(object):
 
     def delete(self, endpoint, id=None, **kwargs):
         return self._request('delete', endpoint, id=id, data=kwargs)
+
+
+class BiglearnAPI(object):
+    """
+    The main class used to encapsulate the Biglearn API and Biglearn Scheduler
+    Scheduler tasks.
+    """
+
+    def __init__(self):
+        # Favoring composition over inheritance.
+        # This also allows monkeypatching for testing.
+        self.client = BaseClient()
+
+    def _create_ecosystem_event_request(self, ecosystem_uuid):
+        data = {
+            'ecosystem_event_requests': [],
+        }
+
+        event_request = {
+            'request_uuid': str(uuid.uuid4()),
+            'event_types': ['create_ecosystem'],
+            'ecosystem_uuid': ecosystem_uuid,
+            'sequence_number_offset': 0,
+            'max_num_events': 10,
+        }
+
+        data['ecosystem_event_requests'].append(event_request)
+
+        return data
+
+    def fetch_ecosystem_metadatas(self):
+        ecosystem_metadas = self.client.post('/fetch_ecosystem_metadatas')
+        return ecosystem_metadas
+
+    def fetch_ecosystem_events(self, ecosystem_uuid):
+        event_request = self._create_ecosystem_event_request(ecosystem_uuid)
+        ecosystem_events = self.client.post('/fetch_ecosystem_events',
+                                            **event_request)
+        return ecosystem_events
+
+    def fetch_course_metadatas(self):
+        course_metadatas = self.client.post('/fetch_course_metadatas')
+        return course_metadatas
