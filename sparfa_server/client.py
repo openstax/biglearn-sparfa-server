@@ -1,110 +1,89 @@
-import json
-import os
+from json import dumps
+from logging import getLogger
 
 import requests
-from requests import RequestException
 
-from sparfa_server.exceptions import RequestError
+from sparfa_server import exceptions
+from sparfa_server.session import BiglearnSession
 
-__version__ = 'v1'
-
-API_URL = 'https://biglearn-dev.openstax.org'
-HTTP_USER_AGENT = 'Biglearn-API Python API client {0}'.format(__version__)
+__logs__ = getLogger(__package__)
 
 
-class BaseClient(object):
-    """Base API client"""
-
-    def __init__(self, url=None, version=__version__):
-        self.url = url or os.environ.get('BIGLEARN_API_URL') or API_URL
-        self.version = version
-
-    def _do_request(self, request, url, **kwargs):
-        try:
-            response = request(url, **kwargs)
-        except RequestException as e:
-            raise RequestError(e)
-        else:
-            if response.status_code >= 400:
-                raise RequestError('Bad request')
-
-        try:
-            return response.json()
-        except (TypeError, ValueError):
-            return response.text
-
-    def _request(self, method, endpoint, id=None, **kwargs):
-        request = getattr(requests, method, None)
-        if not callable(request):
-            raise RequestError('Invalid method %s' % method)
-
-        data = kwargs.get('data', {})
-        headers = {'Content-Type': 'application/json',
-                   'User-Agent': HTTP_USER_AGENT}
-
-        url = self.url + endpoint
-
-        kwargs.setdefault('headers', headers)
-
-        if data:
-            kwargs['data']=json.dumps(data)
-
-        return self._do_request(request, url, **kwargs)
-
-    def __call__(self, *args, **kwargs):
-        return self.get(*args, **kwargs)
-
-    def get(self, endpoint, id=None, **kwargs):
-        return self._request('get', endpoint, id=id, params=kwargs)
-
-    def put(self, endpoint, id=None, **kwargs):
-        return self._request('put', endpoint, id=id, data=kwargs)
-
-    def post(self, endpoint, id=None, **kwargs):
-        return self._request('post', endpoint, id=id, data=kwargs)
-
-    def delete(self, endpoint, id=None, **kwargs):
-        return self._request('delete', endpoint, id=id, data=kwargs)
-
-
-class BiglearnAPI(object):
+class ClientCore(object):
+    """The base object for all objects that require a session.
+    
+    The :class:`ClientCore <ClientCore>` object provides some basic
+    attributes and methods to other sub-classes that are useful.
     """
-    The main class used to encapsulate the Biglearn API and Biglearn Scheduler
-    Scheduler tasks.
-    """
+
+    def __init__(self, json, session=None):
+        if hasattr(session, 'session'):
+            session = session.session
+        elif session is None:
+            session = BiglearnSession()
+        self.session = session
+
+    def _json(self, response, status_code):
+        ret = None
+        if self._boolean(response, status_code, 404) and response.content:
+            __logs__.info('Attempting to get JSON information from a '
+                          'Response with status code %d expecting %d',
+                          response.status_code, status_code)
+            ret = response.json()
+        __logs__.info('JSON was %sreturned', 'not ' if ret is None else '')
+        return ret
+
+    def _boolean(self, response, true_code, false_code):
+        if response is not None:
+            status_code = response.status_code
+            if status_code == true_code:
+                return True
+            if status_code == false_code:
+                raise exceptions.error_for(response)
+        return False
+
+    def _request(self, method, *args, **kwargs):
+        try:
+            request_method = getattr(self.session, method)
+            return request_method(*args, **kwargs)
+        except (requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout) as exc:
+            raise exceptions.ConnectionError(exc)
+        except requests.exceptions.RequestException as exc:
+            raise exceptions.TransportError(exc)
+
+    def _post(self, url, data=None, json=True, **kwargs):
+        if json:
+            data = dumps(data) if data is not None else data
+        __logs__.debug('POST %s with %s, %s', url, data, kwargs)
+        return self._request('post', url, data, **kwargs)
+
+    def _build_url(self, *args, **kwargs):
+        """Builds a new API url from scratch."""
+        return self.session.build_url(*args, **kwargs)
+
+    def fetch(self, url, **kwargs):
+        response = self._post(url, **kwargs)
+        return response
+
+
+class BiglearnApi(ClientCore):
+    """Stores all the session information."""
 
     def __init__(self):
-        # Favoring composition over inheritance.
-        # This also allows monkeypatching for testing.
-        self.client = BaseClient()
-
-    def _create_ecosystem_event_request(self, ecosystem_uuid):
-        data = {
-            'ecosystem_event_requests': [],
-        }
-
-        event_request = {
-            'request_uuid': str(uuid.uuid4()),
-            'event_types': ['create_ecosystem'],
-            'ecosystem_uuid': ecosystem_uuid,
-            'sequence_number_offset': 0,
-            'max_num_events': 10,
-        }
-
-        data['ecosystem_event_requests'].append(event_request)
-
-        return data
+        super().__init__({})
 
     def fetch_ecosystem_metadatas(self):
-        ecosystem_metadas = self.client.post('/fetch_ecosystem_metadatas')
-        return ecosystem_metadas
-
-    def fetch_ecosystem_events(self, ecosystem_uuid):
-        event_request = self._create_ecosystem_event_request(ecosystem_uuid)
-        ecosystem_events = self.client.post('/fetch_ecosystem_events',
-                                            **event_request)
-        return ecosystem_events
+        url = self._build_url('api', 'fetch_ecosystem_metadatas')
+        json = self._json(self.fetch(url), 200)
+        return json
 
     def fetch_course_metadatas(self):
-        course_metadatas = self.client.post('/fetch_course_metadatas')
-        return course_metadatas
+        url = self._build_url('api', 'fetch_course_metadatas')
+        json = self._json(self.fetch(url), 200)
+        return json
+
+    def fetch_ecosystem_event_requests(self, event_request):
+        url = self._build_url('api', 'fetch_ecosystem_events')
+        json = self._json(self.fetch(url, data=event_request), 200)
+        return json

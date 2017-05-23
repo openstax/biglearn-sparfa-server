@@ -1,41 +1,20 @@
 # Checklist
 # [X] Create basic client to start working with responses
 # [X] Need to get all the ecosystems
+# [ ] Save all ecosystems to the database
 # [ ] Need to get all responses
 # [ ] Ask BL Scheduler server what needs to be updated
-# [ ] Refactor biglearn client
+# [X] Refactor biglearn client
 # [ ] Compute all the things
 
 import json
-import os
-import sys
-import uuid
+import logging
 
-from os.path import dirname, abspath
+from sparfa_server.api import (fetch_ecosystem_uuids,
+                               fetch_ecosystem_event_requests)
 
-sys.path.append(dirname(dirname(abspath(__file__))))
-sys.path.append(os.getcwd())
-
-
-from sparfa_server.client import BiglearnAPI
-
-
-def create_ecosystem_event_request(ecosystem_uuid):
-    data = {
-        'ecosystem_event_requests': [],
-    }
-
-    event_request = {
-        'request_uuid': str(uuid.uuid4()),
-        'event_types': ['create_ecosystem'],
-        'ecosystem_uuid': ecosystem_uuid,
-        'sequence_number_offset': 0,
-        'max_num_events': 10,
-    }
-
-    data['ecosystem_event_requests'].append(event_request)
-
-    return data
+logging.basicConfig(level=logging.DEBUG)
+log = logging.getLogger(__name__)
 
 
 def write_json_file(filename, data):
@@ -44,27 +23,25 @@ def write_json_file(filename, data):
 
 
 def main():
-    # Zend in ze Client!
-    api = BiglearnAPI()
+    create_ecosystem_files = False
+    fetch_course_files = False
 
-    # Enable if you don't have any ecosystem files in output.
-    fetch_ecosystem_files = False
-
-    if fetch_ecosystem_files:
-
-        # retrieve all the ecosystems
-        ecosystem_metadata = api.fetch_ecosystem_metadatas()
-
-        # parse out the ecosystem uuids
-        ecosystem_uuids = [id['uuid'] for id in
-                           ecosystem_metadata['ecosystem_responses']]
-
-        # make a request for ecosystem events for each ecosystem uuid
-        for ecosystem_uuid in ecosystem_uuids:
-            ecosystem_events = api.fetch_ecosystem_events(ecosystem_uuid)
+    if create_ecosystem_files:
+        ecosystem_uuids = fetch_ecosystem_uuids()
+        for ecosystem_uuid in ecosystem_uuids[:1]:
+            eco_event_reqs = fetch_ecosystem_event_requests(ecosystem_uuid)
 
             write_json_file('output/ecosystem_{}'.format(ecosystem_uuid),
-                            ecosystem_events)
+                            eco_event_reqs)
+
+    with open('output/ecosystem_f667f783-7944-4153-81ee-f245c209f406.json') as infile:
+        data = json.load(infile)
+
+    eco_event_responses = data['ecosystem_event_responses'][0]
+
+    events = eco_event_responses['events']
+
+    print(events)
 
 
 
