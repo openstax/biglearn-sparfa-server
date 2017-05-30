@@ -2,7 +2,7 @@ import requests
 
 from logging import getLogger
 
-from . import __client_version__
+from sparfa_server import __client_version__
 
 __url_cache__ = {}
 
@@ -37,7 +37,7 @@ class BiglearnSession(requests.Session):
         if key not in __url_cache__:
             __logs__.info('Missed the cache building the url')
             __url_cache__[key] = '/'.join(parts)
-            return __url_cache__[key]
+        return __url_cache__[key]
 
     def request(self, *args, **kwargs):
         response = super(BiglearnSession, self).request(*args, **kwargs)

@@ -4,7 +4,7 @@ from logging import getLogger
 import requests
 
 from sparfa_server import exceptions
-from sparfa_server.session import BiglearnSession
+from sparfa_server.client.session import BiglearnSession
 
 __logs__ = getLogger(__package__)
 

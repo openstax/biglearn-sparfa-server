@@ -25,10 +25,14 @@ def create_ecosystem_event_request(ecosystem_uuid):
 
 def fetch_ecosystem_uuids():
     ecosystem_metadatas = blapi.fetch_ecosystem_metadatas()
-    return [id['uuid'] for id in ecosystem_metadatas['ecosystem_responses']]
+    return [uuid['uuid'] for uuid in ecosystem_metadatas['ecosystem_responses']]
 
 
 def fetch_ecosystem_event_requests(ecosystem_uuid):
     payload = create_ecosystem_event_request(ecosystem_uuid)
-    event_requests = blapi.fetch_ecosystem_event_requests(payload)
-    return event_requests
+
+    eco_event_reqs = blapi.fetch_ecosystem_event_requests(payload)
+
+    eco_event_resps = eco_event_reqs['ecosystem_event_responses'][0]
+    eco_data = eco_event_resps['events'][0]['event_data']
+    return eco_data

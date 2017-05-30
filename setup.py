@@ -28,8 +28,11 @@ setup(
     author_email='',
     packages=find_packages(),
     install_requires=[
+        'alembic==0.9.2',
+        'psycopg2==2.7.1',
         'requests==2.14.0',
         'SQLAlchemy==1.1.9'
+
     ],
     classifiers=[],
 )

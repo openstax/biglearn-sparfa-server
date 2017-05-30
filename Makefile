@@ -26,3 +26,23 @@ test: ## run tests quickly with the default Python
 	python setup.py test
 
 docs: ## generate Sphinx HTML documentation
+
+initdb:
+	psql -h 127.0.0.1 -p 5432 -d postgres -U postgres -c "DROP DATABASE IF EXISTS bl_sparfa_server"
+	psql -h 127.0.0.1 -p 5432 -d postgres -U postgres -c "CREATE DATABASE bl_sparfa_server ENCODING 'UTF8'"
+	alembic upgrade head
+
+venv:
+	python3 -m venv .venv && \
+		source .venv/bin/activate && \
+		pip install requirements.txt
+
+help:
+	@echo "The following targets are available"
+	@echo "clean			Remove build, test, and file artifacts"
+	@echo "clean-build 		Remove build artifacts"
+	@echo "clean-pyc		Remove file artifacts"
+	@echo "clean-test		Remove test artifacts"
+	@echo "test				Run tests quickly with default python"
+	@echo "initdb			Initialize the database and run migrations"
+
