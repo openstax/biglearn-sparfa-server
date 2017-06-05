@@ -87,3 +87,8 @@ class BiglearnApi(ClientCore):
         url = self._build_url('api', 'fetch_ecosystem_events')
         json = self._json(self.fetch(url, data=event_request), 200)
         return json
+
+    def fetch_course_event_requests(self, event_request):
+        url = self._build_url('api', 'fetch_course_events')
+        json = self._json(self.fetch(url, data=event_request), 200)
+        return json

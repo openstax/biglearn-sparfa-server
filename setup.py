@@ -32,7 +32,6 @@ setup(
         'psycopg2==2.7.1',
         'requests==2.14.0',
         'SQLAlchemy==1.1.9'
-
     ],
     classifiers=[],
 )
