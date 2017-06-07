@@ -1,5 +1,5 @@
 import logging
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.dialects.postgresql import (ARRAY,
                                             insert,
                                             JSON,
@@ -20,7 +20,7 @@ def upsert_into(table, values):
     insert_stmt = insert(table).values(values)
 
     do_nothing_stmt = insert_stmt.on_conflict_do_nothing()
-    __logs__.debug('Inserting into {0} with item {1}'.format(table, values))
+    __logs__.info('Inserting into {0} with item {1}'.format(table, values))
     return do_nothing_stmt
 
 
@@ -56,21 +56,29 @@ def get_all_ecosystem_uuids():
     return select([ecosystems.c.uuid])
 
 
+@executor
+def select_max_sequence_offset(course_uuid):
+    return select([func.max(course_events.c.sequence_number)]).select_from(
+        course_events.join(courses,
+                           courses.c.id == course_events.c.course_id)).where(
+        courses.c.uuid == course_uuid)
+
+
 def upsert_and_return_id(table, values):
-    """ 
-    A special upsert that inserts a new row in the database if there is 
-    no conflict. When a successful insert occurs the `inserted_primary_key` 
-    is returned. In the situation a conflict does occur due to a unique 
-    value constraint the insert does nothing and the function "looks up" 
+    """
+    A special upsert that inserts a new row in the database if there is
+    no conflict. When a successful insert occurs the `inserted_primary_key`
+    is returned. In the situation a conflict does occur due to a unique
+    value constraint the insert does nothing and the function "looks up"
     and returns the primary key that is needed.
 
-    This function is necessary due to the `inserted_primary_key` 
+    This function is necessary due to the `inserted_primary_key`
     attribute on the `ResultProxy` not containing a value when the upsert
     encounters a conflict.
 
-    :param table: 
-    :param values: 
-    :return: 
+    :param table:
+    :param values:
+    :return:
     """
     row = upsert_into(table, values)
     if row.lastrowid != 0:
@@ -147,7 +155,7 @@ courses = sa.Table('courses', metadata,
                              unique=True),
                    sa.Column('ecosystem_id',
                              None,
-                             sa.ForeignKey('ecosystems.id'))
+                             sa.ForeignKey('ecosystems.id')),
                    )
 
 course_events = sa.Table('course_events', metadata,
@@ -158,6 +166,9 @@ course_events = sa.Table('course_events', metadata,
                                    sa.String(100),
                                    nullable=False),
                          sa.Column('uuid', UUID, unique=True),
+                         sa.Column('course_id',
+                                   None,
+                                   sa.ForeignKey('courses.id')),
                          sa.Column('sequence_number',
                                    sa.Integer,
                                    nullable=False),
