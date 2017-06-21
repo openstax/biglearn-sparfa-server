@@ -59,9 +59,15 @@ Docker and Docker Compose. This should work on any OS that docker can be install
 
     `make initdb`
 
-7. Ensure the tables were created by the Alembic migrations:
+7. Install biglearn-sparfa-server if you did not run Step 5 above.
 
-    `make tables`
+    `pip install -e .`
+
+## Run the ecosystem and course loaders
+
+Type the following into the command line:
+
+    `sparf run`
 
 ## Migration Folder and Files
 
