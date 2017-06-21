@@ -33,5 +33,10 @@ setup(
         'requests==2.14.0',
         'SQLAlchemy==1.1.9'
     ],
+    entry_points={
+        'console_scripts': [
+            'sparf=sparfa_server.cli:main'
+        ]
+    },
     classifiers=[],
 )
