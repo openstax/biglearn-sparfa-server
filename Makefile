@@ -5,7 +5,6 @@ DB := bl_sparfa_server
 
 clean: clean-build clean-pyc clean-test
 
-
 clean-build: ## remove build artifacts
 	rm -fr build/
 	rm -fr dist/
@@ -40,7 +39,7 @@ initdb:
 venv:
 	python3 -m venv .venv && \
 		source .venv/bin/activate && \
-		pip install requirements.txt
+		pip install -e .
 
 help:
 	@echo "The following targets are available"

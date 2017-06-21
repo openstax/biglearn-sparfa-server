@@ -1,10 +1,14 @@
 import os
 import queue
 import threading
-from concurrent.futures import thread
 from functools import wraps
 
+import time
 from sqlalchemy import create_engine
+
+
+def delay(interval):
+    time.sleep(interval)
 
 
 def make_database_url():
@@ -131,14 +135,14 @@ class WorkerPool(object):
 
     def start(self):
         for __ in range(self.nworker):
-            threading.Thread(target=self.do_work).start()
+            threading.Thread(target=self.process_task).start()
 
     def add_task(self, func, *args, **kwargs):
         r = Result()
         self.queue.put((func, args, kwargs, r))
         return r
 
-    def do_work(self):
+    def process_task(self):
         while True:
             func, args, kwargs, r = self.queue.get()
 
