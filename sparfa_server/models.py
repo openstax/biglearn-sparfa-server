@@ -1,9 +1,11 @@
 import logging
 from sqlalchemy import select, func
-from sqlalchemy.dialects.postgresql import (ARRAY,
-                                            insert,
-                                            JSON,
-                                            UUID)
+from sqlalchemy.dialects.postgresql import (
+    ARRAY,
+    insert,
+    JSON,
+    UUID
+)
 import sqlalchemy as sa
 
 from .utils import Executor, make_database_url
@@ -20,7 +22,9 @@ def upsert_into(table, values):
     insert_stmt = insert(table).values(values)
 
     do_nothing_stmt = insert_stmt.on_conflict_do_nothing()
-    __logs__.info('Inserting into {0} with item {1}'.format(table, values))
+    __logs__.info(
+        'Inserting into {0} {1} items {2:.150}'.format(table, len(values),
+                                                       str(values)))
     return do_nothing_stmt
 
 
@@ -58,39 +62,48 @@ def get_all_ecosystem_uuids():
 
 @executor
 def select_max_sequence_offset(course_uuid):
-    return select([func.max(course_events.c.sequence_number)]).select_from(
-        course_events.join(courses,
-                           courses.c.id == course_events.c.course_id)).where(
-        courses.c.uuid == course_uuid)
+    return select([func.max(course_events.c.sequence_number)]).where(
+        course_events.c.course_uuid == course_uuid)
 
 
-def upsert_and_return_id(table, values):
-    """
-    A special upsert that inserts a new row in the database if there is
-    no conflict. When a successful insert occurs the `inserted_primary_key`
-    is returned. In the situation a conflict does occur due to a unique
-    value constraint the insert does nothing and the function "looks up"
-    and returns the primary key that is needed.
+@executor(fetch_all=True)
+def select_ecosystem_exercises(ecosystem_uuid):
+    return select([ecosystem_exercises.c.exercise_uuid]).where(
+        ecosystem_exercises.c.ecosystem_uuid == ecosystem_uuid)
 
-    This function is necessary due to the `inserted_primary_key`
-    attribute on the `ResultProxy` not containing a value when the upsert
-    encounters a conflict.
 
-    :param table:
-    :param values:
-    :return:
-    """
-    row = upsert_into(table, values)
-    if row.lastrowid != 0:
-        return row.inserted_primary_key
+@executor(fetch_all=True)
+def select_ecosystem_containers(ecosystem_uuid):
+    return select([containers]).where(
+        containers.c.ecosystem_uuid == ecosystem_uuid)
+
+
+@executor(fetch_all=True)
+def select_ecosystem_responses(ecosystem_uuid):
+    return select([responses]).where(
+        responses.c.ecosystem_uuid == ecosystem_uuid)
+
+
+@executor(fetch_all=True)
+def select_exercise_page_modules(exercise_uuid, ecosystem_uuid):
+    return select([container_exercises]).select_from(
+        container_exercises.join(
+            containers,
+            container_exercises.c.container_uuid == containers.c.uuid)).where(
+        container_exercises.c.exercise_uuid == exercise_uuid).where(
+        containers.c.is_page_module == True).where(
+        container_exercises.c.ecosystem_uuid == ecosystem_uuid)
+
+
+def max_sequence_offset(course_uuid):
+    cur_sequence_offset = select_max_sequence_offset(
+        course_uuid).scalar()
+
+    if not cur_sequence_offset:
+        cur_sequence_offset = 0
     else:
-        if isinstance(values, dict):
-            r = select_by_id_or_uuid(table, **values).fetchone()
-            return r['id']
-        elif isinstance(values, list):
-            r = [select_by_id_or_uuid(table, **val).fetchone()['id'] for val in
-                 values]
-            return r
+        cur_sequence_offset += 1
+    return cur_sequence_offset
 
 
 ecosystems = sa.Table('ecosystems', metadata,
@@ -100,21 +113,11 @@ ecosystems = sa.Table('ecosystems', metadata,
 
 exercises = sa.Table('exercises', metadata,
                      sa.Column('id', sa.Integer, primary_key=True),
-                     sa.Column('uuid', UUID, unique=True)
+                     sa.Column('uuid', UUID, unique=True),
+                     sa.Column('group_uuid', UUID, nullable=False),
+                     sa.Column('los', ARRAY(sa.String()), nullable=False),
+                     sa.Column('version', sa.Integer, nullable=False)
                      )
-
-books = sa.Table('books', metadata,
-                 sa.Column('id',
-                           sa.Integer,
-                           primary_key=True),
-                 sa.Column('uuid',
-                           UUID,
-                           nullable=False,
-                           unique=True),
-                 sa.Column('ecosystem_id',
-                           None,
-                           sa.ForeignKey('ecosystems.id'))
-                 )
 
 containers = sa.Table('containers', metadata,
                       sa.Column('id',
@@ -123,28 +126,34 @@ containers = sa.Table('containers', metadata,
                       sa.Column('uuid',
                                 UUID,
                                 unique=True),
-                      sa.Column('book_id',
-                                None,
-                                sa.ForeignKey('books.id')),
+                      sa.Column('ecosystem_uuid', UUID, nullable=False),
                       sa.Column('container_cnx_identity',
                                 sa.String(50)),
                       sa.Column('container_parent_uuid',
-                                UUID)
+                                UUID),
+                      sa.Column('is_page_module', sa.Boolean, default=False,
+                                nullable=False)
                       )
 
-ecosystem_pools = sa.Table('ecosystem_pools', metadata,
-                           sa.Column('id',
-                                     sa.Integer,
-                                     primary_key=True),
-                           sa.Column('ecosystem_id',
-                                     sa.Integer,
-                                     nullable=False),
-                           sa.Column('exercise_uuids',
-                                     ARRAY(sa.String())),
-                           sa.Column('container_id',
-                                     sa.Integer,
-                                     sa.ForeignKey('containers.id'))
-                           )
+container_exercises = sa.Table('container_exercises', metadata,
+                               sa.Column('id',
+                                         sa.Integer,
+                                         primary_key=True),
+                               sa.Column('container_uuid',
+                                         UUID,
+                                         nullable=False,
+                                         index=True),
+                               sa.Column('exercise_uuid',
+                                         UUID,
+                                         nullable=False,
+                                         index=True),
+                               sa.Column('ecosystem_uuid',
+                                         UUID,
+                                         nullable=False),
+                               sa.UniqueConstraint('container_uuid',
+                                                   'ecosystem_uuid',
+                                                   'exercise_uuid')
+                               )
 
 courses = sa.Table('courses', metadata,
                    sa.Column('id',
@@ -153,9 +162,9 @@ courses = sa.Table('courses', metadata,
                    sa.Column('uuid',
                              UUID,
                              unique=True),
-                   sa.Column('ecosystem_id',
-                             None,
-                             sa.ForeignKey('ecosystems.id')),
+                   sa.Column('ecosystem_uuid',
+                             UUID,
+                             nullable=False)
                    )
 
 course_events = sa.Table('course_events', metadata,
@@ -166,9 +175,9 @@ course_events = sa.Table('course_events', metadata,
                                    sa.String(100),
                                    nullable=False),
                          sa.Column('uuid', UUID, unique=True),
-                         sa.Column('course_id',
-                                   None,
-                                   sa.ForeignKey('courses.id')),
+                         sa.Column('course_uuid',
+                                   UUID,
+                                   nullable=False),
                          sa.Column('sequence_number',
                                    sa.Integer,
                                    nullable=False),
@@ -179,15 +188,15 @@ ecosystem_exercises = sa.Table('ecosystem_exercises', metadata,
                                sa.Column('id',
                                          sa.Integer,
                                          primary_key=True),
-                               sa.Column('container_id',
-                                         None,
-                                         sa.ForeignKey('containers.id')),
-                               sa.Column('ecosystem_id',
-                                         None,
-                                         sa.ForeignKey('ecosystems.id')),
-                               sa.Column('exercise_id',
-                                         None,
-                                         sa.ForeignKey('exercises.id'))
+                               sa.Column('ecosystem_uuid',
+                                         UUID,
+                                         nullable=False,
+                                         index=True),
+                               sa.Column('exercise_uuid',
+                                         UUID,
+                                         nullable=False),
+                               sa.UniqueConstraint('ecosystem_uuid',
+                                                   'exercise_uuid')
                                )
 
 responses = sa.Table('responses', metadata,
@@ -198,16 +207,16 @@ responses = sa.Table('responses', metadata,
                      sa.Column('uuid',
                                UUID,
                                unique=True),
-                     sa.Column('ecosystem_id',
-                               None,
-                               sa.ForeignKey('ecosystems.id')),
-                     sa.Column('course_id',
-                               None,
-                               sa.ForeignKey('courses.id')
-                               ),
-                     sa.Column('exercise_id',
-                               None,
-                               sa.ForeignKey('exercises.id')),
+                     sa.Column('ecosystem_uuid',
+                               UUID,
+                               nullable=False,
+                               index=True),
+                     sa.Column('course_uuid',
+                               UUID,
+                               nullable=False),
+                     sa.Column('exercise_uuid',
+                               UUID,
+                               nullable=False),
                      sa.Column('student_uuid',
                                UUID,
                                nullable=False),
