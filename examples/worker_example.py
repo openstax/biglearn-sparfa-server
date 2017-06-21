@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sparfa_server.api import (fetch_ecosystem_uuids,
                                fetch_ecosystem_event_requests)
 from sparfa_server.models import ecosystems, books
-from sparfa_server.utils import Executor, make_database_url, WorkerPool
+from sparfa_server.utils import Executor, make_database_url, Queue
 
 logging.basicConfig(level=logging.DEBUG)
 __logs__ = logging.getLogger(__name__)
@@ -49,8 +49,8 @@ def get_ecosystem_data(ecosystem_uuid):
     """Takes the ecosystem uuid and imports the ecosystem information when
     an ecosystem is not found in the database.
 
-    :param ecosystem_uuid: 
-    :return: 
+    :param ecosystem_uuid:
+    :return:
     """
     return fetch_ecosystem_event_requests(ecosystem_uuid)
 
