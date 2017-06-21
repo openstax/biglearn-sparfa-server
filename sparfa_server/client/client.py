@@ -11,7 +11,7 @@ __logs__ = getLogger(__package__)
 
 class ClientCore(object):
     """The base object for all objects that require a session.
-    
+
     The :class:`ClientCore <ClientCore>` object provides some basic
     attributes and methods to other sub-classes that are useful.
     """
@@ -92,3 +92,11 @@ class BiglearnApi(ClientCore):
         url = self._build_url('api', 'fetch_course_events')
         json = self._json(self.fetch(url, data=event_request), 200)
         return json
+
+    def fetch_matrix_calcs(self, request):
+        url = self._build_url('scheduler', 'fetch_ecosystem_matrix_updates')
+        json = self._json(self.fetch(url, data=request), 200)
+        return json
+
+
+

@@ -1,8 +1,14 @@
+import logging
 import uuid
 
+from .utils import Executor, make_database_url
 from .client import BiglearnApi
+from .models import get_all_ecosystem_uuids
+
+__logs__ = logging.getLogger(__name__)
 
 blapi = BiglearnApi()
+executor = Executor(make_database_url())
 
 
 def create_course_event_request(course_uuid, offset, max_events):
@@ -77,3 +83,28 @@ def fetch_ecosystem_event_requests(ecosystem_uuid):
     eco_event_resps = eco_event_reqs['ecosystem_event_responses'][0]
     eco_data = eco_event_resps['events'][0]['event_data']
     return eco_data
+
+
+def fetch_matrix_calculations(algorithm_name):
+    payload = dict(algorithm_name=algorithm_name)
+
+    matrix_calcs_response = blapi.fetch_matrix_calcs(payload)
+    matrix_calcs = matrix_calcs_response['ecosystem_matrix_updates']
+
+    return matrix_calcs
+
+
+def fetch_pending_ecosystems(force=False):
+    __logs__.info('Polling ecosystem endpoint for new ecosystems')
+    api_ecosystem_uuids = fetch_ecosystem_uuids()
+
+    db_ecosystem_uuids = get_all_ecosystem_uuids()
+
+    import_ecosystem_uuids = list(
+        filter(lambda x: x not in db_ecosystem_uuids,
+               api_ecosystem_uuids))
+
+    if force:
+        import_ecosystem_uuids = api_ecosystem_uuids
+
+    return import_ecosystem_uuids
