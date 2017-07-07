@@ -94,6 +94,21 @@ def fetch_matrix_calculations(algorithm_name):
     return matrix_calcs
 
 
+def update_matrix_calculations(algorithm_name, calc_uuid):
+    # TODO: add log message that update_matrix_calc is happening
+    payload = {
+        'ecosystem_matrices_updated': [
+            {
+                'calculation_uuid': calc_uuid,
+                'algorithm_name': algorithm_name,
+            },
+        ],
+    }
+
+    response = blapi.update_matrix_calcs(payload)
+    return response
+
+
 def fetch_pending_ecosystems(force=False):
     __logs__.info('Polling ecosystem endpoint for new ecosystems')
     api_ecosystem_uuids = fetch_ecosystem_uuids()
@@ -108,3 +123,15 @@ def fetch_pending_ecosystems(force=False):
         import_ecosystem_uuids = api_ecosystem_uuids
 
     return import_ecosystem_uuids
+
+
+def fetch_exercise_calcs(alg_name):
+    # TODO: add log message that update_matrix_calc is happening
+    payload = dict(
+        algorithm_name=alg_name
+    )
+
+    response = blapi.fetch_exercise_calcs(payload)
+
+    exercise_calcs = response['exercise_calculations']
+    return exercise_calcs

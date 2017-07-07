@@ -98,5 +98,16 @@ class BiglearnApi(ClientCore):
         json = self._json(self.fetch(url, data=request), 200)
         return json
 
+    def update_matrix_calcs(self, request):
+        url = self._build_url('scheduler', 'ecosystem_matrices_updated')
+        json = self._json(self.fetch(url, data=request), 200)
+        return json
+
+    def fetch_exercise_calcs(self, request):
+        url = self._build_url('scheduler', 'fetch_exercise_calculations')
+        json = self._json(self.fetch(url, data=request), 200)
+        return json
+
+
 
 
