@@ -130,6 +130,21 @@ def select_exercise_page_modules(exercises, ecosystem_uuid):
         container_exercises.c.ecosystem_uuid == ecosystem_uuid)
 
 
+@executor(fetch_all=True)
+def select_ecosystem_page_modules(ecosystem_uuid):
+    return select([containers.c.uuid]).where(
+        containers.c.is_page_module == True).where(
+        containers.c.ecosystem_uuid == ecosystem_uuid)
+
+
+@executor(fetch_all=True)
+def select_student_responses(ecosystem_uuid, student_uuid, exercise_uuids):
+    return select([responses]).where(
+        responses.c.ecosystem_uuid == ecosystem_uuid).where(
+        responses.c.student_uuid == student_uuid).where(
+        responses.c.exercise_uuid.in_(exercise_uuids))
+
+
 def select_ecosystem_matrices(ecosystem_uuid):
     with executor as connection:
         stmt = select([ecosystem_matrices]).where(
@@ -270,6 +285,18 @@ responses = sa.Table('responses', metadata,
                                nullable=False),
                      sa.Column('is_correct',
                                sa.Boolean,
+                               nullable=False),
+                     sa.Column('responded_at',
+                               sa.DateTime,
+                               nullable=False),
+                     sa.Column('is_real_response',
+                               sa.Boolean,
+                               nullable=False),
+                     sa.Column('sequence_number',
+                               sa.Integer,
+                               nullable=False),
+                     sa.Column('trial_uuid',
+                               UUID,
                                nullable=False)
                      )
 
@@ -296,5 +323,8 @@ ecosystem_matrices = sa.Table('ecosystem_matrices', metadata,
                                         nullable=False),
                               sa.Column('L_idx_by_id',
                                         JSON,
+                                        nullable=True),
+                              sa.Column('H_mask_NCxNQ',
+                                        sa.String,
                                         nullable=True)
                               )
