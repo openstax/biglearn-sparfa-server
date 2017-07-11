@@ -1,10 +1,34 @@
+import io
+import json
 import os
 import queue
 import threading
+from collections import OrderedDict
 from functools import wraps
 
+import numpy as np
 import time
 from sqlalchemy import create_engine
+
+
+def dump_array(array):
+    memfile = io.BytesIO()
+    np.save(memfile, array)
+    memfile.seek(0)
+    return json.dumps(memfile.read().decode('latin-1'))
+
+
+def load_matrix(text):
+    memfile = io.BytesIO()
+    memfile.write(json.loads(text).encode('latin-1'))
+    memfile.seek(0)
+    return np.load(memfile)
+
+
+def load_mapping(text):
+    d = json.loads(text)
+    array = OrderedDict(sorted(d.items(), key=lambda t: t[1]))
+    return array
 
 
 def delay(interval):
@@ -53,13 +77,6 @@ class Executor(object):
        Alchemy connection for execution.
 
        :param connection_string:  The DB connection string.
-
-       :param debug: Enable debug mode.  Result contains verbose error details.
-
-       :param exception_handler: The exception handler to use to
-       transform exceptions to return values.  :func:
-       `api_error_handler` is used if this is not provided.
-
     """
 
     def __init__(self, connection_string):

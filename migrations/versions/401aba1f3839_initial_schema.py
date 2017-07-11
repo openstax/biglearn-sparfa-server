@@ -1,8 +1,8 @@
-"""near-final schema
+"""initial schema
 
-Revision ID: 69d4569a22a1
+Revision ID: 401aba1f3839
 Revises: 
-Create Date: 2017-06-21 15:24:55.125204
+Create Date: 2017-07-10 21:59:02.004242
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '69d4569a22a1'
+revision = '401aba1f3839'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -63,6 +63,18 @@ def upgrade():
     sa.UniqueConstraint('ecosystem_uuid', 'exercise_uuid')
     )
     op.create_index(op.f('ix_ecosystem_exercises_ecosystem_uuid'), 'ecosystem_exercises', ['ecosystem_uuid'], unique=False)
+    op.create_table('ecosystem_matrices',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('ecosystem_uuid', postgresql.UUID(), nullable=False),
+    sa.Column('w_matrix', sa.String(), nullable=False),
+    sa.Column('d_matrix', sa.String(), nullable=False),
+    sa.Column('C_idx_by_id', postgresql.JSON(astext_type=sa.Text()), nullable=False),
+    sa.Column('Q_idx_by_id', postgresql.JSON(astext_type=sa.Text()), nullable=False),
+    sa.Column('L_idx_by_id', postgresql.JSON(astext_type=sa.Text()), nullable=True),
+    sa.Column('H_mask_NCxNQ', sa.String(), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('ecosystem_uuid')
+    )
     op.create_table('ecosystems',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('uuid', postgresql.UUID(), nullable=False),
@@ -86,6 +98,10 @@ def upgrade():
     sa.Column('exercise_uuid', postgresql.UUID(), nullable=False),
     sa.Column('student_uuid', postgresql.UUID(), nullable=False),
     sa.Column('is_correct', sa.Boolean(), nullable=False),
+    sa.Column('responded_at', sa.DateTime(), nullable=False),
+    sa.Column('is_real_response', sa.Boolean(), nullable=False),
+    sa.Column('sequence_number', sa.Integer(), nullable=False),
+    sa.Column('trial_uuid', postgresql.UUID(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('uuid')
     )
@@ -99,6 +115,7 @@ def downgrade():
     op.drop_table('responses')
     op.drop_table('exercises')
     op.drop_table('ecosystems')
+    op.drop_table('ecosystem_matrices')
     op.drop_index(op.f('ix_ecosystem_exercises_ecosystem_uuid'), table_name='ecosystem_exercises')
     op.drop_table('ecosystem_exercises')
     op.drop_table('courses')

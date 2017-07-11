@@ -8,7 +8,7 @@ from .api import (
     fetch_pending_ecosystems,
     fetch_course_uuids)
 from .models import (
-    upsert_into,
+    upsert_into_do_nothing,
     ecosystems,
     exercises,
     ecosystem_exercises,
@@ -31,7 +31,7 @@ def load_course_data(event):
         ecosystem_uuid=ecosystem_uuid
     )
 
-    upsert_into(courses, course_values)
+    upsert_into_do_nothing(courses, course_values)
     return
 
 
@@ -53,7 +53,7 @@ def event_handler(course_uuid, event):
         course_uuid=course_uuid
     )
 
-    upsert_into(course_events, course_event_values)
+    upsert_into_do_nothing(course_events, course_event_values)
 
     return
 
@@ -89,8 +89,8 @@ def load_containers(ecosystem_uuid, contents_data):
                             exercise_uuid=ex_uuid
                         )
                         container_exercise_values.append(container_exercise)
-    upsert_into(container_exercises, container_exercise_values)
-    upsert_into(containers, container_values)
+    upsert_into_do_nothing(container_exercises, container_exercise_values)
+    upsert_into_do_nothing(containers, container_values)
 
     return
 
@@ -104,7 +104,7 @@ def load_ecosystem_exercises(ecosystem_uuid, exercises_data):
         )
         eco_exercise_values.append(eco_exercise)
 
-    upsert_into(ecosystem_exercises, eco_exercise_values)
+    upsert_into_do_nothing(ecosystem_exercises, eco_exercise_values)
 
     return
 
@@ -123,12 +123,12 @@ def load_exercises(ecosystem_uuid, exercises_data):
         )
         exercise_values.append(exercise)
 
-    upsert_into(exercises, exercise_values)
+    upsert_into_do_nothing(exercises, exercise_values)
     return
 
 
 def load_ecosystem(ecosystem_uuid):
-    upsert_into(ecosystems, dict(uuid=ecosystem_uuid))
+    upsert_into_do_nothing(ecosystems, dict(uuid=ecosystem_uuid))
 
     ecosystem_data = fetch_ecosystem_event_requests(ecosystem_uuid)
 
@@ -171,7 +171,7 @@ def load_response(event_data):
                            uuid=event_data['response_uuid'],
                            student_uuid=event_data['student_uuid']
                            )
-    upsert_into(responses, response_values)
+    upsert_into_do_nothing(responses, response_values)
     return
 
 
