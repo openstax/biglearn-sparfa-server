@@ -67,7 +67,11 @@ Docker and Docker Compose. This should work on any OS that docker can be install
 
 Type the following into the command line:
 
-    `sparf run`
+    sparf load --run --delay 600
+
+## Run the calculations
+
+    sparf calc --run --delay 600
 
 ## Migration Folder and Files
 
