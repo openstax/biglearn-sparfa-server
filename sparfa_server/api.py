@@ -1,9 +1,10 @@
 import logging
 import uuid
 
-from .utils import Executor, make_database_url
+from .utils import make_database_url
+from sparfa_server.executer import Executor
 from .client import BiglearnApi
-from .models import get_all_ecosystem_uuids
+from sparfa_server.db import get_all_ecosystem_uuids
 
 __logs__ = logging.getLogger(__name__)
 
@@ -135,3 +136,14 @@ def fetch_exercise_calcs(alg_name):
 
     exercise_calcs = response['exercise_calculations']
     return exercise_calcs
+
+
+def fetch_clue_calcs(alg_name):
+    payload = dict(
+        algorithm_name=alg_name
+    )
+
+    response = blapi.fetch_clue_clacs(payload)
+
+    clue_calcs = response['clue_calculations']
+    return clue_calcs
