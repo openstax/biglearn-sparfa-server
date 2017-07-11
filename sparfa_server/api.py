@@ -161,6 +161,20 @@ def fetch_exercise_calcs(alg_name):
     return exercise_calcs
 
 
+def update_exercise_calcs(alg_name, calc_uuid, exercise_uuids):
+    payload = {
+        'exercise_calculation_updates': [
+            {
+                'calculation_uuid': calc_uuid,
+                'algorithm_name': alg_name,
+                'exercise_uuids': exercise_uuids
+            }
+        ]
+    }
+    response = blapi.update_exercise_calcs(payload)
+    return response['exercise_calculation_update_responses'][0]
+
+
 def fetch_clue_calcs(alg_name):
     payload = dict(
         algorithm_name=alg_name
@@ -170,3 +184,25 @@ def fetch_clue_calcs(alg_name):
 
     clue_calcs = response['clue_calculations']
     return clue_calcs
+
+
+def update_clue_calcs(alg_name, ecosystem_uuid, calc_uuid, clue_min,
+                      clue_most_likely, clue_max, clue_is_real):
+    payload = {
+        'clue_calculation_updates': [
+            {
+                'calculation_uuid': calc_uuid,
+                'algorithm_name': alg_name,
+                'clue_data': {
+                    'ecosystem_uuid': ecosystem_uuid,
+                    'minimum': clue_min,
+                    'most_likely': clue_most_likely,
+                    'maximum': clue_max,
+                    'is_real': clue_is_real
+                }
+            }
+        ]
+    }
+    response = blapi.update_clue_calcs(payload)
+    return response['clue_calculation_update_responses'][0]
+

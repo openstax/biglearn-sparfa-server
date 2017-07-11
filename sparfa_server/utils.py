@@ -3,14 +3,14 @@ import json
 import os
 import queue
 import threading
+import time
 from collections import OrderedDict
 from uuid import UUID
 
 import numpy as np
-import time
 
 
-def dump_array(array):
+def dump_matrix(array):
     memfile = io.BytesIO()
     np.save(memfile, array)
     memfile.seek(0)

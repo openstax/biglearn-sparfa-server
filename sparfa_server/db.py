@@ -146,6 +146,12 @@ def select_student_responses(ecosystem_uuid, student_uuid, exercise_uuids):
         responses.c.exercise_uuid.in_(exercise_uuids))
 
 
+@executor(fetch_all=True)
+def select_responses_by_response_uuids(response_uuids):
+    return select([responses]).where(
+        responses.c.uuid.in_(response_uuids))
+
+
 def select_ecosystem_matrices(ecosystem_uuid):
     with executor as connection:
         stmt = select([ecosystem_matrices]).where(
