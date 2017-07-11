@@ -168,23 +168,30 @@ def load_response(event_data):
                            exercise_uuid=event_data['exercise_uuid'],
                            is_correct=event_data['is_correct'],
                            uuid=event_data['response_uuid'],
-                           student_uuid=event_data['student_uuid']
+                           student_uuid=event_data['student_uuid'],
+                           is_real_response=event_data.get('is_real_response', True),
+                           responded_at=event_data['responded_at'],
+                           sequence_number=event_data['sequence_number'],
+                           trial_uuid=event_data['trial_uuid'],
                            )
     upsert_into_do_nothing(responses, response_values)
     return
 
 
 def run(delay_time=600):
-    while True:
-        # Poll for new ecosystems
-        eco_uuids = fetch_pending_ecosystems(force=False)
-        api_course_uuids = fetch_course_uuids()
+    try:
+        while True:
+            # Poll for new ecosystems
+            eco_uuids = fetch_pending_ecosystems(force=False)
+            api_course_uuids = fetch_course_uuids()
 
-        if eco_uuids:
-            for eco_uuid in eco_uuids:
-                load_ecosystem(eco_uuid)
+            if eco_uuids:
+                for eco_uuid in eco_uuids:
+                    load_ecosystem(eco_uuid)
 
-        for course_uuid in api_course_uuids:
-            load_course(course_uuid)
+            for course_uuid in api_course_uuids:
+                load_course(course_uuid)
 
-        delay(delay_time)
+            delay(delay_time)
+    except (KeyboardInterrupt, SystemExit):
+        pass
