@@ -8,7 +8,6 @@ from .api import (
     fetch_pending_ecosystems,
     fetch_course_uuids)
 from .models import (
-    upsert_into_do_nothing,
     ecosystems,
     exercises,
     ecosystem_exercises,
@@ -17,7 +16,7 @@ from .models import (
     responses,
     course_events,
     courses)
-from .models import max_sequence_offset
+from .db import max_sequence_offset, upsert_into_do_nothing
 
 __logs__ = logging.getLogger(__name__)
 
