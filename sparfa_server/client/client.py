@@ -125,8 +125,18 @@ class BiglearnApi(ClientCore):
         json = self._json(self.fetch(url, data=request), 200)
         return json
 
+    def update_exercise_calcs(self, request):
+        url = self._build_url('scheduler', 'update_exercise_calculations')
+        json = self._json(self.fetch(url, data=request), 200)
+        return json
+
     def fetch_clue_clacs(self, request):
         url = self._build_url('scheduler', 'fetch_clue_calculations')
+        json = self._json(self.fetch(url, data=request), 200)
+        return json
+
+    def update_clue_calcs(self, request):
+        url = self._build_url('scheduler', 'update_clue_calculations')
         json = self._json(self.fetch(url, data=request), 200)
         return json
 
