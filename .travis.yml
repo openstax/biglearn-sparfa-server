@@ -3,14 +3,14 @@ python:
   - "3.6"
 
 dist: trusty
-sudo:false
+sudo: false
 
 addons:
   postgresql: "9.6"
   apt:
     sources:
       - ubuntu-toolchain-r-test
-      packages:
+    packages:
       - g++-4.8
 
 services:
@@ -18,11 +18,14 @@ services:
 
 cache:
   directories:
-    - ~/.cache/pip
+    - $HOME/.cache/pip
 
 # command to install dependencies
+
+before_install:
+  - python setup.py bdist_wheel --universal
 install:
-  - pip install .
+  - pip install -e .[dev]
   - pip install codecov
 
 script:
