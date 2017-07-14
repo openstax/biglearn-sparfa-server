@@ -23,13 +23,22 @@ class ClientCore(object):
             session = BiglearnSession()
         self.session = session
 
-    def _json(self, response, status_code):
+    def _json(self, response, status_code, include_cache_info=True):
         ret = None
         if self._boolean(response, status_code, 404) and response.content:
             __logs__.info('Attempting to get JSON information from a '
                           'Response with status code %d expecting %d',
                           response.status_code, status_code)
             ret = response.json()
+            headers = response.headers
+            if (include_cache_info and
+                    (headers.get('Last-Modified') or headers.get('ETag')) and
+                    isinstance(ret, dict)):
+                ret['Last-Modified'] = response.headers.get(
+                    'Last-Modified', ''
+                )
+                ret['ETag'] = response.headers.get('ETag', '')
+
         __logs__.info('JSON was %sreturned', 'not ' if ret is None else '')
         return ret
 
@@ -38,7 +47,7 @@ class ClientCore(object):
             status_code = response.status_code
             if status_code == true_code:
                 return True
-            if status_code == false_code:
+            if status_code != false_code and status_code >= 400:
                 raise exceptions.error_for(response)
         return False
 
@@ -70,8 +79,8 @@ class ClientCore(object):
 class BiglearnApi(ClientCore):
     """Stores all the session information."""
 
-    def __init__(self):
-        super().__init__({})
+    def __init__(self, session=None):
+        super().__init__({}, session=session)
 
     def fetch_ecosystem_metadatas(self):
         url = self._build_url('api', 'fetch_ecosystem_metadatas')

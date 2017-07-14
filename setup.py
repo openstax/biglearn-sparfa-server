@@ -60,8 +60,21 @@ setup(
     depencency_links=[
         'git+https://github.com/openstax/biglearn-sparfa-algs#egg=sparfa_algs'
     ],
+    extras_require={
+        'dev': [
+            'pytest==3.1.3',
+            'pytest-postgresql==1.3.0',
+            'pytest-runner==2.11.1',
+            'pytest-cov==2.5.1',
+            'pytest-mocker==1.6.0'
+            'pook==0.2.3'
+        ]
+    },
     tests_require=[
         'pytest',
+    ],
+    setup_requires=[
+        'pytest-runner'
     ],
     entry_points={
         'console_scripts': [

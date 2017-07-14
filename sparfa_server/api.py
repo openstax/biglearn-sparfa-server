@@ -9,7 +9,6 @@ from sparfa_server.db import get_all_ecosystem_uuids
 __logs__ = logging.getLogger(__name__)
 
 blapi = BiglearnApi()
-executor = Executor(make_database_url())
 
 
 def create_course_event_request(course_uuid, offset, max_events):

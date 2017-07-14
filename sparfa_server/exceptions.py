@@ -26,6 +26,38 @@ class APIError(Exception):
         return self.msg
 
 
+class BiglearnError(Exception):
+    """The base exception class."""
+
+    def __init__(self, resp):
+        super(BiglearnError, self).__init__(resp)
+        #: Response code that triggered the error
+        self.response = resp
+        self.code = resp.status_code
+        self.errors = []
+        try:
+            error = resp.json()
+            #: Message associated with the error
+            self.msg = error.get('message')
+            #: List of errors provided by GitHub
+            if error.get('errors'):
+                self.errors = error.get('errors')
+        except:  # Amazon S3 error
+            self.msg = resp.content or '[No message]'
+
+    def __repr__(self):
+        return '<{0} [{1}]>'.format(self.__class__.__name__,
+                                    self.msg or self.code)
+
+    def __str__(self):
+        return '{0} {1}'.format(self.code, self.msg)
+
+    @property
+    def message(self):
+        """The actual message returned by the API."""
+        return self.msg
+
+
 class ResponseError(APIError):
     """The base exception for errors stemming from Biglearn API or Scheduler
     responses
@@ -48,7 +80,7 @@ class TransportError(APIError):
 
 
 class ConnectionError(TransportError):
-    """Exception for errors in connecting to 
+    """Exception for errors in connecting to
     or reading data from Biglearn API"""
 
     msg_format = 'A connection-level exception occurred: {0}'
@@ -77,6 +109,7 @@ class ServerError(ResponseError):
 error_classes = {
     400: BadRequest,
     404: NotFoundError,
+
 }
 
 
@@ -86,6 +119,6 @@ def error_for(response):
     if klass is None:
         if 400 <= response.status_code < 500:
             klass = ClientError
-        if 500 <= response.sttatus_code < 600:
+        if 500 <= response.status_code < 600:
             klass = ServerError
     return klass(response)
