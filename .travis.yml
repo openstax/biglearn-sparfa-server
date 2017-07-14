@@ -1,0 +1,32 @@
+language: python
+python:
+  - "3.6"
+
+dist: trusty
+sudo:false
+
+addons:
+  postgresql: "9.6"
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+      packages:
+      - g++-4.8
+
+services:
+  - postgresql
+
+cache:
+  directories:
+    - ~/.cache/pip
+
+# command to install dependencies
+install:
+  - pip install .
+  - pip install codecov
+
+script:
+  - python setup.py test
+
+after_success:
+  - codecov
