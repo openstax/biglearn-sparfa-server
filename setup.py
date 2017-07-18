@@ -55,17 +55,14 @@ setup(
         "scipy==0.19.0",
         "setproctitle==1.1.10",
         "six==1.10.0",
-        "sparfa-algs",
+        "sparfa-algs==0.0.1",
         "SQLAlchemy==1.1.9",
         "sqlparse==0.2.3",
         "tzlocal==1.4",
         "wcwidth==0.1.7",
     ],
-    depencency_links=[
-        'git+https://{github_token}@github.com/{github_user}/biglearn-sparfa-algs.git/@master#egg=sparfa-algs-0'.format(
-            github_token=github_token,
-            github_user=github_user
-        )
+    dependency_links=[
+        'git+https://{0}:x-oauth-basic@github.com/{1}/biglearn-sparfa-algs.git/@master#egg=sparfa-algs-0.0.1'.format(github_token, github_user)
     ],
     extras_require={
         'dev': [
@@ -73,7 +70,6 @@ setup(
             'pytest-postgresql==1.3.0',
             'pytest-runner==2.11.1',
             'pytest-cov==2.5.1',
-            'pytest-mocker==1.6.0'
             'pook==0.2.3'
         ]
     },
