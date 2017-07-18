@@ -1,14 +1,19 @@
 import logging
+import os
 import uuid
 
-from .utils import make_database_url
-from sparfa_server.executer import Executor
 from .client import BiglearnApi
-from sparfa_server.db import get_all_ecosystem_uuids
+from .db import get_all_ecosystem_uuids
 
 __logs__ = logging.getLogger(__name__)
 
-blapi = BiglearnApi()
+try:
+    api_token = os.environ['BIGLEARN_API_TOKEN']
+    sched_token = os.environ['BIGLEARN_SCHED_TOKEN']
+except KeyError:
+    raise Exception('Have you set env vars for biglearn tokens?')
+
+blapi = BiglearnApi(api_token=api_token, sched_token=sched_token)
 
 
 def create_course_event_request(course_uuid, offset, max_events):
@@ -56,8 +61,11 @@ def create_ecosystem_event_request(ecosystem_uuid):
     return data
 
 
-def fetch_course_uuids():
-    course_metadatas = blapi.fetch_course_metadatas()
+def fetch_course_uuids(course_uuids=None):
+    course_metadatas = blapi.fetch_course_metadatas(course_uuids)
+    if course_uuids:
+        return [uuid['uuid'] for uuid in course_metadatas['course_responses'] if uuid in course_uuids]
+
     return [uuid['uuid'] for uuid in course_metadatas['course_responses']]
 
 
@@ -70,9 +78,13 @@ def fetch_course_event_requests(course_uuid, offset=0, max_events=100):
     return course_event_resps
 
 
-def fetch_ecosystem_uuids():
+def fetch_ecosystem_uuids(ecosystem_uuids=None):
     ecosystem_metadatas = blapi.fetch_ecosystem_metadatas()
-    return [uuid['uuid'] for uuid in ecosystem_metadatas['ecosystem_responses']]
+    if ecosystem_uuids:
+        return [uuid['uuid'] for uuid in ecosystem_metadatas['ecosystem_responses'] if uuid in ecosystem_uuids]
+    else:
+        return [uuid['uuid'] for uuid in
+                ecosystem_metadatas['ecosystem_responses']]
 
 
 def fetch_ecosystem_event_requests(ecosystem_uuid):
