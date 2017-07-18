@@ -1,29 +1,3 @@
-class APIError(Exception):
-    """API Base exception"""
-    def __init__(self, resp):
-        super().__init__(resp)
-        self.response = resp
-        self.code = resp.status_code
-        self.errors = []
-        try:
-            error = resp.json()
-            self.msg = error.get('message')
-            if error.get('errors'):
-                self.errors = error.get('errors')
-        except:
-            self.msg = resp.content or '[No message]'
-
-    def __repr__(self):
-        return '<{0} [{1}]>'.format(self.__class__.__name__,
-                                    self.msg or self.code)
-
-    def __str__(self):
-        return '{0} {1}'.format(self.code, self.msg)
-
-    @property
-    def message(self):
-        """The actual message returned by the API."""
-        return self.msg
 
 
 class BiglearnError(Exception):
@@ -37,11 +11,9 @@ class BiglearnError(Exception):
         self.errors = []
         try:
             error = resp.json()
-            #: Message associated with the error
-            self.msg = error.get('message')
             #: List of errors provided by GitHub
             if error.get('errors'):
-                self.errors = error.get('errors')
+                self.msg = error.get('errors')
         except:  # Amazon S3 error
             self.msg = resp.content or '[No message]'
 
@@ -58,14 +30,14 @@ class BiglearnError(Exception):
         return self.msg
 
 
-class ResponseError(APIError):
+class ResponseError(BiglearnError):
     """The base exception for errors stemming from Biglearn API or Scheduler
     responses
     """
     pass
 
 
-class TransportError(APIError):
+class TransportError(BiglearnError):
     """Catch-all exception for errors coming from Requests."""
 
     msg_format = 'An error occurred while making a request to Biglearn API: {0}'

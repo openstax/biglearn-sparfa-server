@@ -9,10 +9,6 @@ from sparfa_server import exceptions
 from sparfa_server.client.client import ClientCore
 
 
-class TestClientCore(ClientCore):
-    """Subclass for testing ClientCore"""
-
-
 def test_boolean(test_session):
     response = requests.Response()
     response.status_code = 200
@@ -71,4 +67,4 @@ def test_json_status_code_does_not_match(test_session):
     response.status_code = 204
 
     json = test_session._json(response, 200)
-    assert json is None
+
