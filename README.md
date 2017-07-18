@@ -1,3 +1,8 @@
+
+
+[![codecov](https://codecov.io/gh/openstax/biglearn-sparfa-server/branch/master/graph/badge.svg)](https://codecov.io/gh/openstax/biglearn-sparfa-server)
+[![travis](https://travis-ci.org/openstax/biglearn-sparfa-server.svg?branch=master)](https://travis-ci.org/openstax/biglearn-sparfa-server)
+
         ____  _       __
        / __ )(_)___ _/ /__  ____ __________
       / __  / / __ `/ / _ \/ __ `/ ___/ __ \______
