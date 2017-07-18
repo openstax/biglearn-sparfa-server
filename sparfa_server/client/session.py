@@ -27,6 +27,17 @@ class BiglearnSession(requests.Session):
             scheduler='https://biglearnworker-dev.openstax.org'
         )
 
+    def token_auth(self, api_token, sched_token):
+
+        if api_token and sched_token:
+
+            self.headers.update({
+                'Biglearn-Api-Token': api_token,
+                'Biglearn-Scheduler-Token': sched_token
+            })
+        else:
+            return
+
     def build_url(self, server='api', *args, **kwargs):
         """Builds the url based on if using the Biglearn Api or Scheduler"""
         parts = [kwargs.get('base_url') or self.base_urls.get(server)]

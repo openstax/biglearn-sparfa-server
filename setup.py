@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 
@@ -17,6 +18,9 @@ with open('sparfa_server/__about__.py', 'r') as fd:
 
 if not __version__:
     raise RuntimeError('Cannot find version information')
+
+github_token = os.environ['GITHUB_TOKEN']
+github_user = os.environ['GITHUB_USER']
 
 setup(
     name='biglearn-sparfa-server',
@@ -58,7 +62,10 @@ setup(
         "wcwidth==0.1.7",
     ],
     depencency_links=[
-        'git+https://github.com/openstax/biglearn-sparfa-algs#egg=sparfa_algs'
+        'git+https://{github_token}@github.com/{github_user}/biglearn-sparfa-algs#egg=sparfa_algs-0'.format(
+            github_token=github_token,
+            github_user=github_user
+        )
     ],
     extras_require={
         'dev': [

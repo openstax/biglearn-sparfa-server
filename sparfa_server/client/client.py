@@ -18,7 +18,7 @@ class ClientCore(object):
 
     def __init__(self, json, session=None):
         if hasattr(session, 'session'):
-            session = session.session
+            session = session.session()
         elif session is None:
             session = BiglearnSession()
         self.session = session
@@ -79,8 +79,16 @@ class ClientCore(object):
 class BiglearnApi(ClientCore):
     """Stores all the session information."""
 
-    def __init__(self, session=None):
+    def __init__(self, session=None, api_token=None, sched_token=None):
+        if session:
+            self.session = session
         super().__init__({}, session=session)
+
+        if api_token and sched_token:
+            self.login(api_token, sched_token)
+
+    def login(self, api_token, sched_token):
+        self.session.token_auth(api_token, sched_token)
 
     def fetch_ecosystem_metadatas(self):
         url = self._build_url('api', 'fetch_ecosystem_metadatas')
