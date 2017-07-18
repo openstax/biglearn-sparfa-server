@@ -44,6 +44,7 @@ nosetests.xml
 coverage.xml
 *,cover
 .hypothesis/
+/cov.xml
 
 # Translations
 *.mo
@@ -73,3 +74,4 @@ target/
 
 # Environmental Variables
 .env
+

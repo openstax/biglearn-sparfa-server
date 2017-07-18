@@ -22,10 +22,8 @@ cache:
 
 # command to install dependencies
 
-before_install:
-  - python setup.py bdist_wheel --universal
 install:
-  - pip install -e .[dev]
+  - pip install --process-dependency-links .[dev]
   - pip install codecov
 
 script:
