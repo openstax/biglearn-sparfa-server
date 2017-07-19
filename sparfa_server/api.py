@@ -16,13 +16,19 @@ except KeyError:
 blapi = BiglearnApi(api_token=api_token, sched_token=sched_token)
 
 
-def create_course_event_request(course_uuid, offset, max_events):
+def create_course_event_request(course_uuid,
+                                offset,
+                                max_events,
+                                request_uuid=None):
     data = {
         'course_event_requests': [],
     }
 
+    if not request_uuid:
+        request_uuid = str(uuid.uuid4())
+
     event_request = {
-        'request_uuid': str(uuid.uuid4()),
+        'request_uuid': request_uuid,
         'event_types': [
             'create_course',
             'prepare_course_ecosystem',
@@ -43,13 +49,16 @@ def create_course_event_request(course_uuid, offset, max_events):
     return data
 
 
-def create_ecosystem_event_request(ecosystem_uuid):
+def create_ecosystem_event_request(ecosystem_uuid, request_uuid=None):
     data = {
         'ecosystem_event_requests': [],
     }
 
+    if not request_uuid:
+        request_uuid = str(uuid.uuid4())
+
     event_request = {
-        'request_uuid': str(uuid.uuid4()),
+        'request_uuid': request_uuid,
         'event_types': ['create_ecosystem'],
         'ecosystem_uuid': ecosystem_uuid,
         'sequence_number_offset': 0,
@@ -64,7 +73,8 @@ def create_ecosystem_event_request(ecosystem_uuid):
 def fetch_course_uuids(course_uuids=None):
     course_metadatas = blapi.fetch_course_metadatas(course_uuids)
     if course_uuids:
-        return [uuid['uuid'] for uuid in course_metadatas['course_responses'] if uuid in course_uuids]
+        return [uuid['uuid'] for uuid in course_metadatas['course_responses'] if
+                uuid in course_uuids]
 
     return [uuid['uuid'] for uuid in course_metadatas['course_responses']]
 
@@ -81,7 +91,9 @@ def fetch_course_event_requests(course_uuid, offset=0, max_events=100):
 def fetch_ecosystem_uuids(ecosystem_uuids=None):
     ecosystem_metadatas = blapi.fetch_ecosystem_metadatas()
     if ecosystem_uuids:
-        return [uuid['uuid'] for uuid in ecosystem_metadatas['ecosystem_responses'] if uuid in ecosystem_uuids]
+        return [uuid['uuid'] for uuid in
+                ecosystem_metadatas['ecosystem_responses'] if
+                uuid in ecosystem_uuids]
     else:
         return [uuid['uuid'] for uuid in
                 ecosystem_metadatas['ecosystem_responses']]
