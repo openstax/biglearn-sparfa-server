@@ -1,5 +1,7 @@
+
 import pytest
 from alembic.command import upgrade
+from click.testing import CliRunner
 
 from alembic.config import Config as AlembicConfig
 from pytest_postgresql.factories import (init_postgresql_database,
@@ -45,3 +47,10 @@ def db(config_database):
 def test_session():
     blapi = BiglearnApi(session=create_session_mock())
     yield blapi
+
+
+@pytest.yield_fixture
+def cli():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        yield runner
