@@ -1,6 +1,7 @@
 import logging
 
-from sparfa_server.utils import delay
+from sqlalchemy.exc import StatementError
+
 
 from .api import (
     fetch_ecosystem_event_requests,
@@ -17,6 +18,7 @@ from .models import (
     course_events,
     courses)
 from .db import max_sequence_offset, upsert_into_do_nothing
+from .utils import delay
 
 __logs__ = logging.getLogger(__name__)
 
@@ -127,9 +129,12 @@ def load_exercises(ecosystem_uuid, exercises_data):
 
 
 def load_ecosystem(ecosystem_uuid):
-    upsert_into_do_nothing(ecosystems, dict(uuid=ecosystem_uuid))
-
     ecosystem_data = fetch_ecosystem_event_requests(ecosystem_uuid)
+
+    try:
+        upsert_into_do_nothing(ecosystems, dict(uuid=ecosystem_uuid))
+    except StatementError:
+        raise Exception('Are you sure that is a valid UUID?')
 
     contents_data = ecosystem_data['book']['contents']
     exercises_data = ecosystem_data['exercises']

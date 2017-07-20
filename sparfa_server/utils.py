@@ -4,6 +4,7 @@ import os
 import queue
 import threading
 from collections import OrderedDict
+from uuid import UUID
 
 import numpy as np
 import time
@@ -41,6 +42,15 @@ def make_database_url():
         os.getenv('DB_PORT', '5432'),
         os.getenv('DB_NAME', 'bl_sparfa_server'),
     )
+
+
+def validate_uuid4(uuid_string):
+    try:
+        val = UUID(uuid_string, version=4)
+    except ValueError:
+        return False
+
+    return val.hex == uuid_string
 
 
 class Result(object):
