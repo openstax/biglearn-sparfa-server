@@ -96,6 +96,7 @@ def load_containers(ecosystem_uuid, contents_data):
 
     return
 
+
 @celery.task
 def load_ecosystem_exercises(ecosystem_uuid, exercises_data):
     eco_exercise_values = []
@@ -109,6 +110,7 @@ def load_ecosystem_exercises(ecosystem_uuid, exercises_data):
     upsert_into_do_nothing(ecosystem_exercises, eco_exercise_values)
 
     return
+
 
 @celery.task
 def load_exercises(ecosystem_uuid, exercises_data):
@@ -167,6 +169,7 @@ def load_course(course_uuid):
             break
 
     return
+
 
 @celery.task
 def load_response(event_data):

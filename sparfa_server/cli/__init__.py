@@ -3,6 +3,7 @@ import click
 from sparfa_server.__about__ import __client_version__
 from sparfa_server.cli.commands.loaders import loaders
 from sparfa_server.cli.commands.celery import celery
+from sparfa_server.cli.commands.server import server
 
 
 @click.group()
@@ -15,5 +16,6 @@ def cli(ctx):
 def main():
     cli.add_command(loaders)
     cli.add_command(celery)
+    cli.add_command(server)
     cli(prog_name='sparf', obj={})
 
