@@ -21,7 +21,6 @@ executor = Executor(make_database_url())
 metadata = sa.MetaData()
 
 
-@executor
 def upsert_into_do_nothing(table, values):
     """
     This function will upsert all the values provided for the table model and
@@ -37,11 +36,24 @@ def upsert_into_do_nothing(table, values):
     __logs__.info(
         'Inserting into {0} {1} items {2:.150}'.format(table, len(values),
                                                        str(values)))
+    with executor as conn:
+        conn.execute(do_nothing_stmt)
+        conn.close()
+
     return do_nothing_stmt
 
 
 @executor
 def upsert_into_do_update(mtable, mvalues, columns):
+    """
+    This is an upsert that will update all columns specified in the columns
+    parameter. The indexes and id will be immediated excluded from update.
+
+    :param mtable:
+    :param mvalues:
+    :param columns:
+    :return:
+    """
     insert_stmt = insert(mtable).values(mvalues)
 
     keys = mtable.c._data.keys()

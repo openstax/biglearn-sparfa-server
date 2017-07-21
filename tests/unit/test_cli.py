@@ -4,10 +4,10 @@ from sparfa_server.cli.commands import loaders as loaders_cli
 
 
 class TestAddCommand(object):
-    def test_it_prints_error_message(self, cli):
+    def test_import_ecoystem_prints_error_message(self, cli):
         result = self._import_ecosystem(cli, self._gen_incorrect_ecosystem_uuid())
         print(result.output)
-        assert 'invalid Ecosystem' in result.output
+        assert 'invalid ecosystem' in result.output
 
     @staticmethod
     def _gen_incorrect_ecosystem_uuid():

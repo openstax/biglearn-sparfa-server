@@ -82,86 +82,21 @@ def calc_ecosystem_pe(ecosystem_uuid, student_uuid, exercise_uuids):
     # Select matrices data from the db
     m = select_ecosystem_matrices(ecosystem_uuid)
 
-    # Load matrices from db
-    W_NCxNQ = load_matrix(m.w_matrix)
-    d_NQx1 = load_matrix(m.d_matrix)
-    H_mask_NCxNQ = load_matrix(m.H_mask_NCxNQ)
+    if m:
 
-    # Load mappings
-    C_idx_by_id = load_mapping(m.C_idx_by_id)
-    Q_idx_by_id = load_mapping(m.Q_idx_by_id)
+        # Load matrices from db
+        W_NCxNQ = load_matrix(m.w_matrix)
+        d_NQx1 = load_matrix(m.d_matrix)
+        H_mask_NCxNQ = load_matrix(m.H_mask_NCxNQ)
 
-    responses = select_student_responses(ecosystem_uuid,
-                                         student_uuid,
-                                         exercise_uuids)
+        # Load mappings
+        C_idx_by_id = load_mapping(m.C_idx_by_id)
+        Q_idx_by_id = load_mapping(m.Q_idx_by_id)
 
-    responses = [
-        {
-            'L_id': r.student_uuid,
-            'Q_id': r.exercise_uuid,
-            'responded_at': r.responded_at,
-            'correct?': r.is_correct
-        } for r in responses]
+        responses = select_student_responses(ecosystem_uuid,
+                                             student_uuid,
+                                             exercise_uuids)
 
-    L_ids = list(set([r['L_id'] for r in responses]))
-
-    G_L_idx_by_id = {L_id: idx for idx, L_id in enumerate(L_ids)}
-    G_Q_idx_by_id = {Q_id: idx for idx, Q_id in enumerate(exercise_uuids)}
-
-    NQ = len(exercise_uuids)
-    NL = len(L_ids)
-
-    # Create Grade book for the student
-    G_NQxNL, G_mask_NQxNL = SparfaAlgs._G_from_responses(NL=NL,
-                                                         NQ=NQ,
-                                                         L_idx_by_id=G_L_idx_by_id,
-                                                         Q_idx_by_id=G_Q_idx_by_id,
-                                                         responses=responses)
-
-    # Create the SparfaAlgs object
-    algs, infos = SparfaAlgs.from_W_d(W_NCxNQ=W_NCxNQ,
-                                      d_NQx1=d_NQx1,
-                                      H_mask_NCxNQ=H_mask_NCxNQ,
-                                      G_NQxNL=G_NQxNL,
-                                      G_mask_NQxNL=G_mask_NQxNL,
-                                      L_ids=[student_uuid],
-                                      Q_ids=list(Q_idx_by_id.keys()),
-                                      C_ids=list(C_idx_by_id.keys()),
-                                      )
-    ordered_Q_ids = algs.tesr(target_L_id=student_uuid,
-                              target_Q_ids=exercise_uuids,
-                              target_responses=responses
-                              )
-
-    return ordered_Q_ids
-
-
-def calc_ecosystem_clues(ecosystem_uuid,
-                         student_uuids,
-                         exercise_uuids,
-                         responses):
-    m = select_ecosystem_matrices(ecosystem_uuid)
-
-    # Load matrices from db
-    W_NCxNQ = load_matrix(m.w_matrix)
-    d_NQx1 = load_matrix(m.d_matrix)
-    H_mask_NCxNQ = load_matrix(m.H_mask_NCxNQ)
-
-    # Get mappings
-    C_idx_by_id = load_mapping(m.C_idx_by_id)
-    Q_idx_by_id = load_mapping(m.Q_idx_by_id)
-
-    # Construct gradebook
-    response_uuids = [r['response_uuid'] for r in responses]
-
-    responses = select_responses_by_response_uuids(response_uuids)
-
-    # Quick sanity check that the length of responses is the same
-    if len(response_uuids) != len(responses):
-        raise Exception('The responses returned by the db are not the same '
-                        'length as the responses from the scheduler for the '
-                        'clue calculation.')
-    else:
         responses = [
             {
                 'L_id': r.student_uuid,
@@ -170,32 +105,105 @@ def calc_ecosystem_clues(ecosystem_uuid,
                 'correct?': r.is_correct
             } for r in responses]
 
-    NQ = len(Q_idx_by_id)
-    NL = len(student_uuids)
+        L_ids = list(set([r['L_id'] for r in responses]))
 
-    G_L_idx_by_id = {L_id: idx for idx, L_id in enumerate(student_uuids)}
-    G_Q_idx_by_id = {Q_id: idx for idx, Q_id in enumerate(exercise_uuids)}
+        G_L_idx_by_id = {L_id: idx for idx, L_id in enumerate(L_ids)}
+        G_Q_idx_by_id = {Q_id: idx for idx, Q_id in enumerate(exercise_uuids)}
 
-    # Create Grade book for the student
-    G_NQxNL, G_mask_NQxNL = SparfaAlgs._G_from_responses(NL=NL,
-                                                         NQ=NQ,
-                                                         L_idx_by_id=G_L_idx_by_id,
-                                                         Q_idx_by_id=G_Q_idx_by_id,
-                                                         responses=responses)
+        NQ = len(exercise_uuids)
+        NL = len(L_ids)
 
-    # Create matrices
-    algs, infos = SparfaAlgs.from_W_d(W_NCxNQ=W_NCxNQ,
-                                      d_NQx1=d_NQx1,
-                                      H_mask_NCxNQ=H_mask_NCxNQ,
-                                      G_NQxNL=G_NQxNL,
-                                      G_mask_NQxNL=G_mask_NQxNL,
-                                      L_ids=student_uuids,
-                                      Q_ids=list(Q_idx_by_id.keys()),
-                                      C_ids=list(C_idx_by_id.keys()),
-                                      )
+        # Create Grade book for the student
+        G_NQxNL, G_mask_NQxNL = SparfaAlgs._G_from_responses(NL=NL,
+                                                             NQ=NQ,
+                                                             L_idx_by_id=G_L_idx_by_id,
+                                                             Q_idx_by_id=G_Q_idx_by_id,
+                                                             responses=responses)
 
-    clue_mean, clue_min, clue_max = algs.calc_clue_interval(confidence=.5,
-                                                            target_L_ids=student_uuids,
-                                                            target_Q_ids=exercise_uuids)
+        # Create the SparfaAlgs object
+        algs, infos = SparfaAlgs.from_W_d(W_NCxNQ=W_NCxNQ,
+                                          d_NQx1=d_NQx1,
+                                          H_mask_NCxNQ=H_mask_NCxNQ,
+                                          G_NQxNL=G_NQxNL,
+                                          G_mask_NQxNL=G_mask_NQxNL,
+                                          L_ids=[student_uuid],
+                                          Q_ids=list(Q_idx_by_id.keys()),
+                                          C_ids=list(C_idx_by_id.keys()),
+                                          )
+        ordered_Q_ids = algs.tesr(target_L_id=student_uuid,
+                                  target_Q_ids=exercise_uuids,
+                                  target_responses=responses
+                                  )
 
-    return clue_mean, clue_min, clue_max
+        return ordered_Q_ids
+    else:
+        return None
+
+
+def calc_ecosystem_clues(ecosystem_uuid,
+                         student_uuids,
+                         exercise_uuids,
+                         responses):
+    m = select_ecosystem_matrices(ecosystem_uuid)
+
+    if m:
+
+        # Load matrices from db
+        W_NCxNQ = load_matrix(m.w_matrix)
+        d_NQx1 = load_matrix(m.d_matrix)
+        H_mask_NCxNQ = load_matrix(m.H_mask_NCxNQ)
+
+        # Get mappings
+        C_idx_by_id = load_mapping(m.C_idx_by_id)
+        Q_idx_by_id = load_mapping(m.Q_idx_by_id)
+
+        # Construct gradebook
+        response_uuids = [r['response_uuid'] for r in responses]
+
+        responses = select_responses_by_response_uuids(response_uuids)
+
+        # Quick sanity check that the length of responses is the same
+        if len(response_uuids) != len(responses):
+            raise Exception('The responses returned by the db are not the same '
+                            'length as the responses from the scheduler for the '
+                            'clue calculation.')
+        else:
+            responses = [
+                {
+                    'L_id': r.student_uuid,
+                    'Q_id': r.exercise_uuid,
+                    'responded_at': r.responded_at,
+                    'correct?': r.is_correct
+                } for r in responses]
+
+        NQ = len(Q_idx_by_id)
+        NL = len(student_uuids)
+
+        G_L_idx_by_id = {L_id: idx for idx, L_id in enumerate(student_uuids)}
+        G_Q_idx_by_id = {Q_id: idx for idx, Q_id in enumerate(exercise_uuids)}
+
+        # Create Grade book for the student
+        G_NQxNL, G_mask_NQxNL = SparfaAlgs._G_from_responses(NL=NL,
+                                                             NQ=NQ,
+                                                             L_idx_by_id=G_L_idx_by_id,
+                                                             Q_idx_by_id=G_Q_idx_by_id,
+                                                             responses=responses)
+
+        # Create matrices
+        algs, infos = SparfaAlgs.from_W_d(W_NCxNQ=W_NCxNQ,
+                                          d_NQx1=d_NQx1,
+                                          H_mask_NCxNQ=H_mask_NCxNQ,
+                                          G_NQxNL=G_NQxNL,
+                                          G_mask_NQxNL=G_mask_NQxNL,
+                                          L_ids=student_uuids,
+                                          Q_ids=list(Q_idx_by_id.keys()),
+                                          C_ids=list(C_idx_by_id.keys()),
+                                          )
+
+        clue_mean, clue_min, clue_max = algs.calc_clue_interval(confidence=.5,
+                                                                target_L_ids=student_uuids,
+                                                                target_Q_ids=exercise_uuids)
+
+        return clue_mean, clue_min, clue_max
+    else:
+        return None, None, None
