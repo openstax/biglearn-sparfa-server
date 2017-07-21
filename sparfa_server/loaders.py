@@ -2,12 +2,12 @@ import logging
 
 from sqlalchemy.exc import StatementError
 
-
 from .api import (
     fetch_ecosystem_event_requests,
     fetch_course_event_requests,
     fetch_pending_ecosystems,
     fetch_course_uuids)
+from .celery import celery
 from .models import (
     ecosystems,
     exercises,
@@ -59,6 +59,7 @@ def event_handler(course_uuid, event):
     return
 
 
+@celery.task
 def load_containers(ecosystem_uuid, contents_data):
     container_uuids = [c['container_uuid'] for c in contents_data]
     parent_uuids = [c['container_parent_uuid'] for c in
@@ -95,7 +96,7 @@ def load_containers(ecosystem_uuid, contents_data):
 
     return
 
-
+@celery.task
 def load_ecosystem_exercises(ecosystem_uuid, exercises_data):
     eco_exercise_values = []
     for ex in exercises_data:
@@ -109,7 +110,7 @@ def load_ecosystem_exercises(ecosystem_uuid, exercises_data):
 
     return
 
-
+@celery.task
 def load_exercises(ecosystem_uuid, exercises_data):
     __logs__.info(
         'Importing {} exercises for ecosystem {}'.format(len(exercises_data),
@@ -127,7 +128,7 @@ def load_exercises(ecosystem_uuid, exercises_data):
     upsert_into_do_nothing(exercises, exercise_values)
     return
 
-
+@celery.task
 def load_ecosystem(ecosystem_uuid):
     ecosystem_data = fetch_ecosystem_event_requests(ecosystem_uuid)
 
@@ -143,9 +144,10 @@ def load_ecosystem(ecosystem_uuid):
     load_ecosystem_exercises(ecosystem_uuid, exercises_data)
     load_containers(ecosystem_uuid, contents_data)
 
-    return
+    return dict(success=True, msg='ecosystem_loaded_sucessfully')
 
 
+@celery.task
 def load_course(course_uuid):
     cur_sequence_offset = max_sequence_offset(course_uuid)
 
@@ -166,7 +168,7 @@ def load_course(course_uuid):
 
     return
 
-
+@celery.task
 def load_response(event_data):
     response_values = dict(course_uuid=event_data['course_uuid'],
                            ecosystem_uuid=event_data['ecosystem_uuid'],

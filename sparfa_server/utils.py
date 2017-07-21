@@ -50,7 +50,7 @@ def validate_uuid4(uuid_string):
     except ValueError:
         return False
 
-    return val.hex == uuid_string
+    return val.hex == uuid_string.replace('-', '')
 
 
 class Result(object):
