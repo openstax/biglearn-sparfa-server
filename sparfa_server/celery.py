@@ -19,7 +19,7 @@ celery.conf.update(
     CELERYBEAT_SCHEDULE={
         'load_ecosystems': {
             'task': 'sparfa_server.tasks.loaders.load_ecosystems_task',
-            'schedule': timedelta(minutes=10)
+            'schedule': 10
         },
         'load_courses': {
             'task': 'sparfa_server.tasks.loaders.load_courses_task',

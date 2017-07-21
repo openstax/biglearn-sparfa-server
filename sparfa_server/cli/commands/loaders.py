@@ -1,27 +1,24 @@
 import click
-import click_log
 
 from sparfa_server.api import fetch_pending_ecosystems, fetch_course_uuids
 from sparfa_server.loaders import (load_ecosystem as import_ecosystem,
                                    load_course as import_course,
                                    run as run_loaders)
 
-from sparfa_server.tasks import loaders as task_loaders
 from sparfa_server.utils import validate_uuid4
 
 import logging
 
+logging.basicConfig(level=logging.INFO)
 __logs__ = logging.getLogger(__name__)
 
 
 @click.group()
-@click_log.simple_verbosity_option()
 def loaders():
     """Manage Loaders"""
 
 
 @loaders.command()
-@click_log.simple_verbosity_option()
 @click.option('--ecosystem_uuid', prompt=True, help="The uuid of the ecosystem")
 def load_ecosystem(ecosystem_uuid):
     """
