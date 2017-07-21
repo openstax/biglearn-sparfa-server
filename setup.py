@@ -35,7 +35,6 @@ setup(
         "alembic==0.9.2",
         "celery==4.0.2",
         "click==6.7",
-        "click-log==0.1.8",
         "configobj==5.0.6",
         "dateparser==0.6.0",
         "frozendict==1.2",

@@ -128,7 +128,7 @@ def load_exercises(ecosystem_uuid, exercises_data):
     upsert_into_do_nothing(exercises, exercise_values)
     return
 
-@celery.task
+
 def load_ecosystem(ecosystem_uuid):
     ecosystem_data = fetch_ecosystem_event_requests(ecosystem_uuid)
 
