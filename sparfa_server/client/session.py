@@ -1,4 +1,5 @@
 import requests
+import os
 
 from logging import getLogger
 
@@ -23,8 +24,8 @@ class BiglearnSession(requests.Session):
         })
 
         self.base_urls = dict(
-            api='https://biglearn-dev.openstax.org',
-            scheduler='https://biglearnworker-dev.openstax.org'
+            api=os.environ.get('BIGLEARN_API_URL', 'https://biglearn-dev.openstax.org'),
+            scheduler=os.environ.get('BIGLEARN_SCHED_URL', 'https://biglearnworker-dev.openstax.org')
         )
 
     def token_auth(self, api_token, sched_token):
