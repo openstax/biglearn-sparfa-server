@@ -40,7 +40,8 @@ brew install \
 
 The following external services are required:
 
-- PostgreSQL 9.4+
+- PostgreSQL 9.6+
+- RabbitMQ 3.6+
 
 How you install these services is up to you, but the easiest way is by using
 Docker and Docker Compose. This should work on any OS that docker can be installed on.
@@ -76,6 +77,17 @@ Docker and Docker Compose. This should work on any OS that docker can be install
 7. Install biglearn-sparfa-server if you did not run Step 5 above.
 
     `pip install -e .`
+
+
+8. Set environmental variables. See `.env.example` for required variables to be set.
+
+## Dev Server
+
+The dev server runs the celery worker and the beat process to start all periodic tasks.
+The tasks are the loader tasks and the calculations. Make sure you have the database and RabbitMQ services running.
+
+    sparf server
+
 
 ## Run the ecosystem and course loaders
 

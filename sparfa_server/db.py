@@ -47,7 +47,7 @@ def upsert_into_do_nothing(table, values):
 def upsert_into_do_update(mtable, mvalues, columns):
     """
     This is an upsert that will update all columns specified in the columns
-    parameter. The indexes and id will be immediated excluded from update.
+    parameter. The indexes and id will be immediately excluded from update.
 
     :param mtable:
     :param mvalues:
