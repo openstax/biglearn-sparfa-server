@@ -36,11 +36,11 @@ def delay(interval):
 
 def make_database_url():
     return 'postgresql+psycopg2://{0}:{1}@{2}:{3}/{4}'.format(
-        os.getenv('DB_USER', 'postgres'),
-        os.getenv('DB_PASSWORD', ''),
-        os.getenv('DB_HOST', '127.0.0.1'),
-        os.getenv('DB_PORT', '5432'),
-        os.getenv('DB_NAME', 'bl_sparfa_server'),
+        os.environ.get('DB_USER', 'postgres'),
+        os.environ.get('DB_PASSWORD', ''),
+        os.environ.get('DB_HOST', '127.0.0.1'),
+        os.environ.get('DB_PORT', '5432'),
+        os.environ.get('DB_NAME', 'bl_sparfa_server'),
     )
 
 
