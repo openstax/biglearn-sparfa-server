@@ -19,8 +19,23 @@ with open('sparfa_server/__about__.py', 'r') as fd:
 if not __version__:
     raise RuntimeError('Cannot find version information')
 
-github_token = os.environ['GITHUB_TOKEN']
-github_user = os.environ['GITHUB_USER']
+
+def make_sparfa_algs_dependency_link():
+    environment = os.environ.get('PY_ENV')
+
+    if environment == 'travis' or environment == "production":
+        github_token = os.environ['GITHUB_TOKEN']
+        github_user = os.environ['GITHUB_USER']
+        dlink = ('git+https://{0}:x-oauth-basic@github.com/{1}/'
+                 'biglearn-sparfa-algs.git/'
+                 '@master#egg=sparfa-algs-0.0.1'.format(github_token,
+                                                        github_user))
+        return dlink
+    else:
+        dlink = ('git+https://github.com/openstax/biglearn-sparfa-algs.git/'
+                 '@master#egg=sparfa-algs-0.0.1')
+        return dlink
+
 
 setup(
     name='biglearn-sparfa-server',
@@ -62,9 +77,7 @@ setup(
         "tzlocal==1.4",
         "wcwidth==0.1.7",
     ],
-    dependency_links=[
-        'git+https://{0}:x-oauth-basic@github.com/{1}/biglearn-sparfa-algs.git/@master#egg=sparfa-algs-0.0.1'.format(github_token, github_user)
-    ],
+    dependency_links=[make_sparfa_algs_dependency_link()],
     extras_require={
         'dev': [
             'pytest==3.1.3',

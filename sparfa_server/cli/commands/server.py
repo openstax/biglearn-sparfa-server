@@ -24,7 +24,7 @@ def server(worker, beat):
         from honcho.manager import Manager
     except ImportError:
         raise click.ClickException(
-            'cannot import honcho: did you run `pip install -r requirements-dev.in` yet?')
+            'cannot import honcho: did you run `pip install -e .` yet?')
 
     os.environ['PYTHONUNBUFFERED'] = 'true'
 
