@@ -132,15 +132,12 @@ def load_exercises(ecosystem_uuid, exercises_data):
 
 
 def load_ecosystem(ecosystem_uuid):
-    ecosystem_data = fetch_ecosystem_event_requests(ecosystem_uuid)
+    contents_data, exercises_data = fetch_ecosystem_event_requests(ecosystem_uuid)
 
     try:
         upsert_into_do_nothing(ecosystems, dict(uuid=ecosystem_uuid))
     except StatementError:
         raise Exception('Are you sure that is a valid UUID?')
-
-    contents_data = ecosystem_data['book']['contents']
-    exercises_data = ecosystem_data['exercises']
 
     load_exercises(ecosystem_uuid, exercises_data)
     load_ecosystem_exercises(ecosystem_uuid, exercises_data)
