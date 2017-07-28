@@ -6,10 +6,16 @@ from kombu import Queue, Exchange
 
 celery = Celery('sparfa')
 
+def make_celery_url():
+    return 'amqp://{0}:{1}@{2}:{3}'.format(
+        os.environ.get('CELERY_USER', 'guest'),
+        os.environ.get('CELERY_PASSWORD', 'guest'),
+        os.environ.get('CELERY_HOST', '127.0.0.1'),
+        os.environ.get('CELERY_PORT', '5672'),
+    )
+
 celery.conf.update(
-    BROKER_URL=os.environ.get('CELERY_BROKER_URL',
-                              os.environ.get('BROKER_URL',
-                                             'amqp://guest:guest@127.0.0.1:5672')),
+    BROKER_URL=make_celery_url(),
     CELERY_ANNOTATIONS={
         'sparfa_server.tasks.loaders.load_courses_task':
             {
