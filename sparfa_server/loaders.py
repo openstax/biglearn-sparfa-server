@@ -147,7 +147,7 @@ def load_ecosystem(ecosystem_uuid):
 
 
 @celery.task
-def load_course(course_uuid):
+def load_course(course_uuid, max_events=100):
     cur_sequence_offset = max_sequence_offset(course_uuid)
 
     while True:
@@ -157,7 +157,14 @@ def load_course(course_uuid):
         cur_events = cur_event_data['events']
         is_end = cur_event_data['is_end']
 
-        cur_sequence_offset += len(cur_events)
+        __logs__.debug('Fetchings course events for {} '
+            'with {} offset '
+            '{} number of events returned '
+            'where is_end = {} and is_gap = {}'.format(
+            course_uuid, cur_sequence_offset, len(cur_events), is_end, cur_event_data['is_gap']
+        ))
+
+        cur_sequence_offset += (len(cur_events) or max_events)
 
         for event in cur_events:
             event_handler(course_uuid, event)
