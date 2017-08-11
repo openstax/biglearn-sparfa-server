@@ -4,7 +4,7 @@ from datetime import timedelta
 from celery import Celery
 from kombu import Queue, Exchange
 
-celery = Celery('sparfa')
+celery = Celery(os.environ.get('CELERY_APP_NAME', 'sparfa'))
 
 def make_celery_url():
     return 'amqp://{0}:{1}@{2}:{3}'.format(
