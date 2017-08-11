@@ -185,7 +185,7 @@ def fetch_clue_calcs(alg_name):
         algorithm_name=alg_name
     )
 
-    response = blapi.fetch_clue_clacs(payload)
+    response = blapi.fetch_clue_calcs(payload)
 
     clue_calcs = response['clue_calculations']
     return clue_calcs
