@@ -1,4 +1,5 @@
 import logging
+import math
 
 from sqlalchemy.exc import StatementError
 
@@ -148,7 +149,7 @@ def load_ecosystem(ecosystem_uuid):
 
 @celery.task
 def load_course(course_uuid, max_events=100):
-    cur_sequence_offset = max_sequence_offset(course_uuid)
+    cur_sequence_offset = math.floor(max_sequence_offset(course_uuid) / max_events)
 
     while True:
         cur_event_data = fetch_course_event_requests(course_uuid,
