@@ -164,7 +164,7 @@ def load_course(course_uuid, max_events=100):
             course_uuid, cur_sequence_offset, len(cur_events), is_end, cur_event_data['is_gap']
         ))
 
-        cur_sequence_offset += (len(cur_events) or max_events)
+        cur_sequence_offset += max_events
 
         for event in cur_events:
             event_handler(course_uuid, event)
