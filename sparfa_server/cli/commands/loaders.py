@@ -5,7 +5,7 @@ from sparfa_server.loaders import (load_ecosystem as import_ecosystem,
                                    load_course as import_course,
                                    run as run_loaders)
 
-from sparfa_server.tasks import load_course_task
+from sparfa_server.tasks.loaders import load_course_task
 
 from sparfa_server.utils import validate_uuid4
 
