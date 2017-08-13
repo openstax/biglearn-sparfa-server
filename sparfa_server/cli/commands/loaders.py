@@ -34,13 +34,17 @@ def load_ecosystem(ecosystem_uuid):
 
 @loaders.command()
 @click.option('--course_uuid', prompt=True, help="The uuid of the course")
-def load_course(course_uuid):
+@click.option('--offset', type=int, default=None,
+                                        help="The offset to start with. Loader will start with most recently recorded sequence number if omitted.")
+@click.option('--step_size', type=int, default=1,
+                                        help="Step size to increase by when gap exists.")
+def load_course(course_uuid, offset):
     """
     Load a course
     """
     click.echo('Loading course UUID {0}'.format(course_uuid))
     if validate_uuid4(course_uuid):
-        import_course(course_uuid)
+        import_course(course_uuid, cur_sequence_offset=offset, sequence_step_size=step_size)
     else:
         click.echo('Please enter a valid UUID')
 

@@ -13,9 +13,9 @@ from sparfa_server.loaders import (
     load_exercises,
     load_ecosystem_exercises,
     load_containers,
-    event_handler)
+    load_course)
 from sparfa_server.models import ecosystems
-
+from sparfa_server.utils import get_next_offset
 
 @celery.task
 def load_ecosystems_task():
@@ -36,27 +36,16 @@ def load_ecosystems_task():
 
 
 @celery.task
+def load_course_task(course_uuid, cur_sequence_offset = None, sequence_step_size=1):
+    load_course(course_uuid, cur_sequence_offset, sequence_step_size)
+
+
+@celery.task
 def load_courses_task():
     api_course_uuids = fetch_course_uuids()
 
     if api_course_uuids:
 
         for course_uuid in api_course_uuids:
-            cur_sequence_offset = max_sequence_offset(course_uuid)
-
-            while True:
-                cur_event_data = fetch_course_event_requests(course_uuid,
-                                                     cur_sequence_offset)
-
-                cur_events = cur_event_data['events']
-                is_end = cur_event_data['is_end']
-
-                cur_sequence_offset += len(cur_events)
-
-                for event in cur_events:
-                    event_handler(course_uuid, event)
-
-                if is_end:
-                    break
-
+            load_course(course_uuid)
 

@@ -18,7 +18,7 @@ from .models import (
     course_events,
     courses)
 from .db import max_sequence_offset, upsert_into_do_nothing
-from .utils import delay
+from .utils import delay, get_next_offset
 
 __logs__ = logging.getLogger(__name__)
 
@@ -146,14 +146,14 @@ def load_ecosystem(ecosystem_uuid):
     return dict(success=True, msg='ecosystem_loaded_sucessfully')
 
 
-@celery.task
-def load_course(course_uuid, max_events=100):
-    cur_sequence_offset = max_sequence_offset(course_uuid)
+def load_course(course_uuid, cur_sequence_offset = None, sequence_step_size=1):
+
+    if cur_sequence_offset is None:
+        cur_sequence_offset = max_sequence_offset(course_uuid)
 
     while True:
         cur_event_data = fetch_course_event_requests(course_uuid,
                                                      cur_sequence_offset)
-        cur_sequence_offset_needs_update = True
         cur_events = cur_event_data['events']
         is_end = cur_event_data['is_end']
 
@@ -170,16 +170,11 @@ def load_course(course_uuid, max_events=100):
         if is_end:
             break
 
-        new_max_sequence_offset = max([cur_event['sequence_number'] for cur_event in cur_events])
-        if new_max_sequence_offset > cur_sequence_offset:
-            cur_sequence_offset = new_max_sequence_offset + 1
-        else:
-            cur_sequence_offset += max_events
+        cur_sequence_offset = get_next_offset(cur_sequence_offset, cur_events, sequence_step_size)
 
     return
 
 
-@celery.task
 def load_response(event_data):
     response_values = dict(course_uuid=event_data['course_uuid'],
                            ecosystem_uuid=event_data['ecosystem_uuid'],
