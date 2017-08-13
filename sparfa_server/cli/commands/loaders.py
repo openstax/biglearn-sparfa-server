@@ -40,7 +40,7 @@ def load_ecosystem(ecosystem_uuid):
                                         help="The offset to start with. Loader will start with most recently recorded sequence number if omitted.")
 @click.option('--step_size', type=int, default=1,
                                         help="Step size to increase by when gap exists.")
-def load_course(course_uuid, offset):
+def load_course(course_uuid, offset, step_size):
     """
     Load a course
     """
