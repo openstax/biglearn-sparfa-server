@@ -59,7 +59,7 @@ def all():
     for eco_uuid in ecosystem_uuids:
         import_ecosystem(eco_uuid)
     for course_uuid in api_course_uuids:
-        load_course_task.delay(course_uuid)
+        load_course_task.delay(course_uuid, cur_sequence_offset = 0)
 
     __logs__.info('Ecosystems and Courses have been loaded')
 

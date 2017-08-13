@@ -3,34 +3,34 @@ from functools import wraps
 from sqlalchemy import create_engine
 
 
-class Executor(object):
-    """The :class: `Executor` acts both as a context manager and a
+class Executer(object):
+    """The :class: `Executer` acts both as a context manager and a
        decorator.
 
-       An instance of the executor can be created by passing in
+       An instance of the executer can be created by passing in
        the SQL Alchemy connection uri. ::
 
-           executor = Executor('<sqlalchemy uri>')
+           executer = Executer('<sqlalchemy uri>')
 
            # in a flask app, for example:
-           executor = Executor(app.config['sqlalchemy.url'], debug=app.debug)
+           executer = Executer(app.config['sqlalchemy.url'], debug=app.debug)
 
 
-       To use the executor as a context manager::
+       To use the executer as a context manager::
 
            def insert_into(table, values):
-               with executor as connection:
+               with executer as connection:
                    statement = table.insert().values(**values)
                    result = connection.execute(statement)
                return result
 
-       The same can be done using the :class: `Executor` as a decorator::
+       The same can be done using the :class: `Executer` as a decorator::
 
-           @executor
+           @executer
            def insert_into(table, values):
                return table.insert().values(**values)
 
-       As a decorator, the executor expects the decorated function to
+       As a decorator, the executer expects the decorated function to
        return a SQL Alchemy statement that can be passed on to the SQL
        Alchemy connection for execution.
 
@@ -43,7 +43,7 @@ class Executor(object):
 
     def __enter__(self):
         if self._conn:
-            raise RuntimeError('This executor is already open.')
+            raise RuntimeError('This executer is already open.')
 
         engine = create_engine(self.connection_string,
                                convert_unicode=True)
@@ -52,7 +52,7 @@ class Executor(object):
 
     def __exit__(self, e_typ, e_val, e_trc):
         if not self._conn:
-            raise RuntimeError('This executor is not open.')
+            raise RuntimeError('This executer is not open.')
         self._conn.close()
         self._conn = None
 
