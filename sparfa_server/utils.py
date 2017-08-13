@@ -53,7 +53,7 @@ def validate_uuid4(uuid_string):
     return val.hex == uuid_string.replace('-', '')
 
 
-def get_next_offset(current_offset, current_events = [], step_size=1, sequence_number_key = 'sequence_number')
+def get_next_offset(current_offset, current_events = [], step_size=1, sequence_number_key = 'sequence_number'):
     next_offset = current_offset + step_size
 
     if len(current_events) is not 0:
