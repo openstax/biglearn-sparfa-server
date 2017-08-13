@@ -36,11 +36,6 @@ def load_ecosystems_task():
 
 
 @celery.task
-def load_course_task(course_uuid, cur_sequence_offset = None, sequence_step_size=1):
-    load_course(course_uuid, cur_sequence_offset, sequence_step_size)
-
-
-@celery.task
 def load_courses_task():
     api_course_uuids = fetch_course_uuids()
 

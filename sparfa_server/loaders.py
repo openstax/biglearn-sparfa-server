@@ -146,33 +146,40 @@ def load_ecosystem(ecosystem_uuid):
     return dict(success=True, msg='ecosystem_loaded_sucessfully')
 
 
+def course_loader(max_sequence_function, event_handler_function):
+    def load_course(course_uuid, cur_sequence_offset = None, sequence_step_size=1):
+
+        if cur_sequence_offset is None:
+            cur_sequence_offset = max_sequence_function(course_uuid)
+
+        while True:
+            cur_event_data = fetch_course_event_requests(course_uuid,
+                                                         cur_sequence_offset)
+            cur_events = cur_event_data['events']
+            is_end = cur_event_data['is_end']
+
+            __logs__.debug('Fetchings course events for {} '
+                'with {} offset '
+                '{} number of events returned '
+                'where is_end = {} and is_gap = {}'.format(
+                course_uuid, cur_sequence_offset, len(cur_events), is_end, cur_event_data['is_gap']
+            ))
+
+            for event in cur_events:
+                event_handler_function(course_uuid, event)
+
+            if is_end:
+                break
+
+            cur_sequence_offset = get_next_offset(cur_sequence_offset, cur_events, sequence_step_size)
+
+        return
+
+    return load_course
+
+
 def load_course(course_uuid, cur_sequence_offset = None, sequence_step_size=1):
-
-    if cur_sequence_offset is None:
-        cur_sequence_offset = max_sequence_offset(course_uuid)
-
-    while True:
-        cur_event_data = fetch_course_event_requests(course_uuid,
-                                                     cur_sequence_offset)
-        cur_events = cur_event_data['events']
-        is_end = cur_event_data['is_end']
-
-        __logs__.debug('Fetchings course events for {} '
-            'with {} offset '
-            '{} number of events returned '
-            'where is_end = {} and is_gap = {}'.format(
-            course_uuid, cur_sequence_offset, len(cur_events), is_end, cur_event_data['is_gap']
-        ))
-
-        for event in cur_events:
-            event_handler(course_uuid, event)
-
-        if is_end:
-            break
-
-        cur_sequence_offset = get_next_offset(cur_sequence_offset, cur_events, sequence_step_size)
-
-    return
+    return course_loader(max_sequence_offset, event_handler)(*args, **kwargs)
 
 
 def load_response(event_data):
