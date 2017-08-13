@@ -5,6 +5,8 @@ from sparfa_server.loaders import (load_ecosystem as import_ecosystem,
                                    load_course as import_course,
                                    run as run_loaders)
 
+from sparfa_server.tasks import load_course_task
+
 from sparfa_server.utils import validate_uuid4
 
 import logging
@@ -57,7 +59,7 @@ def all():
     for eco_uuid in ecosystem_uuids:
         import_ecosystem(eco_uuid)
     for course_uuid in api_course_uuids:
-        import_course(course_uuid)
+        load_course_task.delay(course_uuid)
 
     __logs__.info('Ecosystems and Courses have been loaded')
 
