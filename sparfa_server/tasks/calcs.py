@@ -6,6 +6,8 @@ from sparfa_server.calcs import calc_ecosystem_matrices, calc_ecosystem_pe, \
 from sparfa_server.celery import celery
 
 
+alg_name = 'biglearn-sparfa'
+
 # need to make this task shorter.
 # task_time_limit increased for now.
 # otherwise, celery force restarts the worker
@@ -13,8 +15,6 @@ from sparfa_server.celery import celery
     task_time_limit=1200
 )
 def run_matrix_calc_task():
-    alg_name = 'biglearn-sparfa'
-
     calc_uuids = api.fetch_matrix_calculations(alg_name)
 
     if calc_uuids:
@@ -26,8 +26,6 @@ def run_matrix_calc_task():
 
 @celery.task
 def run_pe_calc_task():
-    alg_name = 'biglearn-sparfa'
-
     calc_uuids = fetch_exercise_calcs(alg_name)
 
     if calc_uuids:
@@ -57,7 +55,6 @@ def run_pe_calc_task():
 
 @celery.task
 def run_clue_calc_task():
-    alg_name = 'biglearn-sparfa-dev'
     calcs = fetch_clue_calcs(alg_name=alg_name)
 
     if calcs:
