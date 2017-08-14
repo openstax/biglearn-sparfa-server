@@ -1,3 +1,5 @@
+import celery
+
 from sparfa_server.loaders import course_loader
 from sparfa_server.ddb import (
     max_sequence_offset_with_existing,
