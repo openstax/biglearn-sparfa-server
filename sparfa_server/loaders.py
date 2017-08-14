@@ -178,8 +178,8 @@ def course_loader(max_sequence_function, event_handler_function):
     return load_course_meta_and_events
 
 
-def load_course(*args, *kwargs):
-    return course_loader(max_sequence_offset, event_handler)(*args, *kwargs)
+def load_course(*args, **kwargs):
+    return course_loader(max_sequence_offset, event_handler)(*args, **kwargs)
 
 
 def load_response(event_data):
