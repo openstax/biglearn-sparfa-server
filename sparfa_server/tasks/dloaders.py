@@ -1,9 +1,12 @@
 import celery
+import logging
 
 from sparfa_server.loaders import course_loader
 from sparfa_server.ddb import (
     max_sequence_offset_with_existing,
     upsert_into_do_nothing_with_existing)
+
+__logs__ = logging.getLogger(__name__)
 
 
 def load_course_data(event):
