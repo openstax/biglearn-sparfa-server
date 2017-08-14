@@ -6,7 +6,7 @@ from sparfa_server.loaders import (load_ecosystem as import_ecosystem,
                                    run as run_loaders)
 
 from sparfa_server.tasks.calcs import run_matrix_calc_task
-from sparfa_server.tasks.loaders import load_course_task
+from sparfa_server.tasks.loaders import load_course_task, load_ecosystem_task
 
 from sparfa_server.utils import validate_uuid4
 
@@ -57,7 +57,7 @@ def load_ecosystems():
     ecosystem_uuids = fetch_pending_ecosystems()
 
     for eco_uuid in ecosystem_uuids:
-        import_ecosystem(eco_uuid)
+        load_ecosystem_task.delay(eco_uuid)
 
     __logs__.info('Ecosystems have been loaded')
 

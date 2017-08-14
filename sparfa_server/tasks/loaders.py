@@ -15,7 +15,28 @@ from sparfa_server.loaders import (
     load_containers,
     load_course)
 from sparfa_server.models import ecosystems
-from sparfa_server.utils import get_next_offset
+
+
+def _load_ecosystem_task(ecosystem_uuid):
+    contents_data, exercises_data = fetch_ecosystem_event_requests(ecosystem_uuid)
+
+    upsert_into_do_nothing(ecosystems, dict(uuid=ecosystem_uuid))
+
+    res = chain(
+        load_exercises.si(ecosystem_uuid, exercises_data),
+        load_ecosystem_exercises.si(ecosystem_uuid, exercises_data),
+        load_containers.si(ecosystem_uuid, contents_data))()
+
+
+@celery.task
+def load_ecosystem_task(ecosystem_uuid):
+    return _load_ecosystem_task(ecosystem_uuid)
+
+
+@celery.task
+def load_course_task(*args, **kwargs):
+    return load_course(*args, **kwargs)
+
 
 @celery.task
 def load_ecosystems_task():
@@ -25,14 +46,7 @@ def load_ecosystems_task():
     if ecosystem_uuids:
 
         for ecosystem_uuid in ecosystem_uuids:
-            contents_data, exercises_data = fetch_ecosystem_event_requests(ecosystem_uuid)
-
-            upsert_into_do_nothing(ecosystems, dict(uuid=ecosystem_uuid))
-
-            res = chain(
-                load_exercises.si(ecosystem_uuid, exercises_data),
-                load_ecosystem_exercises.si(ecosystem_uuid, exercises_data),
-                load_containers.si(ecosystem_uuid, contents_data))()
+            _load_ecosystem_task(ecosystem_uuid)
 
 
 @celery.task
@@ -43,8 +57,3 @@ def load_courses_task():
 
         for course_uuid in api_course_uuids:
             load_course(course_uuid)
-
-
-@celery.task
-def load_course_task(*args, **kwargs):
-    return load_course(*args, **kwargs)

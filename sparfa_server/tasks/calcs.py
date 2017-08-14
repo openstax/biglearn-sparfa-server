@@ -8,20 +8,20 @@ from sparfa_server.celery import celery
 
 alg_name = 'biglearn-sparfa'
 
-# need to make this task shorter.
-# task_time_limit increased for now.
-# otherwise, celery force restarts the worker
-@celery.task(
-    task_time_limit=1200
-)
+
+@celery.task
+def run_ecosystem_matrix_calc(calc_uuid, alg_name):
+    calc_ecosystem_matrices(calc_uuid['ecosystem_uuid'])
+    update_matrix_calculations(alg_name, calc_uuid)
+
+
+@celery.task
 def run_matrix_calc_task():
     calc_uuids = api.fetch_matrix_calculations(alg_name)
 
     if calc_uuids:
         for calc_uuid in calc_uuids:
-            calc_ecosystem_matrices(calc_uuid['ecosystem_uuid'])
-
-            update_matrix_calculations(alg_name, calc_uuid)
+            run_ecosystem_matrix_calc.delay(calc_uuid, alg_name)
 
 
 @celery.task
