@@ -1,3 +1,5 @@
+import logging
+
 from sparfa_server.utils import make_database_url
 
 from sparfa_server.dexecuter import Dexecuter
