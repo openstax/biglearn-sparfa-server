@@ -147,7 +147,7 @@ def load_ecosystem(ecosystem_uuid):
 
 
 def course_loader(max_sequence_function, event_handler_function):
-    def load_course(course_uuid, cur_sequence_offset = None, sequence_step_size=1):
+    def load_course_meta_and_events(course_uuid, cur_sequence_offset = None, sequence_step_size=1):
 
         if cur_sequence_offset is None:
             cur_sequence_offset = max_sequence_function(course_uuid)
@@ -175,11 +175,11 @@ def course_loader(max_sequence_function, event_handler_function):
 
         return
 
-    return load_course
+    return load_course_meta_and_events
 
 
-def load_course(course_uuid, cur_sequence_offset=None, sequence_step_size=1):
-    return course_loader(max_sequence_offset, event_handler)(course_uuid, cur_sequence_offset=cur_sequence_offset, sequence_step_size=sequence_step_size)
+def load_course(*args, *kwargs):
+    return course_loader(max_sequence_offset, event_handler)(*args, *kwargs)
 
 
 def load_response(event_data):

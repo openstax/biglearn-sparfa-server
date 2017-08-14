@@ -66,5 +66,5 @@ def event_handler(course_uuid, event):
 
 
 @celery.task
-def load_course_task(course_uuid, cur_sequence_offset=None, sequence_step_size=1):
-    return course_loader(max_sequence_offset_with_existing, event_handler)(course_uuid, cur_sequence_offset=cur_sequence_offset, sequence_step_size=sequence_step_size)
+def load_course_task(*args, *kwargs):
+    return course_loader(max_sequence_offset_with_existing, event_handler)(*args, *kwargs)

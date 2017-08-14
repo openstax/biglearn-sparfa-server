@@ -6,7 +6,12 @@ from sparfa_server.calcs import calc_ecosystem_matrices, calc_ecosystem_pe, \
 from sparfa_server.celery import celery
 
 
-@celery.task
+# need to make this task shorter.
+# task_time_limit increased for now.
+# otherwise, celery force restarts the worker
+@celery.task(
+    task_time_limit=1200
+)
 def run_matrix_calc_task():
     alg_name = 'biglearn-sparfa'
 

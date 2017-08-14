@@ -6,6 +6,7 @@ from sparfa_server.loaders import (load_ecosystem as import_ecosystem,
                                    run as run_loaders)
 
 from sparfa_server.tasks.dloaders import load_course_task
+from sparfa_server.tasks.calcs import run_matrix_calc_task
 
 from sparfa_server.utils import validate_uuid4
 
@@ -49,6 +50,26 @@ def load_course(course_uuid, offset, step_size):
         import_course(course_uuid, cur_sequence_offset=offset, sequence_step_size=step_size)
     else:
         click.echo('Please enter a valid UUID')
+
+
+@loaders.command()
+def load_ecosystems():
+    ecosystem_uuids = fetch_pending_ecosystems()
+
+    for eco_uuid in ecosystem_uuids:
+        import_ecosystem(eco_uuid)
+
+    __logs__.info('Ecosystems have been loaded')
+
+
+@loaders.command()
+def load_courses():
+    api_course_uuids = fetch_course_uuids()
+    for course_uuid in api_course_uuids:
+        load_course_task.delay(course_uuid, cur_sequence_offset = 0)
+
+    run_matrix_calc_task.delay()
+    __logs__.info('Initial courses and calculation tasks have been loaded')
 
 
 @loaders.command()
