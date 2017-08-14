@@ -167,7 +167,7 @@ def load_course(course_uuid, cur_sequence_offset = None, sequence_step_size=1):
         for event in cur_events:
             event_handler(course_uuid, event)
 
-        if is_end:
+        if is_end or is_gap:
             break
 
         cur_sequence_offset = get_next_offset(cur_sequence_offset, cur_events, sequence_step_size)
