@@ -48,7 +48,6 @@ celery.conf.update(
     CELERY_TASK_SERIALIZER='json',
     CELERY_IMPORTS=(
         'sparfa_server.tasks.loaders',
-        'sparfa_server.tasks.dloaders',
         'sparfa_server.tasks.calcs'
     ),
     CELERY_QUEUES=[
