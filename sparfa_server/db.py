@@ -1,7 +1,13 @@
 import logging
+
 import sqlalchemy as sa
 from sqlalchemy import select, func
 from sqlalchemy.dialects.postgresql import insert
+
+from celery.signals import (
+    worker_process_init,
+    worker_process_shutdown
+)
 
 from sparfa_server.executer import Executer
 from sparfa_server.models import (
@@ -21,17 +27,16 @@ executer = Executer(make_database_url())
 metadata = sa.MetaData()
 
 
-def make_upsert_into_do_nothing_statement(table, values):
-    insert_stmt = insert(table).values(values)
-
-    do_nothing_stmt = insert_stmt.on_conflict_do_nothing()
-
-    return do_nothing_stmt
+@worker_process_init.connect
+def init_worker(**kwargs):
+    print('Initializing database engine for worker.')
+    executer.connect()
 
 
-def make_select_max_sequence_offset_statement(course_uuid):
-    return select([func.max(course_events.c.sequence_number)]).where(
-        course_events.c.course_uuid == course_uuid)
+@worker_process_shutdown.connect
+def shutdown_worker(**kwargs):
+    print('Closing database engine for worker.')
+    executer.close()
 
 
 def upsert_into_do_nothing(table, values):
@@ -43,13 +48,15 @@ def upsert_into_do_nothing(table, values):
     :param values:
     :return:
     """
-    do_nothing_stmt = make_upsert_into_do_nothing_statement(table, values)
+    insert_stmt = insert(table).values(values)
+
+    do_nothing_stmt = insert_stmt.on_conflict_do_nothing()
+
     __logs__.info(
         'Inserting into {0} {1} items {2:.150}'.format(table, len(values),
                                                        str(values)))
     with executer as conn:
         conn.execute(do_nothing_stmt)
-        conn.close()
 
     return do_nothing_stmt
 
@@ -121,7 +128,8 @@ def get_all_ecosystem_uuids():
 
 @executer
 def select_max_sequence_offset(course_uuid):
-    return make_select_max_sequence_offset_statement(course_uuid)
+    return select([func.max(course_events.c.sequence_number)]).where(
+        course_events.c.course_uuid == course_uuid)
 
 
 @executer(fetch_all=True)

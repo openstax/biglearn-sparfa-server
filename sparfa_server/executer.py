@@ -42,19 +42,14 @@ class Executer(object):
         self._conn = None
 
     def __enter__(self):
-        if self._conn:
-            raise RuntimeError('This executer is already open.')
+        if not self._conn:
+          self.connect()
 
-        engine = create_engine(self.connection_string,
-                               convert_unicode=True)
-        self._conn = engine.connect()
         return self._conn
 
     def __exit__(self, e_typ, e_val, e_trc):
         if not self._conn:
             raise RuntimeError('This executer is not open.')
-        self._conn.close()
-        self._conn = None
 
     def __call__(self, *args, **kwargs):
         """
@@ -87,3 +82,21 @@ class Executer(object):
             fetch_all = args[0]
 
         return deco
+
+
+    def connect(self):
+        if self._conn:
+            raise RuntimeError('This executer is already open.')
+
+        engine = create_engine(self.connection_string,
+                               convert_unicode=True)
+        self._conn = engine.connect()
+        return self._conn
+
+
+    def close(self):
+        if not self._conn:
+            raise RuntimeError('This executer is not open.')
+        self._conn.close()
+        self._conn = None
+

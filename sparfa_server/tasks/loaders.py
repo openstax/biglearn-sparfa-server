@@ -44,3 +44,7 @@ def load_courses_task():
         for course_uuid in api_course_uuids:
             load_course(course_uuid)
 
+
+@celery.task
+def load_course_task(*args, **kwargs):
+    return load_course(*args, **kwargs)
