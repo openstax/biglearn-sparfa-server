@@ -47,6 +47,10 @@ class Dexecuter(object):
 
         return self._conn
 
+    def __exit__(self, e_typ, e_val, e_trc):
+        if not self._conn:
+            raise RuntimeError('This executer is not open.')
+
     def __call__(self, *args, **kwargs):
         """
         :param fetch_all:  Calls fetch_all on the statement instead of
