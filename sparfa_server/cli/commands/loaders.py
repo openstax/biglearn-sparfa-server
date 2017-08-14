@@ -1,12 +1,12 @@
 import click
 
 from sparfa_server.api import fetch_pending_ecosystems, fetch_course_uuids
-from sparfa_server.loaders import (load_course_task,
-                                   load_ecosystem as import_ecosystem,
+from sparfa_server.loaders import (load_ecosystem as import_ecosystem,
                                    load_course as import_course,
                                    run as run_loaders)
 
 from sparfa_server.tasks.calcs import run_matrix_calc_task
+from sparfa_server.tasks.loaders import load_course_task
 
 from sparfa_server.utils import validate_uuid4
 
