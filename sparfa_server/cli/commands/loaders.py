@@ -5,6 +5,9 @@ from sparfa_server.loaders import (load_ecosystem as import_ecosystem,
                                    load_course as import_course,
                                    run as run_loaders)
 
+from sparfa_server.tasks.calcs import run_matrix_calc_task
+from sparfa_server.tasks.loaders import load_course_task
+
 from sparfa_server.utils import validate_uuid4
 
 import logging
@@ -34,15 +37,39 @@ def load_ecosystem(ecosystem_uuid):
 
 @loaders.command()
 @click.option('--course_uuid', prompt=True, help="The uuid of the course")
-def load_course(course_uuid):
+@click.option('--offset', type=int, default=None,
+                                        help="The offset to start with. Loader will start with most recently recorded sequence number if omitted.")
+@click.option('--step_size', type=int, default=1,
+                                        help="Step size to increase by when gap exists.")
+def load_course(course_uuid, offset, step_size):
     """
     Load a course
     """
     click.echo('Loading course UUID {0}'.format(course_uuid))
     if validate_uuid4(course_uuid):
-        import_course(course_uuid)
+        import_course(course_uuid, cur_sequence_offset=offset, sequence_step_size=step_size)
     else:
         click.echo('Please enter a valid UUID')
+
+
+@loaders.command()
+def load_ecosystems():
+    ecosystem_uuids = fetch_pending_ecosystems()
+
+    for eco_uuid in ecosystem_uuids:
+        import_ecosystem(eco_uuid)
+
+    __logs__.info('Ecosystems have been loaded')
+
+
+@loaders.command()
+def load_courses():
+    api_course_uuids = fetch_course_uuids()
+    for course_uuid in api_course_uuids:
+        load_course_task.delay(course_uuid, cur_sequence_offset = 0)
+
+    run_matrix_calc_task.delay()
+    __logs__.info('Initial courses and calculation tasks have been loaded')
 
 
 @loaders.command()
@@ -53,7 +80,7 @@ def all():
     for eco_uuid in ecosystem_uuids:
         import_ecosystem(eco_uuid)
     for course_uuid in api_course_uuids:
-        import_course(course_uuid)
+        load_course_task.delay(course_uuid, cur_sequence_offset = 0)
 
     __logs__.info('Ecosystems and Courses have been loaded')
 

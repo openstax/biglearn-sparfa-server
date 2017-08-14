@@ -35,11 +35,11 @@ def config_database(request):
 
 @pytest.yield_fixture(scope='session')
 def db(config_database):
-    from sparfa_server.executer import Executor
+    from sparfa_server.executer import Executer
 
-    executor = Executor(connection_string=config_database)
+    executer = Executer(connection_string=config_database)
 
-    with executor as conn:
+    with executer as conn:
         yield conn
 
 

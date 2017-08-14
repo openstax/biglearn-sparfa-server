@@ -7,17 +7,17 @@ from sqlalchemy import select
 from sparfa_server.api import (fetch_ecosystem_uuids,
                                fetch_ecosystem_event_requests)
 from sparfa_server.models import ecosystems, books
-from sparfa_server.utils import Executor, make_database_url, Queue
+from sparfa_server.utils import Executer, make_database_url, Queue
 
 logging.basicConfig(level=logging.DEBUG)
 __logs__ = logging.getLogger(__name__)
 
 connection_string = make_database_url()
 
-executor = Executor(connection_string)
+executer = Executer(connection_string)
 
 
-@executor
+@executer
 def upsert_into(table, values):
     insert_stmt = insert(table).values(values)
 
@@ -28,19 +28,19 @@ def upsert_into(table, values):
     return do_nothing_stmt
 
 
-@executor
+@executer
 def get_ecosystem_by_id(ecosystem_id):
     return select([ecosystems]).where(
-        ecosystems.c.id == ecosystem_id) @ executor
+        ecosystems.c.id == ecosystem_id) @ executer
 
 
-@executor
+@executer
 def get_ecosystem_by_uuid(ecosystem_uuid):
     return select([ecosystems]).where(
         ecosystems.c.uuid == ecosystem_uuid)
 
 
-@executor(fetch_all=True)
+@executer(fetch_all=True)
 def get_all_ecosystem_uuids():
     return select([ecosystems.c.uuid])
 

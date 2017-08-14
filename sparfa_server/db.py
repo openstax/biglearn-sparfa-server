@@ -1,9 +1,15 @@
 import logging
+
 import sqlalchemy as sa
 from sqlalchemy import select, func
 from sqlalchemy.dialects.postgresql import insert
 
-from sparfa_server.executer import Executor
+from celery.signals import (
+    worker_process_init,
+    worker_process_shutdown
+)
+
+from sparfa_server.executer import Executer
 from sparfa_server.models import (
     ecosystems,
     course_events,
@@ -16,9 +22,21 @@ from sparfa_server.utils import make_database_url
 
 __logs__ = logging.getLogger(__name__)
 
-executor = Executor(make_database_url())
+executer = Executer(make_database_url())
 
 metadata = sa.MetaData()
+
+
+@worker_process_init.connect
+def init_worker(**kwargs):
+    print('Initializing database engine for worker.')
+    executer.connect()
+
+
+@worker_process_shutdown.connect
+def shutdown_worker(**kwargs):
+    print('Closing database engine for worker.')
+    executer.close()
 
 
 def upsert_into_do_nothing(table, values):
@@ -33,17 +51,17 @@ def upsert_into_do_nothing(table, values):
     insert_stmt = insert(table).values(values)
 
     do_nothing_stmt = insert_stmt.on_conflict_do_nothing()
+
     __logs__.info(
         'Inserting into {0} {1} items {2:.150}'.format(table, len(values),
                                                        str(values)))
-    with executor as conn:
+    with executer as conn:
         conn.execute(do_nothing_stmt)
-        conn.close()
 
     return do_nothing_stmt
 
 
-@executor
+@executer
 def upsert_into_do_update(mtable, mvalues, columns):
     """
     This is an upsert that will update all columns specified in the columns
@@ -76,13 +94,13 @@ def upsert_into_do_update(mtable, mvalues, columns):
     return do_update_stmt
 
 
-@executor
+@executer
 def get_ecosystem_by_id(ecosystem_id):
     return select([ecosystems]).where(
         ecosystems.c.id == ecosystem_id)
 
 
-@executor
+@executer
 def select_by_id_or_uuid(table, **kwargs):
     query = select([table])
     id_val = kwargs.get('id', None)
@@ -97,42 +115,42 @@ def select_by_id_or_uuid(table, **kwargs):
     return query
 
 
-@executor
+@executer
 def get_ecosystem_by_uuid(ecosystem_uuid):
     return select([ecosystems]).where(
         ecosystems.c.uuid == ecosystem_uuid)
 
 
-@executor(fetch_all=True)
+@executer(fetch_all=True)
 def get_all_ecosystem_uuids():
     return select([ecosystems.c.uuid])
 
 
-@executor
+@executer
 def select_max_sequence_offset(course_uuid):
     return select([func.max(course_events.c.sequence_number)]).where(
         course_events.c.course_uuid == course_uuid)
 
 
-@executor(fetch_all=True)
+@executer(fetch_all=True)
 def select_ecosystem_exercises(ecosystem_uuid):
     return select([ecosystem_exercises.c.exercise_uuid]).where(
         ecosystem_exercises.c.ecosystem_uuid == ecosystem_uuid)
 
 
-@executor(fetch_all=True)
+@executer(fetch_all=True)
 def select_ecosystem_containers(ecosystem_uuid):
     return select([containers]).where(
         containers.c.ecosystem_uuid == ecosystem_uuid)
 
 
-@executor(fetch_all=True)
+@executer(fetch_all=True)
 def select_ecosystem_responses(ecosystem_uuid):
     return select([responses]).where(
         responses.c.ecosystem_uuid == ecosystem_uuid)
 
 
-@executor(fetch_all=True)
+@executer(fetch_all=True)
 def select_exercise_page_modules(exercises, ecosystem_uuid):
     return select([container_exercises]).select_from(
         container_exercises.join(
@@ -143,14 +161,14 @@ def select_exercise_page_modules(exercises, ecosystem_uuid):
         container_exercises.c.ecosystem_uuid == ecosystem_uuid)
 
 
-@executor(fetch_all=True)
+@executer(fetch_all=True)
 def select_ecosystem_page_modules(ecosystem_uuid):
     return select([containers.c.uuid]).where(
         containers.c.is_page_module == True).where(
         containers.c.ecosystem_uuid == ecosystem_uuid)
 
 
-@executor(fetch_all=True)
+@executer(fetch_all=True)
 def select_student_responses(ecosystem_uuid, student_uuid, exercise_uuids):
     return select([responses]).where(
         responses.c.ecosystem_uuid == ecosystem_uuid).where(
@@ -158,14 +176,14 @@ def select_student_responses(ecosystem_uuid, student_uuid, exercise_uuids):
         responses.c.exercise_uuid.in_(exercise_uuids))
 
 
-@executor(fetch_all=True)
+@executer(fetch_all=True)
 def select_responses_by_response_uuids(response_uuids):
     return select([responses]).where(
         responses.c.uuid.in_(response_uuids))
 
 
 def select_ecosystem_matrices(ecosystem_uuid):
-    with executor as connection:
+    with executer as connection:
         stmt = select([ecosystem_matrices]).where(
             ecosystem_matrices.c.ecosystem_uuid == ecosystem_uuid)
         result = connection.execute(stmt)
