@@ -25,21 +25,21 @@ celery.conf.update(
     CELERYBEAT_SCHEDULE={
         'load_ecosystems': {
             'task': 'sparfa_server.tasks.loaders.load_ecosystems_task',
-            'schedule': 10
+            'schedule': timedelta(minutes=2)
         },
-        '00-load_courses': {
+        'load_courses': {
             'task': 'sparfa_server.tasks.loaders.load_courses_task',
             'schedule': timedelta(minutes=10)
         },
-        '01-run_matrix_calc': {
+        'run_matrix_calc': {
             'task': 'sparfa_server.tasks.calcs.run_matrix_calc_task',
             'schedule': timedelta(minutes=10)
         },
-        '02-run_pe_calc': {
+        'run_pe_calc': {
             'task': 'sparfa_server.tasks.calcs.run_pe_calc_task',
             'schedule': timedelta(minutes=10)
         },
-        '03-run_clue_calc': {
+        'run_clue_calc': {
             'task': 'sparfa_server.tasks.calcs.run_clue_calc_task',
             'schedule': timedelta(minutes=10)
         }
