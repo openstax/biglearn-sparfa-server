@@ -5,6 +5,10 @@ from sparfa_server.loaders import course_loader
 from sparfa_server.ddb import (
     max_sequence_offset_with_existing,
     upsert_into_do_nothing_with_existing)
+from sparfa_server.models import (
+    responses,
+    course_events,
+    courses)
 
 __logs__ = logging.getLogger(__name__)
 
