@@ -14,7 +14,7 @@ def calcs():
 
 
 @calcs.command()
-def calc_ecosystem_matrix(ecosystem_uuid):
+def calc_ecosystem_matrix():
     """
     Calculate all ecosystem matrices
     """
