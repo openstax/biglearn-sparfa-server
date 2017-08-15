@@ -75,6 +75,9 @@ target/
 # Environmental Variables
 .env
 
+# Virtual environments
+.venv
+
 # Celery files
 /celerybeat.pid
 /celerybeat-schedule
