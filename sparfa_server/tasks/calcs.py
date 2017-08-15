@@ -12,7 +12,7 @@ alg_name = 'biglearn-sparfa'
 @celery.task
 def run_ecosystem_matrix_calc(calc_uuid, alg_name):
     calc_ecosystem_matrices(calc_uuid['ecosystem_uuid'])
-    update_matrix_calculations(alg_name, calc_uuid)
+    update_matrix_calculations(alg_name, calc_uuid['calculation_uuid'])
 
 
 @celery.task
