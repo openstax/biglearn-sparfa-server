@@ -60,7 +60,7 @@ def load_ecosystems():
 
 @loaders.command()
 def load_courses():
-    load_courses_task.delay(cur_sequence_offset = 0)
+    load_courses_task.delay()
 
     __logs__.info('Initial courses have been loaded')
 
@@ -68,7 +68,7 @@ def load_courses():
 @loaders.command()
 def all():
     load_ecosystems_task.delay()
-    load_courses_task.delay(cur_sequence_offset = 0)
+    load_courses_task.delay()
 
     __logs__.info('Ecosystems and Courses have been loaded')
 

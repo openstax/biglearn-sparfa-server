@@ -71,6 +71,7 @@ def create_ecosystem_event_request(ecosystem_uuid, request_uuid=None):
 
 
 def fetch_course_uuids(course_uuids=None):
+    __logs__.info('Polling courses endpoint for new courses')
     course_metadatas = blapi.fetch_course_metadatas()
     if course_uuids:
         return [uuid['uuid'] for uuid in course_metadatas['course_responses'] if

@@ -43,8 +43,8 @@ def load_ecosystems_task():
 
 
 @celery.task
-def load_courses_task(**kwargs):
+def load_courses_task():
     api_course_uuids = fetch_course_uuids()
 
     if api_course_uuids:
-        group(load_course_task.s(course_uuid, **kwargs) for course_uuid in api_course_uuids).delay()
+        group(load_course_task.s(course_uuid) for course_uuid in api_course_uuids).delay()
