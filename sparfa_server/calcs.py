@@ -2,8 +2,6 @@ import json
 
 from sparfa_algs.sgd.sparfa_algs import SparfaAlgs
 
-from sparfa_server.models import (
-    ecosystem_matrices)
 from sparfa_server.db import (
     upsert_into_do_update,
     select_ecosystem_exercises,
@@ -67,15 +65,7 @@ def calc_ecosystem_matrices(ecosystem_uuid):
         'H_mask_NCxNQ': dump_matrix(algs.H_mask_NCxNQ)
     }
 
-    upsert_into_do_update(ecosystem_matrices, matrix_values,
-                          columns=['w_matrix',
-                                   'd_matrix',
-                                   'C_idx_by_id',
-                                   'Q_idx_by_id',
-                                   'L_idx_by_id',
-                                   'H_mask_NCxNQ'
-                                   ])
-    return
+    return matrix_values
 
 
 def calc_ecosystem_pe(ecosystem_uuid, student_uuid, exercise_uuids):

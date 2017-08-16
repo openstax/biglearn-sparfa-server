@@ -1,4 +1,4 @@
-from celery import chain
+from celery import chain, group
 
 from sparfa_server import (
     fetch_pending_ecosystems,
@@ -17,7 +17,8 @@ from sparfa_server.loaders import (
 from sparfa_server.models import ecosystems
 
 
-def _load_ecosystem_task(ecosystem_uuid):
+@celery.task
+def load_ecosystem_task(ecosystem_uuid):
     contents_data, exercises_data = fetch_ecosystem_event_requests(ecosystem_uuid)
 
     upsert_into_do_nothing(ecosystems, dict(uuid=ecosystem_uuid))
@@ -29,31 +30,21 @@ def _load_ecosystem_task(ecosystem_uuid):
 
 
 @celery.task
-def load_ecosystem_task(ecosystem_uuid):
-    return _load_ecosystem_task(ecosystem_uuid)
-
-
-@celery.task
 def load_course_task(*args, **kwargs):
     return load_course(*args, **kwargs)
 
 
 @celery.task
 def load_ecosystems_task():
-
     ecosystem_uuids = fetch_pending_ecosystems()
 
     if ecosystem_uuids:
-
-        for ecosystem_uuid in ecosystem_uuids:
-            _load_ecosystem_task(ecosystem_uuid)
+        group(load_ecosystem_task.s(ecosystem_uuid) for ecosystem_uuid in ecosystem_uuids).delay()
 
 
 @celery.task
-def load_courses_task():
+def load_courses_task(**kwargs):
     api_course_uuids = fetch_course_uuids()
 
     if api_course_uuids:
-
-        for course_uuid in api_course_uuids:
-            load_course(course_uuid)
+        group(load_course_task.s(course_uuid, **kwargs) for course_uuid in api_course_uuids).delay()

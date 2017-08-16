@@ -2,7 +2,6 @@ import logging
 import os
 import uuid
 
-from .celery import celery
 from .client import BiglearnApi
 from .db import get_all_ecosystem_uuids
 
@@ -137,7 +136,7 @@ def update_matrix_calculations(algorithm_name, calc_uuid):
     response = blapi.update_matrix_calcs(payload)
     return response
 
-@celery.task
+
 def fetch_pending_ecosystems(force=False):
     __logs__.info('Polling ecosystem endpoint for new ecosystems')
     api_ecosystem_uuids = fetch_ecosystem_uuids()

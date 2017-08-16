@@ -94,6 +94,20 @@ def upsert_into_do_update(mtable, mvalues, columns):
     return do_update_stmt
 
 
+def update_ecosystem_matrix(matrix_values):
+    return upsert_into_do_update(
+        ecosystem_matrices,
+        matrix_values,
+        columns=['w_matrix',
+               'd_matrix',
+               'C_idx_by_id',
+               'Q_idx_by_id',
+               'L_idx_by_id',
+               'H_mask_NCxNQ'
+               ]
+    )
+
+
 @executer
 def get_ecosystem_by_id(ecosystem_id):
     return select([ecosystems]).where(
