@@ -16,6 +16,10 @@ from sparfa_server.loaders import (
     load_course)
 from sparfa_server.models import ecosystems
 
+from logging import getLogger
+
+
+__logs__ = getLogger(__package__)
 
 @celery.task
 def load_ecosystem_task(ecosystem_uuid):
@@ -44,7 +48,10 @@ def load_ecosystems_task():
 
 @celery.task
 def load_courses_task():
+    __logs__.info('starting up load courses task')
     api_course_uuids = fetch_course_uuids()
+    __logs__.info('shoulve fetched something')
+    __logs__.info(api_course_uuids)
 
     if api_course_uuids:
         group(load_course_task.s(course_uuid) for course_uuid in api_course_uuids).delay()
