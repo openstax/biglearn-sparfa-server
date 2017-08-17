@@ -24,7 +24,8 @@ def run_matrix_calc_task():
     calc_uuids = api.fetch_matrix_calculations(alg_name)
 
     if calc_uuids:
-        group(run_ecosystem_matrix_calc.s(calc_uuid, alg_name) for calc_uuid in calc_uuids).delay()
+        results = group(run_ecosystem_matrix_calc.s(calc_uuid, alg_name) for calc_uuid in calc_uuids)
+        results.apply_async()
 
 
 @celery.task
@@ -58,7 +59,8 @@ def run_pe_calc_task():
     calcs = fetch_exercise_calcs(alg_name)
 
     if calcs:
-        group(run_pe_calc.s(calc) for calc in calcs).delay()
+        results = group(run_pe_calc.s(calc) for calc in calcs)
+        results.apply_async()
 
 
 @celery.task
@@ -98,5 +100,6 @@ def run_clue_calc_task():
     calcs = fetch_clue_calcs(alg_name=alg_name)
 
     if calcs:
-        group(run_clue_calc.s(calc) for calc in calcs).delay()
+        results = group(run_clue_calc.s(calc) for calc in calcs)
+        results.apply_async()
 

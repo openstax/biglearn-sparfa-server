@@ -43,7 +43,8 @@ def load_ecosystems_task():
     ecosystem_uuids = fetch_pending_ecosystems()
 
     if ecosystem_uuids:
-        return group(load_ecosystem_task.s(ecosystem_uuid) for ecosystem_uuid in ecosystem_uuids).delay()
+        results = group(load_ecosystem_task.s(ecosystem_uuid) for ecosystem_uuid in ecosystem_uuids)
+        return results.apply_async()
 
 
 @celery.task
@@ -54,4 +55,6 @@ def load_courses_task():
     __logs__.info(api_course_uuids)
 
     if api_course_uuids:
-        return group(load_course_task.s(course_uuid) for course_uuid in api_course_uuids).delay()
+        results = group(load_course_task.s(course_uuid) for course_uuid in api_course_uuids)
+        return results.apply_async()
+
