@@ -49,6 +49,12 @@ celery.conf.update(
               routing_key='celery',
               exchange=Exchange('celery', type='direct', durable=True))
     ],
+    CELERY_TASK_ROUTES={
+        'sparfa_server.tasks.loaders.*': 'one',
+        'sparfa_server.tasks.calcs.run_clue_calc_task': 'one',
+        'sparfa_server.tasks.calcs.run_matrix_calc_task': 'two',
+        'sparfa_server.tasks.calcs.run_pe_calc_task': 'two'
+    },
     CELERYD_PREFETCH_MULTIPLIER=1,
 )
 
