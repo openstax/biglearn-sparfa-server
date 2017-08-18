@@ -92,21 +92,23 @@ def run_clue_calc(calc):
         responses=responses
     )
 
-    response = update_clue_calcs(
-        alg_name=alg_name,
-        calc_uuid=calc_uuid,
-        ecosystem_uuid=ecosystem_uuid,
-        clue_min=clue_min,
-        clue_max=clue_max,
-        clue_most_likely=clue_mean,
-        clue_is_real=True
-    )
-    if response['calculation_status'] == 'calculation_accepted':
-        return response
-    else:
-        raise Exception(
-            'Calculation {0} for ecosystem {1} was not accepted'.format(
-                calc_uuid, ecosystem_uuid))
+    if clue_mean and clue_min and clue_max:
+
+        response = update_clue_calcs(
+            alg_name=alg_name,
+            calc_uuid=calc_uuid,
+            ecosystem_uuid=ecosystem_uuid,
+            clue_min=clue_min,
+            clue_max=clue_max,
+            clue_most_likely=clue_mean,
+            clue_is_real=True
+        )
+        if response['calculation_status'] == 'calculation_accepted':
+            return response
+        else:
+            raise Exception(
+                'Calculation {0} for ecosystem {1} was not accepted'.format(
+                    calc_uuid, ecosystem_uuid))
 
 
 @celery.task
