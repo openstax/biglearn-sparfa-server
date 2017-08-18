@@ -5,7 +5,6 @@ from sparfa_server import (
     fetch_course_uuids,
     fetch_ecosystem_event_requests,
     fetch_course_event_requests)
-from sparfa_server.celery import celery
 from sparfa_server.db import (
     upsert_into_do_nothing,
     max_sequence_offset)
@@ -15,6 +14,7 @@ from sparfa_server.loaders import (
     load_containers,
     load_course)
 from sparfa_server.models import ecosystems
+from sparfa_server.celery import celery
 
 from logging import getLogger
 
@@ -52,7 +52,6 @@ def load_courses_task():
     __logs__.info('starting up load courses task')
     api_course_uuids = fetch_course_uuids()
     __logs__.info('shoulve fetched something')
-    __logs__.info(api_course_uuids)
 
     if api_course_uuids:
         results = group(load_course_task.s(course_uuid) for course_uuid in api_course_uuids)

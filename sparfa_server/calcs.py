@@ -11,8 +11,8 @@ from sparfa_server.db import (
     select_student_responses,
     select_ecosystem_matrices, select_responses_by_response_uuids)
 from sparfa_server.utils import (
-    dump_matrix,
-    load_matrix,
+    dump_sparse_matrix,
+    load_sparse_matrix,
     load_mapping)
 
 
@@ -57,12 +57,12 @@ def calc_ecosystem_matrices(ecosystem_uuid):
 
     matrix_values = {
         'ecosystem_uuid': ecosystem_uuid,
-        'w_matrix': dump_matrix(algs.W_NCxNQ),
-        'd_matrix': dump_matrix(algs.d_NQx1),
+        'w_matrix': dump_sparse_matrix(algs.W_NCxNQ),
+        'd_matrix': dump_sparse_matrix(algs.d_NQx1),
         'C_idx_by_id': json.dumps(algs.C_idx_by_id),
         'Q_idx_by_id': json.dumps(algs.Q_idx_by_id),
         'L_idx_by_id': json.dumps(algs.L_idx_by_id),
-        'H_mask_NCxNQ': dump_matrix(algs.H_mask_NCxNQ)
+        'H_mask_NCxNQ': dump_sparse_matrix(algs.H_mask_NCxNQ)
     }
 
     return matrix_values
@@ -75,9 +75,9 @@ def calc_ecosystem_pe(ecosystem_uuid, student_uuid, exercise_uuids):
     if m:
 
         # Load matrices from db
-        W_NCxNQ      = load_matrix(m.w_matrix)
-        d_NQx1       = load_matrix(m.d_matrix)
-        H_mask_NCxNQ = load_matrix(m.H_mask_NCxNQ)
+        W_NCxNQ      = load_sparse_matrix(m.w_matrix)
+        d_NQx1       = load_sparse_matrix(m.d_matrix)
+        H_mask_NCxNQ = load_sparse_matrix(m.H_mask_NCxNQ)
 
         # Load mappings
         C_idx_by_id = load_mapping(m.C_idx_by_id)
@@ -154,9 +154,9 @@ def calc_ecosystem_clues(ecosystem_uuid,
     if m:
 
         # Load matrices from db
-        W_NCxNQ      = load_matrix(m.w_matrix)
-        d_NQx1       = load_matrix(m.d_matrix)
-        H_mask_NCxNQ = load_matrix(m.H_mask_NCxNQ)
+        W_NCxNQ      = load_sparse_matrix(m.w_matrix)
+        d_NQx1       = load_sparse_matrix(m.d_matrix)
+        H_mask_NCxNQ = load_sparse_matrix(m.H_mask_NCxNQ)
 
         # Get mappings
         C_idx_by_id = load_mapping(m.C_idx_by_id)

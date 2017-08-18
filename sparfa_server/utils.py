@@ -8,20 +8,25 @@ from collections import OrderedDict
 from uuid import UUID
 
 import numpy as np
+from scipy.sparse import coo_matrix
 
 
-def dump_matrix(array):
-    memfile = io.BytesIO()
-    np.save(memfile, array)
-    memfile.seek(0)
-    return json.dumps(memfile.read().decode('latin-1'))
+def dump_sparse_matrix(array):
+    sparse_matrix = coo_matrix(array)
+    return json.dumps({
+        "data":     sparse_matrix.data.tolist(),
+        "row":      sparse_matrix.row.tolist(),
+        "col":      sparse_matrix.col.tolist(),
+        "shape":    sparse_matrix.shape
+    })
 
 
-def load_matrix(text):
-    memfile = io.BytesIO()
-    memfile.write(json.loads(text).encode('latin-1'))
-    memfile.seek(0)
-    return np.load(memfile)
+def load_sparse_matrix(sparse_json):
+    sparse_matrix = coo_matrix((sparse_json.get('data'),
+                                (sparse_json.get('row'), sparse_json.get('col'))
+                                ), shape = sparse_json.get('shape'))
+
+    return sparse_matrix.toarray()
 
 
 def load_mapping(text):
