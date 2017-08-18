@@ -2,7 +2,8 @@ import click
 
 from sparfa_server.tasks.calcs import (run_matrix_calc_task,
                                        run_pe_calc_task,
-                                       run_clue_calc_task)
+                                       run_clue_calc_task,
+                                       run_matrix_all_ecosystems_task)
 
 import logging
 
@@ -22,6 +23,15 @@ def calc_ecosystem_matrix():
     """
     run_matrix_calc_task.delay()
     __logs__.info('Initial ecosystem calculations running')
+
+
+@calcs.command()
+def calc_all_ecosystem_matrix():
+    """
+    Calculate all ecosystem matrices
+    """
+    run_matrix_all_ecosystems_task.delay()
+    __logs__.info('Initial ecosystem calculations running for all ecosystems')
 
 
 @calcs.command()
