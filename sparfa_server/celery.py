@@ -31,11 +31,11 @@ celery.conf.update(
         },
         'run_pe_calc': {
             'task': 'sparfa_server.tasks.calcs.run_pe_calc_task',
-            'schedule': timedelta(milliseconds=2)
+            'schedule': timedelta(seconds=2)
         },
         'run_clue_calc': {
             'task': 'sparfa_server.tasks.calcs.run_clue_calc_task',
-            'schedule': timedelta(milliseconds=3500)
+            'schedule': timedelta(minutes=10)
         }
     },
     CELERY_ACCEPT_CONTENT=['json'],
