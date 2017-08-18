@@ -105,11 +105,14 @@ def calc_ecosystem_pe(ecosystem_uuid, student_uuid, exercise_uuids):
                                              student_uuid,
                                              valid_exercise_uuids)
 
+
+        # TODO make algs.tesr work with responses with dates already parsed
+        # as opposed to formatting and parsing multiple times.
         responses = [
             {
                 'L_id':         r.student_uuid,
                 'Q_id':         r.exercise_uuid,
-                'responded_at': r.responded_at,
+                'responded_at': r.responded_at.isoformat(),
                 'correct?':     r.is_correct
             } for r in responses]
 
