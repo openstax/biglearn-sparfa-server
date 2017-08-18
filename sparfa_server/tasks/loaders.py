@@ -44,7 +44,7 @@ def load_ecosystems_task():
 
     if ecosystem_uuids:
         results = group(load_ecosystem_task.s(ecosystem_uuid) for ecosystem_uuid in ecosystem_uuids)
-        return results.apply_async()
+        return results.apply_async(queue='beat-one')
 
 
 @celery.task
@@ -55,5 +55,5 @@ def load_courses_task():
 
     if api_course_uuids:
         results = group(load_course_task.s(course_uuid) for course_uuid in api_course_uuids)
-        return results.apply_async()
+        return results.apply_async(queue='beat-one')
 

@@ -25,7 +25,7 @@ def run_matrix_calc_task():
 
     if calc_uuids:
         results = group(run_ecosystem_matrix_calc.s(calc_uuid, alg_name) for calc_uuid in calc_uuids)
-        results.apply_async()
+        results.apply_async(queue='beat-one')
 
 
 @celery.task
@@ -74,7 +74,7 @@ def run_pe_calc_task():
 
     if calcs:
         results = group(run_pe_calc.s(calc) for calc in calcs)
-        results.apply_async()
+        results.apply_async(queue='beat-two')
 
 
 @celery.task
@@ -117,5 +117,5 @@ def run_clue_calc_task():
 
     if calcs:
         results = group(run_clue_calc.s(calc) for calc in calcs)
-        results.apply_async()
+        results.apply_async(queue='beat-two')
 
