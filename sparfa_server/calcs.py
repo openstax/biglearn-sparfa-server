@@ -15,6 +15,9 @@ from sparfa_server.utils import (
     load_sparse_matrix,
     load_mapping)
 
+from logging import getLogger
+
+__logs__ = getLogger(__package__)
 
 def gen_ecosystem_hints(ecosystem_uuid, exercise_uuids):
     page_modules = select_exercise_page_modules(exercise_uuids,
@@ -149,6 +152,9 @@ def calc_ecosystem_clues(ecosystem_uuid,
                          student_uuids,
                          exercise_uuids,
                          responses):
+
+    clue_mean, clue_min, clue_max = None, None, None
+
     m = select_ecosystem_matrices(ecosystem_uuid)
 
     if m:
@@ -161,6 +167,13 @@ def calc_ecosystem_clues(ecosystem_uuid,
         # Get mappings
         C_idx_by_id = load_mapping(m.C_idx_by_id)
         Q_idx_by_id = load_mapping(m.Q_idx_by_id)
+
+        for exercise_uuid in exercise_uuids:
+            if exercise_uuid not in Q_idx_by_id:
+                __logs__.info(('Exercises missing in {} for {}.'
+                              'Shorting out of calc_ecosystem_clues.')
+                              .format(ecosystem_uuid, student_uuids))
+                return clue_mean, clue_min, clue_max
 
         # Construct gradebook
         L_idx_by_id = {L_id: idx for idx, L_id in enumerate(student_uuids)}
@@ -218,6 +231,4 @@ def calc_ecosystem_clues(ecosystem_uuid,
                                                                 target_L_ids=student_uuids,
                                                                 target_Q_ids=valid_exercise_uuids)
 
-        return clue_mean, clue_min, clue_max
-    else:
-        return None, None, None
+    return clue_mean, clue_min, clue_max
