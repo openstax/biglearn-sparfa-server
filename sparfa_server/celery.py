@@ -50,10 +50,10 @@ celery.conf.update(
               exchange=Exchange('celery', type='direct', durable=True))
     ],
     CELERY_TASK_ROUTES={
-        'sparfa_server.tasks.loaders.*': 'one',
-        'sparfa_server.tasks.calcs.run_clue_calc_task': 'one',
-        'sparfa_server.tasks.calcs.run_matrix_calc_task': 'two',
-        'sparfa_server.tasks.calcs.run_pe_calc_task': 'two'
+        'sparfa_server.tasks.loaders.*':  {'queue': 'one'},
+        'sparfa_server.tasks.calcs.run_clue_calc_task':  {'queue': 'one'},
+        'sparfa_server.tasks.calcs.run_matrix_calc_task':  {'queue': 'two'},
+        'sparfa_server.tasks.calcs.run_pe_calc_task':  {'queue': 'two'}
     },
     CELERYD_PREFETCH_MULTIPLIER=1,
 )
