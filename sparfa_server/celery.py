@@ -16,12 +16,6 @@ def make_celery_url():
 
 celery.conf.update(
     BROKER_URL=make_celery_url(),
-    CELERY_ANNOTATIONS={
-        'sparfa_server.tasks.loaders.load_courses_task':
-            {
-                'rate_limit': '2/h'
-            }
-    },
     CELERYBEAT_SCHEDULE={
         'load_ecosystems': {
             'task': 'sparfa_server.tasks.loaders.load_ecosystems_task',
