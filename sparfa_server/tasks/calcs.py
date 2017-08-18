@@ -36,9 +36,9 @@ def run_ecosystem_matrix_calc_simple(ecosystem_uuid, alg_name):
 
 @celery.task
 def run_matrix_all_ecosystems_task():
-    all_ecosystems = get_all_ecosystem_uuids()
+    all_ecosystem_uuids = get_all_ecosystem_uuids()
 
-    results = group(run_ecosystem_matrix_calc_simple.s(ecosystem.uuid, alg_name) for ecosystem in all_ecosystems)
+    results = group(run_ecosystem_matrix_calc_simple.s(ecosystem_uuid, alg_name) for ecosystem_uuid in all_ecosystem_uuids)
     results.apply_async()
 
 
