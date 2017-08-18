@@ -60,6 +60,12 @@ celery.conf.update(
               routing_key='beat-two',
               exchange=Exchange('beat-two', type='direct', durable=True))
     ],
+    CELERY_TASK_ROUTES={
+        'sparfa_server.tasks.loaders.*':  {'queue': 'beat-one'},
+        'sparfa_server.tasks.calcs.run_ecosystem_matrix_calc':  {'queue': 'beat-one'},
+        'sparfa_server.tasks.calcs.run_clue_calc':  {'queue': 'beat-two'},
+        'sparfa_server.tasks.calcs.run_pe_calc':  {'queue': 'beat-two'}
+    },
     CELERYD_PREFETCH_MULTIPLIER=1
 )
 
