@@ -21,7 +21,8 @@ def dump_sparse_matrix(array):
     })
 
 
-def load_sparse_matrix(sparse_json):
+def load_sparse_matrix(text):
+    sparse_json = json.loads(text)
     sparse_matrix = coo_matrix((sparse_json.get('data'),
                                 (sparse_json.get('row'), sparse_json.get('col'))
                                 ), shape = sparse_json.get('shape'))
