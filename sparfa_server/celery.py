@@ -19,23 +19,28 @@ celery.conf.update(
     CELERYBEAT_SCHEDULE={
         'load_ecosystems': {
             'task': 'sparfa_server.tasks.loaders.load_ecosystems_task',
-            'schedule': timedelta(seconds=2)
+            'schedule': timedelta(seconds=2),
+            'options': {'queue' : 'beat-one'}
         },
         'load_courses': {
             'task': 'sparfa_server.tasks.loaders.load_courses_task',
-            'schedule': timedelta(seconds=2)
+            'schedule': timedelta(seconds=2),
+            'options': {'queue' : 'beat-one'}
         },
         'run_matrix_calc': {
             'task': 'sparfa_server.tasks.calcs.run_matrix_calc_task',
-            'schedule': timedelta(seconds=5)
+            'schedule': timedelta(seconds=5),
+            'options': {'queue' : 'beat-one'}
         },
         'run_pe_calc': {
             'task': 'sparfa_server.tasks.calcs.run_pe_calc_task',
-            'schedule': timedelta(seconds=2)
+            'schedule': timedelta(seconds=2),
+            'options': {'queue' : 'beat-two'}
         },
         'run_clue_calc': {
             'task': 'sparfa_server.tasks.calcs.run_clue_calc_task',
-            'schedule': timedelta(minutes=10)
+            'schedule': timedelta(minutes=5),
+            'options': {'queue' : 'beat-two'}
         }
     },
     CELERY_ACCEPT_CONTENT=['json'],
@@ -47,15 +52,15 @@ celery.conf.update(
     CELERY_QUEUES=[
         Queue('celery',
               routing_key='celery',
-              exchange=Exchange('celery', type='direct', durable=True))
+              exchange=Exchange('celery', type='direct', durable=True)),
+        Queue('beat-one',
+              routing_key='beat-one',
+              exchange=Exchange('beat-one', type='direct', durable=True)),
+        Queue('beat-two',
+              routing_key='beat-two',
+              exchange=Exchange('beat-two', type='direct', durable=True))
     ],
-    CELERY_TASK_ROUTES={
-        'sparfa_server.tasks.loaders.*':  {'queue': 'one'},
-        'sparfa_server.tasks.calcs.run_clue_calc_task':  {'queue': 'one'},
-        'sparfa_server.tasks.calcs.run_matrix_calc_task':  {'queue': 'two'},
-        'sparfa_server.tasks.calcs.run_pe_calc_task':  {'queue': 'two'}
-    },
-    CELERYD_PREFETCH_MULTIPLIER=1,
+    CELERYD_PREFETCH_MULTIPLIER=1
 )
 
 
