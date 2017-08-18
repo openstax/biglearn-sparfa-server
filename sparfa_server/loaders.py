@@ -156,12 +156,13 @@ def load_course(course_uuid, cur_sequence_offset = None, sequence_step_size=1):
                                                      cur_sequence_offset)
         cur_events = cur_event_data['events']
         is_end = cur_event_data['is_end']
+        is_gap = cur_event_data['is_gap']
 
         __logs__.debug('Fetchings course events for {} '
             'with {} offset '
             '{} number of events returned '
             'where is_end = {} and is_gap = {}'.format(
-            course_uuid, cur_sequence_offset, len(cur_events), is_end, cur_event_data['is_gap']
+            course_uuid, cur_sequence_offset, len(cur_events), is_end, is_gap
         ))
 
         for event in cur_events:
