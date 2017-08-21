@@ -83,7 +83,7 @@ def run_pe_calc_recurse_task():
 
     if calcs:
         results = (group(run_pe_calc.s(calc) for calc in calcs) | run_pe_calc_recurse_task.s())
-        results.apply_async(queue='beat-two')
+        results.apply_async(queue='celery')
 
 
 @celery.task
@@ -135,5 +135,5 @@ def run_clue_calc_recurse_task():
 
     if calcs:
         results = (group(run_clue_calc.s(calc) for calc in calcs) | run_clue_calc_recurse_task.s())
-        results.apply_async(queue='beat-two')
+        results.apply_async(queue='celery')
 
