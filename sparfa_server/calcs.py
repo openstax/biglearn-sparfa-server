@@ -85,39 +85,47 @@ def calc_ecosystem_pe(ecosystem_uuid, student_uuid, exercise_uuids):
     if m:
 
         # Load matrices from db
-        W_NCxNQ = load_matrix(m.w_matrix)
-        d_NQx1 = load_matrix(m.d_matrix)
+        W_NCxNQ      = load_matrix(m.w_matrix)
+        d_NQx1       = load_matrix(m.d_matrix)
         H_mask_NCxNQ = load_matrix(m.H_mask_NCxNQ)
 
         # Load mappings
         C_idx_by_id = load_mapping(m.C_idx_by_id)
         Q_idx_by_id = load_mapping(m.Q_idx_by_id)
 
+        L_ids       = [student_uuid]
+        L_idx_by_id = {L_id: idx for idx,L_id in enumerate(L_ids)}
+
+        NL = len(L_ids)
+        NQ = len(Q_idx_by_id)
+        NC = len(C_idx_by_id)
+
+        C_id_by_idx = {idx: C_id for C_id,idx in C_idx_by_id.items()}
+        Q_id_by_idx = {idx: Q_id for Q_id,idx in Q_idx_by_id.items()}
+
+        C_ids = [C_id_by_idx[idx] for idx in range(NC)]
+        Q_ids = [Q_id_by_idx[idx] for idx in range(NQ)]
+
+        valid_exercise_uuids = [uuid for uuid in exercise_uuids if uuid in Q_idx_by_id]
+
         responses = select_student_responses(ecosystem_uuid,
                                              student_uuid,
-                                             exercise_uuids)
+                                             valid_exercise_uuids)
 
         responses = [
             {
-                'L_id': r.student_uuid,
-                'Q_id': r.exercise_uuid,
+                'L_id':         r.student_uuid,
+                'Q_id':         r.exercise_uuid,
                 'responded_at': r.responded_at,
-                'correct?': r.is_correct
+                'correct?':     r.is_correct
             } for r in responses]
 
-        L_ids = list(set([r['L_id'] for r in responses]))
-
-        G_L_idx_by_id = {L_id: idx for idx, L_id in enumerate(L_ids)}
-        G_Q_idx_by_id = {Q_id: idx for idx, Q_id in enumerate(exercise_uuids)}
-
-        NQ = len(exercise_uuids)
-        NL = len(L_ids)
 
         # Create Grade book for the student
         G_NQxNL, G_mask_NQxNL = SparfaAlgs._G_from_responses(NL=NL,
                                                              NQ=NQ,
-                                                             L_idx_by_id=G_L_idx_by_id,
-                                                             Q_idx_by_id=G_Q_idx_by_id,
+                                                             L_idx_by_id=L_idx_by_id,
+                                                             Q_idx_by_id=Q_idx_by_id,
                                                              responses=responses)
 
         # Create the SparfaAlgs object
@@ -126,16 +134,23 @@ def calc_ecosystem_pe(ecosystem_uuid, student_uuid, exercise_uuids):
                                           H_mask_NCxNQ=H_mask_NCxNQ,
                                           G_NQxNL=G_NQxNL,
                                           G_mask_NQxNL=G_mask_NQxNL,
-                                          L_ids=[student_uuid],
-                                          Q_ids=list(Q_idx_by_id.keys()),
-                                          C_ids=list(C_idx_by_id.keys()),
+                                          L_ids=L_ids,
+                                          Q_ids=Q_ids,
+                                          C_ids=C_ids,
                                           )
-        ordered_Q_ids = algs.tesr(target_L_id=student_uuid,
-                                  target_Q_ids=exercise_uuids,
-                                  target_responses=responses
-                                  )
 
-        return ordered_Q_ids
+        ordered_Q_infos = algs.tesr(target_L_id=student_uuid,
+                                    target_Q_ids=valid_exercise_uuids,
+                                    target_responses=responses
+                                    )
+
+        ordered_exercise_uuids = [info.Q_id for info in ordered_Q_uuids]
+
+        ## Put any unknown exercise uuids at the end of the list.
+        unknown_exercise_uuids = list(set(exercise_uuids) - set(ordered_exercise_uuids))
+        ordered_exercise_uuids.extend(unknown_exercise_uuids)
+
+        return ordered_exercise_uuids
     else:
         return None
 
