@@ -208,9 +208,10 @@ def calc_ecosystem_clues(ecosystem_uuid,
                                           C_ids=C_ids,
                                           )
 
+        valid_exercise_uuids = [uuid for uuid in exercise_uuids if uuid in Q_idx_by_id]
         clue_mean, clue_min, clue_max = algs.calc_clue_interval(confidence=.5,
                                                                 target_L_ids=student_uuids,
-                                                                target_Q_ids=exercise_uuids)
+                                                                target_Q_ids=valid_exercise_uuids)
 
         return clue_mean, clue_min, clue_max
     else:
