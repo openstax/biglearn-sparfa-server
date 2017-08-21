@@ -21,10 +21,9 @@ def main():
             Q_ids = calc['exercise_uuids']
             student_uuid = calc['student_uuid']
 
-            ordered_Q_infos = calc_ecosystem_pe(ecosystem_uuid=ecosystem_uuid,
-                                                student_uuid=student_uuid,
-                                                exercise_uuids=Q_ids)
-            exercise_uuids = [info.Q_id for info in ordered_Q_infos]
+            exercise_uuids = calc_ecosystem_pe(ecosystem_uuid=ecosystem_uuid,
+                                               student_uuid=student_uuid,
+                                            exercise_uuids=Q_ids)
 
             response = update_exercise_calcs(alg_name, calc_uuid,
                                              exercise_uuids)
