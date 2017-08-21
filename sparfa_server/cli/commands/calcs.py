@@ -33,8 +33,8 @@ def calc_all_ecosystem_matrix():
     """
     Calculate all ecosystem matrices
     """
-    run_matrix_all_ecosystems_task.delay()
     __logs__.info('Initial ecosystem calculations running for all ecosystems')
+    run_matrix_all_ecosystems_task.delay()
 
 
 @calcs.command()
@@ -60,5 +60,5 @@ def calc_initial():
     """
     Calculate all queued up calculations
     """
-    all_calcs = (run_matrix_all_ecosystems_task.signature() | group(run_pe_calc_recurse_task.signature(), run_clue_calc_recurse_task.signature()))
+    all_calcs = (run_matrix_all_ecosystems_task.signature() | group(run_pe_calc_recurse_task.signature(()), run_clue_calc_recurse_task.signature(())))
     all_calcs.delay()
