@@ -20,7 +20,6 @@ class TestBiglearnApi(UnitHelper):
         request_uuid = str(uuid.uuid4())
         course_uuid = str(uuid.uuid4())
         offset = 0
-        max_events = 100
 
         event_request = {
             'course_event_requests': [
@@ -38,8 +37,7 @@ class TestBiglearnApi(UnitHelper):
                         'record_response'
                     ],
                     'course_uuid': course_uuid,
-                    'sequence_number_offset': offset,
-                    'max_num_events': max_events
+                    'sequence_number_offset': offset
 
                 }
             ]
@@ -47,7 +45,6 @@ class TestBiglearnApi(UnitHelper):
 
         data = create_course_event_request(course_uuid,
                                            offset,
-                                           max_events,
                                            request_uuid)
         assert data == event_request
 
@@ -62,7 +59,6 @@ class TestBiglearnApi(UnitHelper):
                     'event_types': ['create_ecosystem'],
                     'ecosystem_uuid': ecosystem_uuid,
                     'sequence_number_offset': 0,
-                    'max_num_events': 10,
                 }
             ]
         }
@@ -81,8 +77,7 @@ class TestBiglearnApi(UnitHelper):
     def test_fetch_course_event_requests(self):
         course_uuid = str(uuid.uuid4())
         offset = 10
-        max_events = 100
-        payload = create_course_event_request(course_uuid, offset, max_events)
+        payload = create_course_event_request(course_uuid, offset)
         url = build_url('api', 'fetch_course_events')
         self.instance.fetch_course_event_requests(payload)
         self.post_called_with(url, data=payload)
