@@ -149,8 +149,8 @@ def calc_ecosystem_clues(ecosystem_uuid,
     if m:
 
         # Load matrices from db
-        W_NCxNQ = load_matrix(m.w_matrix)
-        d_NQx1 = load_matrix(m.d_matrix)
+        W_NCxNQ      = load_matrix(m.w_matrix)
+        d_NQx1       = load_matrix(m.d_matrix)
         H_mask_NCxNQ = load_matrix(m.H_mask_NCxNQ)
 
         # Get mappings
@@ -158,6 +158,20 @@ def calc_ecosystem_clues(ecosystem_uuid,
         Q_idx_by_id = load_mapping(m.Q_idx_by_id)
 
         # Construct gradebook
+        L_idx_by_id = {L_id: idx for idx, L_id in enumerate(student_uuids)}
+
+        NL = len(L_idx_by_id)
+        NQ = len(Q_idx_by_id)
+        NC = len(C_idx_by_id)
+
+        C_id_by_idx = {idx: C_id for C_id,idx in C_idx_by_id.items()}
+        Q_id_by_idx = {idx: Q_id for Q_id,idx in Q_idx_by_id.items()}
+        L_id_by_idx = {idx: L_id for L_id,idx in L_idx_by_id.items()}
+
+        C_ids = [C_id_by_idx[idx] for idx in range(NC)]
+        Q_ids = [Q_id_by_idx[idx] for idx in range(NQ)]
+        L_ids = [L_id_by_idx[idx] for idx in range(NL)]
+
         response_uuids = [r['response_uuid'] for r in responses]
 
         responses = select_responses_by_response_uuids(response_uuids)
@@ -170,23 +184,17 @@ def calc_ecosystem_clues(ecosystem_uuid,
         else:
             responses = [
                 {
-                    'L_id': r.student_uuid,
-                    'Q_id': r.exercise_uuid,
+                    'L_id':         r.student_uuid,
+                    'Q_id':         r.exercise_uuid,
                     'responded_at': r.responded_at,
-                    'correct?': r.is_correct
-                } for r in responses]
-
-        NQ = len(Q_idx_by_id)
-        NL = len(student_uuids)
-
-        G_L_idx_by_id = {L_id: idx for idx, L_id in enumerate(student_uuids)}
-        G_Q_idx_by_id = {Q_id: idx for idx, Q_id in enumerate(exercise_uuids)}
+                    'correct?':     r.is_correct
+                } for r in responses if r.exercise_uuid in Q_idx_by_id]
 
         # Create Grade book for the student
         G_NQxNL, G_mask_NQxNL = SparfaAlgs._G_from_responses(NL=NL,
                                                              NQ=NQ,
-                                                             L_idx_by_id=G_L_idx_by_id,
-                                                             Q_idx_by_id=G_Q_idx_by_id,
+                                                             L_idx_by_id=L_idx_by_id,
+                                                             Q_idx_by_id=Q_idx_by_id,
                                                              responses=responses)
 
         # Create matrices
@@ -196,8 +204,8 @@ def calc_ecosystem_clues(ecosystem_uuid,
                                           G_NQxNL=G_NQxNL,
                                           G_mask_NQxNL=G_mask_NQxNL,
                                           L_ids=student_uuids,
-                                          Q_ids=list(Q_idx_by_id.keys()),
-                                          C_ids=list(C_idx_by_id.keys()),
+                                          Q_ids=Q_ids,
+                                          C_ids=C_ids,
                                           )
 
         clue_mean, clue_min, clue_max = algs.calc_clue_interval(confidence=.5,
