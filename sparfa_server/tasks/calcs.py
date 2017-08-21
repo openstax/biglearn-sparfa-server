@@ -13,18 +13,18 @@ alg_name = 'biglearn-sparfa'
 
 
 @celery.task
-def run_ecosystem_matrix_calc(calc_uuid, alg_name):
-    result = calc_ecosystem_matrices(calc_uuid['ecosystem_uuid'])
+def run_ecosystem_matrix_calc(calc, alg_name):
+    result = calc_ecosystem_matrices(calc['ecosystem_uuid'])
     update_ecosystem_matrix(result)
-    update_matrix_calculations(alg_name, calc_uuid['calculation_uuid'])
+    update_matrix_calculations(alg_name, calc['calculation_uuid'])
 
 
 @celery.task
 def run_matrix_calc_task():
-    calc_uuids = api.fetch_matrix_calculations(alg_name)
+    calcs = api.fetch_matrix_calculations(alg_name)
 
-    if calc_uuids:
-        results = group(run_ecosystem_matrix_calc.s(calc_uuid, alg_name) for calc_uuid in calc_uuids)
+    if calcs:
+        results = group(run_ecosystem_matrix_calc.s(calc, alg_name) for calc in calcs)
         results.apply_async(queue='beat-one')
 
 
