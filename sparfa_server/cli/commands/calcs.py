@@ -1,5 +1,6 @@
 import click
 
+from celery import group
 from sparfa_server.tasks.calcs import (run_matrix_calc_task,
                                        run_pe_calc_task,
                                        run_clue_calc_task,
@@ -59,6 +60,5 @@ def calc_initial():
     """
     Calculate all queued up calculations
     """
-    run_matrix_all_ecosystems_task.delay()
-    run_pe_calc_recurse_task.delay()
-    run_clue_calc_recurse_task.delay()
+    all_calcs = (run_matrix_all_ecosystems_task.s() | group(run_pe_calc_recurse_task.s(), run_clue_calc_recurse_task.s()))
+    all_calcs.delay()
