@@ -46,7 +46,6 @@ def fetch_ecosystem_metadata():
                 'event_types': ['create_ecosystem'],
                 'ecosystem_uuid': ecosystem_uuid,
                 'sequence_number_offset': 0,
-                'max_num_events': 10,
             }
 
             data['ecosystem_event_requests'].append(event_request)
@@ -91,7 +90,6 @@ def fetch_course_events(target_course_uuid):
 
     with open('output/course_{}.txt'.format(target_course_uuid), 'w') as fd:
         current_sequence_number = 0
-        max_num_events = 100
 
         while True:
             data = {
@@ -111,7 +109,6 @@ def fetch_course_events(target_course_uuid):
                         ],
                         'course_uuid': target_course_uuid,
                         'sequence_number_offset': current_sequence_number,
-                        'max_num_events': max_num_events,
                     },
                 ],
             }
