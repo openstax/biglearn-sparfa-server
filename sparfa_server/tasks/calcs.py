@@ -78,6 +78,16 @@ def run_pe_calc_task():
 
 
 @celery.task
+def run_pe_calc_recurse_task():
+    calcs = fetch_exercise_calcs(alg_name)
+
+    if calcs:
+        results = group(run_pe_calc.s(calc) for calc in calcs)
+        results.apply_async(queue='beat-two')
+        run_pe_calc_recurse_task.apply_async(queue='beat-two')
+
+
+@celery.task
 def run_clue_calc(calc):
     ecosystem_uuid = calc['ecosystem_uuid']
     calc_uuid = calc['calculation_uuid']
@@ -118,4 +128,14 @@ def run_clue_calc_task():
     if calcs:
         results = group(run_clue_calc.s(calc) for calc in calcs)
         results.apply_async(queue='beat-two')
+
+
+@celery.task
+def run_clue_calc_recurse_task():
+    calcs = fetch_clue_calcs(alg_name=alg_name)
+
+    if calcs:
+        results = group(run_clue_calc.s(calc) for calc in calcs)
+        results.apply_async(queue='beat-two')
+        run_clue_calc_recurse_task.apply_async(queue='beat-two')
 

@@ -3,7 +3,9 @@ import click
 from sparfa_server.tasks.calcs import (run_matrix_calc_task,
                                        run_pe_calc_task,
                                        run_clue_calc_task,
-                                       run_matrix_all_ecosystems_task)
+                                       run_matrix_all_ecosystems_task,
+                                       run_pe_calc_recurse_task,
+                                       run_clue_calc_recurse_task)
 
 import logging
 
@@ -37,7 +39,7 @@ def calc_all_ecosystem_matrix():
 @calcs.command()
 def calc_pes():
     """
-    Calculate all PEs
+    Calculate PEs
     """
     run_pe_calc_task.delay()
     __logs__.info('Initial ecosystem calculations running')
@@ -46,8 +48,17 @@ def calc_pes():
 @calcs.command()
 def calc_clues():
     """
-    Calculate all CLUEs
+    Calculate CLUEs
     """
     run_clue_calc_task.delay()
     __logs__.info('Initial ecosystem calculations running')
 
+
+@calcs.command()
+def calc_initial():
+    """
+    Calculate all queued up calculations
+    """
+    run_matrix_all_ecosystems_task.delay()
+    run_pe_calc_recurse_task.delay()
+    run_clue_calc_recurse_task.delay()
