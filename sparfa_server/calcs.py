@@ -144,7 +144,7 @@ def calc_ecosystem_pe(ecosystem_uuid, student_uuid, exercise_uuids):
                                     target_responses=responses
                                     )
 
-        ordered_exercise_uuids = [info.Q_id for info in ordered_Q_uuids]
+        ordered_exercise_uuids = [info.Q_id for info in ordered_Q_infos]
 
         ## Put any unknown exercise uuids at the end of the list.
         unknown_exercise_uuids = list(set(exercise_uuids) - set(ordered_exercise_uuids))
