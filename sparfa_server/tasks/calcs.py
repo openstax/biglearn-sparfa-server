@@ -75,14 +75,13 @@ def run_pe_calc_task():
         results.apply_async(queue='beat-two')
 
 
-@celery.task
+@celery.task(on_success=run_pe_calc_recurse_task)
 def run_pe_calc_recurse_task():
     calcs = fetch_exercise_calcs(alg_name)
 
     if calcs:
         results = (group(run_pe_calc.s(calc) for calc in calcs))
-        calculations = results.apply_async(queue='celery')
-        calculations.get().then(run_pe_calc_recurse_task)
+        results.apply_async(queue='celery')
 
 
 @celery.task
@@ -128,12 +127,11 @@ def run_clue_calc_task():
         results.apply_async(queue='beat-two')
 
 
-@celery.task
+@celery.task(on_success=run_clue_calc_recurse_task)
 def run_clue_calc_recurse_task():
     calcs = fetch_clue_calcs(alg_name=alg_name)
 
     if calcs:
         results = (group(run_clue_calc.s(calc) for calc in calcs))
-        calculations = results.apply_async(queue='celery')
-        calculations.get().then(run_clue_calc_recurse_task)
+        results.apply_async(queue='celery')
 
