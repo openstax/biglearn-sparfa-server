@@ -82,7 +82,7 @@ def run_pe_calc_recurse_task():
     calcs = fetch_exercise_calcs(alg_name)
 
     if calcs:
-        results = (group(run_pe_calc.s(calc) for calc in calcs) | run_pe_calc_recurse_task.si(()))
+        results = (run_pe_calc.map(calcs) | run_pe_calc_recurse_task.si())
         results.apply_async(queue='celery')
 
 
@@ -134,6 +134,6 @@ def run_clue_calc_recurse_task():
     calcs = fetch_clue_calcs(alg_name=alg_name)
 
     if calcs:
-        results = (group(run_clue_calc.s(calc) for calc in calcs) | run_clue_calc_recurse_task.si(()))
+        results = (run_clue_calc.map(calcs) | run_clue_calc_recurse_task.si())
         results.apply_async(queue='celery')
 
