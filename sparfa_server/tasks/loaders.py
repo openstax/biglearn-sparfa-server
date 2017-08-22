@@ -7,14 +7,17 @@ from sparfa_server import (
     fetch_course_event_requests)
 from sparfa_server.db import (
     upsert_into_do_nothing,
-    max_sequence_offset)
+    max_sequence_offset,
+    select_all_course_next_sequence_offsets)
 from sparfa_server.loaders import (
     load_exercises,
     load_ecosystem_exercises,
     load_containers,
-    load_course)
+    load_course,
+    load_courses)
 from sparfa_server.models import ecosystems
 from sparfa_server.celery import celery
+from sparfa_server.utils import chunks
 
 from logging import getLogger
 
@@ -43,17 +46,22 @@ def load_ecosystems_task():
     ecosystem_uuids = fetch_pending_ecosystems()
 
     if ecosystem_uuids:
-        results = group(load_ecosystem_task.s(ecosystem_uuid) for ecosystem_uuid in ecosystem_uuids)
+        results = group(load_ecosystem_task.si(ecosystem_uuid) for ecosystem_uuid in ecosystem_uuids)
         return results.apply_async(queue='beat-one')
 
 
 @celery.task
-def load_courses_task():
-    __logs__.info('starting up load courses task')
-    api_course_uuids = fetch_course_uuids()
-    __logs__.info('shoulve fetched something')
+def load_courses_task(course_events_requests)
+    if len(course_events_requests):
+        next_course_events_requests = load_courses(course_events_requests)
+        load_courses_task.apply_async(next_course_events_requests)
 
-    if api_course_uuids:
-        results = group(load_course_task.s(course_uuid) for course_uuid in api_course_uuids)
-        return results.apply_async(queue='beat-one')
+
+@celery.task
+def load_courses_latest_task():
+    current_courses = select_all_course_next_sequence_offsets()
+
+    chunked_courses = chunks(current_courses, 50)
+    results = group(load_courses_task.si(course_events_requests) for course_events_requests in current_courses)
+    return results.apply_async()
 

@@ -16,13 +16,10 @@ except KeyError:
 blapi = BiglearnApi(api_token=api_token, sched_token=sched_token)
 
 
-def create_course_event_request(course_uuid,
-                                offset,
-                                max_events,
-                                request_uuid=None):
-    data = {
-        'course_event_requests': [],
-    }
+def create_course_event(course_uuid,
+                        offset,
+                        max_events,
+                        request_uuid=None):
 
     if not request_uuid:
         request_uuid = str(uuid.uuid4())
@@ -45,7 +42,17 @@ def create_course_event_request(course_uuid,
         'max_num_events': max_events
     }
 
-    data['course_event_requests'].append(event_request)
+    return event_request
+
+
+def create_course_event_request(course_uuid,
+                                offset,
+                                max_events,
+                                request_uuid=None):
+    data = {
+        'course_event_requests': [create_course_event(course_uuid, offset, max_events)],
+    }
+
     return data
 
 
@@ -70,6 +77,16 @@ def create_ecosystem_event_request(ecosystem_uuid, request_uuid=None):
     return data
 
 
+def create_courses_event_request(courses_data, max_events):
+
+    data = {
+        'course_event_requests':
+            [create_course_event(course['course_uuid'], course['sequence_offset'], max_events) for course in courses_data]
+    }
+
+    return data
+
+
 def fetch_course_uuids(course_uuids=None):
     __logs__.info('Polling courses endpoint for new courses')
     course_metadatas = blapi.fetch_course_metadatas()
@@ -86,6 +103,15 @@ def fetch_course_event_requests(course_uuid, offset=0, max_events=100):
     course_event_reqs = blapi.fetch_course_event_requests(payload)
 
     course_event_resps = course_event_reqs['course_event_responses'][0]
+    return course_event_resps
+
+
+def fetch_pending_course_events_requests(current_course_events_data, max_events=100):
+    payload = create_courses_event_request(current_course_events_data, max_events)
+
+    course_event_reqs = blapi.fetch_course_event_requests(payload)
+
+    course_event_resps = course_event_reqs['course_event_responses']
     return course_event_resps
 
 

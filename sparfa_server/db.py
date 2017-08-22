@@ -146,6 +146,32 @@ def select_max_sequence_offset(course_uuid):
         course_events.c.course_uuid == course_uuid)
 
 
+# TODO may convert this to sqlalchemy query as opposed to raw query
+def select_all_course_next_sequence_offsets():
+    select_statement = ('SELECT '
+                          'courses.uuid AS course_uuid, '
+                          'coalesce((max(course_events.sequence_number)), 0) AS next_sequence_offset '
+                        'FROM '
+                          'courses '
+                        'LEFT JOIN '
+                          'course_events '
+                        'ON '
+                          'course_events.course_uuid = courses.uuid '
+                        'GROUP BY '
+                          'courses.uuid LIMIT 50')
+
+    with executer as conn:
+        dbresult = conn.execute(select_statement)
+        rows = dbresult.fetchall()
+
+        results = [{
+            'course_uuid':      str(row['course_uuid']),
+            'sequence_offset':  row['next_sequence_offset']
+        } for row in rows]
+
+    return results
+
+
 @executer(fetch_all=True)
 def select_ecosystem_exercises(ecosystem_uuid):
     return select([ecosystem_exercises.c.exercise_uuid]).where(

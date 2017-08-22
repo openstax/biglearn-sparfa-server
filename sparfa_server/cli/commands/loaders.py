@@ -6,7 +6,8 @@ from sparfa_server.loaders import (run as run_loaders)
 from sparfa_server.tasks.loaders import (load_course_task,
                                          load_ecosystem_task,
                                          load_courses_task,
-                                         load_ecosystems_task)
+                                         load_ecosystems_task,
+                                         load_courses_latest_task)
 
 from sparfa_server.utils import validate_uuid4
 
@@ -63,6 +64,12 @@ def load_courses():
     load_courses_task.delay()
 
     __logs__.info('Initial courses have been loaded')
+
+@loaders.command()
+def load_courses_latest():
+    load_courses_latest_task.delay()
+
+    __logs__.info('Latest courses have been loaded')
 
 
 @loaders.command()

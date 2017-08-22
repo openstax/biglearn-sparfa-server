@@ -40,6 +40,13 @@ def delay(interval):
     time.sleep(interval)
 
 
+# https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks#312464
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
+
+
 def make_database_url():
     return 'postgresql+psycopg2://{0}:{1}@{2}:{3}/{4}'.format(
         os.environ.get('DB_USER', 'postgres'),
