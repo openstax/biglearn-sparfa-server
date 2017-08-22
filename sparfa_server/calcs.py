@@ -171,13 +171,6 @@ def calc_ecosystem_clues(ecosystem_uuid,
         C_idx_by_id = load_mapping(m.C_idx_by_id)
         Q_idx_by_id = load_mapping(m.Q_idx_by_id)
 
-        for exercise_uuid in exercise_uuids:
-            if exercise_uuid not in Q_idx_by_id:
-                __logs__.info(('Exercises missing in {} for {}.'
-                              'Shorting out of calc_ecosystem_clues.')
-                              .format(ecosystem_uuid, student_uuids))
-                return clue_mean, clue_min, clue_max
-
         # Construct gradebook
         L_idx_by_id = {L_id: idx for idx, L_id in enumerate(student_uuids)}
 
