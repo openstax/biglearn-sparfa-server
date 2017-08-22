@@ -49,13 +49,11 @@ def run_pe_calc(calc):
     Q_ids = calc['exercise_uuids']
     student_uuid = calc['student_uuid']
 
-    ordered_Q_infos = calc_ecosystem_pe(ecosystem_uuid=ecosystem_uuid,
-                                        student_uuid=student_uuid,
-                                        exercise_uuids=Q_ids)
+    exercise_uuids = calc_ecosystem_pe(ecosystem_uuid=ecosystem_uuid,
+                                       student_uuid=student_uuid,
+                                       exercise_uuids=Q_ids)
 
-    if ordered_Q_infos:
-
-        exercise_uuids = [info.Q_id for info in ordered_Q_infos]
+    if exercise_uuids:
 
         response = update_exercise_calcs(alg_name, calc_uuid,
                                          exercise_uuids)
@@ -82,8 +80,9 @@ def run_pe_calc_recurse_task():
     calcs = fetch_exercise_calcs(alg_name)
 
     if calcs:
-        results = (run_pe_calc.map(calcs) | run_pe_calc_recurse_task.si())
-        results.apply_async(queue='celery')
+        results = (group(run_pe_calc.s(calc) for calc in calcs))
+        calculations = results.apply_async(queue='celery')
+        calculations.get().then(run_pe_calc_recurse_task)
 
 
 @celery.task
@@ -134,6 +133,7 @@ def run_clue_calc_recurse_task():
     calcs = fetch_clue_calcs(alg_name=alg_name)
 
     if calcs:
-        results = (run_clue_calc.map(calcs) | run_clue_calc_recurse_task.si())
-        results.apply_async(queue='celery')
+        results = (group(run_clue_calc.s(calc) for calc in calcs))
+        calculations = results.apply_async(queue='celery')
+        calculations.get().then(run_clue_calc_recurse_task)
 
