@@ -60,5 +60,5 @@ def calc_initial():
     """
     Calculate all queued up calculations
     """
-    all_calcs = group(run_pe_calc_recurse_task.s(), run_clue_calc_recurse_task.s())
+    all_calcs = (run_matrix_all_ecosystems_task.si() | group(run_pe_calc_recurse_task.si(), run_clue_calc_recurse_task.si()))
     all_calcs.delay()
