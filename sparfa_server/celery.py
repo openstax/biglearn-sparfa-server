@@ -18,7 +18,7 @@ def make_celery_url():
 
 celery.conf.update(
     BROKER_URL=make_celery_url(),
-    CELERY_RESULT_BACKEND=make_database_url(),
+    CELERY_RESULT_BACKEND='db+' + make_database_url(),
     CELERYBEAT_SCHEDULE={
         'load_ecosystems': {
             'task': 'sparfa_server.tasks.loaders.load_ecosystems_task',
