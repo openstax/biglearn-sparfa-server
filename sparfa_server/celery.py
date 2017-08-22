@@ -4,6 +4,8 @@ from datetime import timedelta
 from celery import Celery
 from kombu import Queue, Exchange
 
+from sparfa_server.utils import make_database_url
+
 celery = Celery(os.environ.get('CELERY_APP_NAME', 'sparfa'))
 
 def make_celery_url():
@@ -16,6 +18,7 @@ def make_celery_url():
 
 celery.conf.update(
     BROKER_URL=make_celery_url(),
+    CELERY_RESULT_BACKEND=make_database_url(),
     CELERYBEAT_SCHEDULE={
         'load_ecosystems': {
             'task': 'sparfa_server.tasks.loaders.load_ecosystems_task',
