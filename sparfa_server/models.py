@@ -9,7 +9,8 @@ metadata = sa.MetaData()
 
 ecosystems = sa.Table('ecosystems', metadata,
                       sa.Column('id', sa.Integer, primary_key=True),
-                      sa.Column('uuid', UUID, nullable=False, unique=True)
+                      sa.Column('uuid', UUID, nullable=False, unique=True),
+                      sa.Column('metadata_sequence_number', sa.Integer, nullable=False, unique=True)
                       )
 
 exercises = sa.Table('exercises', metadata,
@@ -65,7 +66,11 @@ courses = sa.Table('courses', metadata,
                              unique=True),
                    sa.Column('ecosystem_uuid',
                              UUID,
-                             nullable=False)
+                             nullable=False),
+                   sa.Column('metadata_sequence_number',
+                             sa.Integer,
+                             nullable=False,
+                             unique=True)
                    )
 
 course_events = sa.Table('course_events', metadata,
