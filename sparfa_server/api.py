@@ -50,7 +50,10 @@ def create_course_event_request(course_uuid,
                                 max_events,
                                 request_uuid=None):
     data = {
-        'course_event_requests': [create_course_event(course_uuid, offset, max_events)],
+        'course_event_requests': [create_course_event(course_uuid,
+                                                      offset,
+                                                      max_events,
+                                                      request_uuid=request_uuid)],
     }
 
     return data
