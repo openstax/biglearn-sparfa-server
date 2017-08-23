@@ -56,6 +56,16 @@ def calc_clues():
 
 
 @calcs.command()
+def calc_clue_initial():
+    run_clue_calc_recurse_task.delay()
+
+
+@calcs.command()
+def calc_pe_initial():
+    run_pe_calc_recurse_task.delay()
+
+
+@calcs.command()
 def calc_initial():
     """
     Calculate all queued up calculations
