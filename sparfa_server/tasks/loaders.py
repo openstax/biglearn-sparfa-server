@@ -64,6 +64,6 @@ def load_courses_latest_task():
     current_courses = select_all_course_next_sequence_offsets()
 
     chunked_courses = chunks(current_courses, 50)
-    results = group(load_courses_task.si(course_events_requests) for course_events_requests in current_courses)
+    results = group(load_courses_task.si(course_events_requests) for course_events_requests in chunked_courses)
     return results.apply_async()
 
