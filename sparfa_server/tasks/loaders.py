@@ -56,7 +56,9 @@ def load_courses_task(course_events_requests):
         __logs__.info('Loading courses')
         __logs__.info(course_events_requests)
         next_course_events_requests = load_courses(course_events_requests)
-        load_courses_task.apply_async(next_course_events_requests)
+
+        if len(next_course_events_requests):
+            load_courses_task.apply_async(next_course_events_requests)
 
 
 @celery.task
