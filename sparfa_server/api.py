@@ -3,7 +3,7 @@ import os
 import uuid
 
 from .client import BiglearnApi
-from .db import get_all_ecosystem_uuids
+from .db import get_all_ecosystem_uuids, get_all_course_uuids
 
 __logs__ = logging.getLogger(__name__)
 
@@ -98,6 +98,22 @@ def fetch_course_uuids(course_uuids=None):
                 uuid in course_uuids]
 
     return [uuid['uuid'] for uuid in course_metadatas['course_responses']]
+
+
+def fetch_pending_courses_metadata(force=False):
+    __logs__.info('Polling courses endpoint for new courses')
+    api_course_metadatas = blapi.fetch_course_metadatas()
+
+    db_course_uuids = get_all_course_uuids()
+
+    import_course_uuids = list(
+        filter(lambda x: x['uuid'] not in db_course_uuids,
+               api_course_metadatas))
+
+    if force:
+        import_course_uuids = api_course_metadatas
+
+    return import_course_uuids
 
 
 def fetch_course_event_requests(course_uuid, offset=0, max_events=100):

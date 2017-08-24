@@ -146,6 +146,11 @@ def select_max_sequence_offset(course_uuid):
         course_events.c.course_uuid == course_uuid)
 
 
+@executer(fetch_all=True)
+def get_all_course_uuids():
+    return select([courses.c.uuid])
+
+
 # TODO may convert this to sqlalchemy query as opposed to raw query
 def select_all_course_next_sequence_offsets():
     select_statement = ('SELECT '

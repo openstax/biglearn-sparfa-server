@@ -25,8 +25,13 @@ celery.conf.update(
             'schedule': timedelta(seconds=2),
             'options': {'queue' : 'beat-one'}
         },
-        'load_courses': {
-            'task': 'sparfa_server.tasks.loaders.load_courses_latest_task',
+        'load_courses_metadata': {
+            'task': 'sparfa_server.tasks.loaders.load_courses_metadata_task',
+            'schedule': timedelta(seconds=2),
+            'options': {'queue' : 'beat-one'}
+        },
+        'load_courses_updates': {
+            'task': 'sparfa_server.tasks.loaders.load_courses_updates_task',
             'schedule': timedelta(seconds=2),
             'options': {'queue' : 'beat-one'}
         },
