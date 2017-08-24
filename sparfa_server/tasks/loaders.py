@@ -17,10 +17,8 @@ from sparfa_server.loaders import (
     load_courses)
 from sparfa_server.models import ecosystems
 from sparfa_server.celery import celery
-from sparfa_server.utils import chunks
 
 from logging import getLogger
-
 
 __logs__ = getLogger(__package__)
 
@@ -58,14 +56,13 @@ def load_courses_task(course_events_requests):
         next_course_events_requests = load_courses(course_events_requests)
 
         if len(next_course_events_requests):
-            load_courses_task.apply_async(next_course_events_requests)
+            load_courses_task.apply_async(next_course_events_requests, queue='beat-one')
 
 
 @celery.task
 def load_courses_latest_task():
     current_courses = select_all_course_next_sequence_offsets()
 
-    chunked_courses = chunks(current_courses, 50)
-    results = group(load_courses_task.si(course_events_requests) for course_events_requests in chunked_courses)
-    return results.apply_async()
+    results = load_courses_task.chunks(current_courses, 50)
+    return results.apply_async(queue='beat-one')
 

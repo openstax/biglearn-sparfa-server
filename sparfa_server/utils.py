@@ -11,6 +11,11 @@ import numpy as np
 from scipy.sparse import coo_matrix
 
 
+from logging import getLogger
+
+__logs__ = getLogger(__package__)
+
+
 def dump_sparse_matrix(array):
     sparse_matrix = coo_matrix(array)
     return json.dumps({
@@ -38,14 +43,6 @@ def load_mapping(text):
 
 def delay(interval):
     time.sleep(interval)
-
-
-# https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks#312464
-def chunks(l, n):
-    """Yield successive n-sized chunks from l."""
-    for i in range(0, len(l), n):
-        yield l[i:i + n]
-
 
 def make_database_url():
     return 'postgresql+psycopg2://{0}:{1}@{2}:{3}/{4}'.format(
@@ -75,6 +72,28 @@ def get_next_offset(current_offset, current_events = [], step_size=1, sequence_n
             next_offset = new_max_sequence_offset + 1
 
     return next_offset
+
+
+def error_handler():
+    __logs__.exception(e)
+
+
+def get_try_decorator(errors=(Exception, ), on_error=error_handler):
+
+    def try_decorator(func):
+
+        def try_wrapped_function(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except errors, e:
+                return on_error(e)
+
+        return try_wrapped_function
+
+    return try_decorator
+
+
+try_all = get_try_decorator()
 
 
 class Result(object):

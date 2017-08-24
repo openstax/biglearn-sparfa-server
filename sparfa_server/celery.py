@@ -22,27 +22,27 @@ celery.conf.update(
     CELERYBEAT_SCHEDULE={
         'load_ecosystems': {
             'task': 'sparfa_server.tasks.loaders.load_ecosystems_task',
-            'schedule': timedelta(seconds=5),
+            'schedule': timedelta(seconds=2),
             'options': {'queue' : 'beat-one'}
         },
         'load_courses': {
-            'task': 'sparfa_server.tasks.loaders.load_courses_task',
-            'schedule': timedelta(minutes=1),
+            'task': 'sparfa_server.tasks.loaders.load_courses_latest_task',
+            'schedule': timedelta(seconds=2),
             'options': {'queue' : 'beat-one'}
         },
         'run_matrix_calc': {
             'task': 'sparfa_server.tasks.calcs.run_matrix_calc_task',
-            'schedule': timedelta(seconds=10),
+            'schedule': timedelta(seconds=2),
             'options': {'queue' : 'beat-one'}
         },
         'run_pe_calc': {
             'task': 'sparfa_server.tasks.calcs.run_pe_calc_task',
-            'schedule': timedelta(seconds=5),
+            'schedule': timedelta(seconds=2),
             'options': {'queue' : 'beat-two'}
         },
         'run_clue_calc': {
             'task': 'sparfa_server.tasks.calcs.run_clue_calc_task',
-            'schedule': timedelta(minutes=5),
+            'schedule': timedelta(seconds=2),
             'options': {'queue' : 'beat-two'}
         }
     },
