@@ -99,7 +99,7 @@ def run_clue_calc(calc):
         responses=responses
     )
 
-    if clue_mean and clue_min and clue_max:
+    if (clue_mean and clue_min and clue_max) is not None:
 
         response = update_clue_calcs(
             alg_name=alg_name,
