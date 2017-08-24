@@ -85,7 +85,7 @@ def get_try_decorator(errors=(Exception, ), on_error=error_handler):
         def try_wrapped_function(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
-            except errors, e:
+            except errors as e:
                 return on_error(e)
 
         return try_wrapped_function
