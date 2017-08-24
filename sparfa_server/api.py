@@ -16,10 +16,9 @@ except KeyError:
 blapi = BiglearnApi(api_token=api_token, sched_token=sched_token)
 
 
-def create_course_event(course_uuid,
-                        offset,
-                        max_events,
-                        request_uuid=None):
+def create_partial_course_event_request(course_uuid,
+                                        offset,
+                                        request_uuid=None):
 
     if not request_uuid:
         request_uuid = str(uuid.uuid4())
@@ -39,7 +38,6 @@ def create_course_event(course_uuid,
         ],
         'course_uuid': course_uuid,
         'sequence_number_offset': offset,
-        'max_num_events': max_events
     }
 
     return event_request
@@ -47,22 +45,32 @@ def create_course_event(course_uuid,
 
 def create_course_event_request(course_uuid,
                                 offset,
-                                max_events,
+                                max_events=1000,
                                 request_uuid=None):
+
     data = {
-        'course_event_requests': [create_course_event(course_uuid,
-                                                      offset,
-                                                      max_events,
-                                                      request_uuid=request_uuid)],
+        'course_event_requests':
+            [create_partial_course_event_request(course_uuid, offset, request_uuid)],
+        'max_num_events': max_events,
     }
 
     return data
 
 
-def create_ecosystem_event_request(ecosystem_uuid, request_uuid=None):
+def create_course_event_requests(courses_data, max_events=1000):
+
     data = {
-        'ecosystem_event_requests': [],
+        'course_event_requests':
+            [create_partial_course_event_request(course['course_uuid'], course['sequence_offset']) for course in courses_data],
+        'max_num_events': max_events,
     }
+
+    return data
+
+
+def create_partial_ecosystem_event_request(ecosystem_uuid,
+                                           offset,
+                                           request_uuid=None):
 
     if not request_uuid:
         request_uuid = str(uuid.uuid4())
@@ -71,20 +79,21 @@ def create_ecosystem_event_request(ecosystem_uuid, request_uuid=None):
         'request_uuid': request_uuid,
         'event_types': ['create_ecosystem'],
         'ecosystem_uuid': ecosystem_uuid,
-        'sequence_number_offset': 0,
-        'max_num_events': 10,
+        'sequence_number_offset': offset,
     }
 
-    data['ecosystem_event_requests'].append(event_request)
-
-    return data
+    return event_request
 
 
-def create_courses_event_request(courses_data, max_events):
+def create_ecosystem_event_request(ecosystem_uuid,
+                                   offset,
+                                   max_events=1000,
+                                   request_uuid=None):
 
     data = {
-        'course_event_requests':
-            [create_course_event(course['course_uuid'], course['sequence_offset'], max_events) for course in courses_data]
+        'ecosystem_event_requests':
+            [create_partial_ecosystem_event_request(ecosystem_uuid, offset, request_uuid)],
+        'max_num_events': max_events,
     }
 
     return data
@@ -116,7 +125,7 @@ def fetch_pending_courses_metadata(force=False):
     return import_course_uuids
 
 
-def fetch_course_event_requests(course_uuid, offset=0, max_events=100):
+def fetch_course_event_requests(course_uuid, offset=0, max_events=1000):
     payload = create_course_event_request(course_uuid, offset, max_events)
 
     course_event_reqs = blapi.fetch_course_event_requests(payload)
@@ -125,8 +134,8 @@ def fetch_course_event_requests(course_uuid, offset=0, max_events=100):
     return course_event_resps
 
 
-def fetch_pending_course_events_requests(current_course_events_data, max_events=100):
-    payload = create_courses_event_request(current_course_events_data, max_events)
+def fetch_pending_course_events_requests(current_course_events_data, max_events=1000):
+    payload = create_course_event_requests(current_course_events_data, max_events)
 
     course_event_reqs = blapi.fetch_course_event_requests(payload)
 
@@ -145,8 +154,8 @@ def fetch_ecosystem_uuids(ecosystem_uuids=None):
                 ecosystem_metadatas['ecosystem_responses']]
 
 
-def fetch_ecosystem_event_requests(ecosystem_uuid):
-    payload = create_ecosystem_event_request(ecosystem_uuid)
+def fetch_ecosystem_event_requests(ecosystem_uuid, offset=0, max_events=1000):
+    payload = create_ecosystem_event_request(ecosystem_uuid, offset, max_events)
 
     eco_event_reqs = blapi.fetch_ecosystem_event_requests(payload)
 
@@ -255,4 +264,3 @@ def update_clue_calcs(alg_name, ecosystem_uuid, calc_uuid, clue_min,
     }
     response = blapi.update_clue_calcs(payload)
     return response['clue_calculation_update_responses'][0]
-

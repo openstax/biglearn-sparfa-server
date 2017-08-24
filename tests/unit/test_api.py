@@ -20,7 +20,7 @@ class TestBiglearnApi(UnitHelper):
         request_uuid = str(uuid.uuid4())
         course_uuid = str(uuid.uuid4())
         offset = 0
-        max_events = 100
+        max_events = 1000
 
         event_request = {
             'course_event_requests': [
@@ -39,10 +39,9 @@ class TestBiglearnApi(UnitHelper):
                     ],
                     'course_uuid': course_uuid,
                     'sequence_number_offset': offset,
-                    'max_num_events': max_events
-
                 }
-            ]
+            ],
+            'max_num_events': max_events
         }
 
         data = create_course_event_request(course_uuid,
@@ -62,12 +61,12 @@ class TestBiglearnApi(UnitHelper):
                     'event_types': ['create_ecosystem'],
                     'ecosystem_uuid': ecosystem_uuid,
                     'sequence_number_offset': 0,
-                    'max_num_events': 10,
                 }
-            ]
+            ],
+            'max_num_events': 1000
         }
 
-        data = create_ecosystem_event_request(ecosystem_uuid, request_uuid)
+        data = create_ecosystem_event_request(ecosystem_uuid, 0, 1000, request_uuid)
         assert data == event_request
 
     def test_fetch_course_uuids(self):
@@ -81,7 +80,7 @@ class TestBiglearnApi(UnitHelper):
     def test_fetch_course_event_requests(self):
         course_uuid = str(uuid.uuid4())
         offset = 10
-        max_events = 100
+        max_events = 1000
         payload = create_course_event_request(course_uuid, offset, max_events)
         url = build_url('api', 'fetch_course_events')
         self.instance.fetch_course_event_requests(payload)
@@ -89,8 +88,9 @@ class TestBiglearnApi(UnitHelper):
 
     def test_ecosystem_event_requests(self):
         ecosystem_uuid = str(uuid.uuid4())
-
-        payload = create_ecosystem_event_request(ecosystem_uuid)
+        offset = 10
+        max_events = 1000
+        payload = create_ecosystem_event_request(ecosystem_uuid, offset, max_events)
         url = build_url('api', 'fetch_ecoystem_events')
         self.instance.fetch_ecosystem_event_requests(payload)
         self.post_called_with(url, data=payload)
