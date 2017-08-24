@@ -19,6 +19,7 @@ blapi = BiglearnApi(api_token=api_token, sched_token=sched_token)
 
 def create_course_event_request(course_uuid,
                                 offset,
+                                max_events,
                                 request_uuid=None):
     data = {
         'course_event_requests': [],
@@ -42,6 +43,7 @@ def create_course_event_request(course_uuid,
         ],
         'course_uuid': course_uuid,
         'sequence_number_offset': offset,
+        'max_num_events': max_events
     }
 
     data['course_event_requests'].append(event_request)
@@ -61,6 +63,7 @@ def create_ecosystem_event_request(ecosystem_uuid, request_uuid=None):
         'event_types': ['create_ecosystem'],
         'ecosystem_uuid': ecosystem_uuid,
         'sequence_number_offset': 0,
+        'max_num_events': 10,
     }
 
     data['ecosystem_event_requests'].append(event_request)
@@ -77,8 +80,8 @@ def fetch_course_uuids(course_uuids=None):
     return [uuid['uuid'] for uuid in course_metadatas['course_responses']]
 
 
-def fetch_course_event_requests(course_uuid, offset=0):
-    payload = create_course_event_request(course_uuid, offset)
+def fetch_course_event_requests(course_uuid, offset=0, max_events=100):
+    payload = create_course_event_request(course_uuid, offset, max_events)
 
     course_event_reqs = blapi.fetch_course_event_requests(payload)
 
@@ -207,3 +210,4 @@ def update_clue_calcs(alg_name, ecosystem_uuid, calc_uuid, clue_min,
     }
     response = blapi.update_clue_calcs(payload)
     return response['clue_calculation_update_responses'][0]
+
