@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+
+cd "$(dirname "$0")/.."
+
+echo "==> Activating the virtualenv"
+source .venv/bin/activate
+
+echo "==> Starting server"
+sparf server

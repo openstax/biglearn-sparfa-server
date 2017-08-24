@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+
+cd "$(dirname "$0")/.."
+
+./script/bootstrap
+
+echo "==> Creating python Virtualenv"
+make venv
+
+echo "==> Activating the virtualenv"
+source .venv/bin/activate
+
+echo "==> Initializing the database"
+make initdb

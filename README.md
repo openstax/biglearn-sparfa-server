@@ -20,6 +20,11 @@ Python tasks used to support Biglearn and conduct calculations.
 
 ## Get Started
 
+# Quick setup (OSX)
+
+You can just run `./script/setup` (assuming you have [Homebrew](http://brew.sh/) and docker installed).
+
+
 ### Installing the system dependencies on OS X
 
 This section describes how to install the dependencies on Mac OS X.
@@ -82,6 +87,8 @@ Docker and Docker Compose. This should work on any OS that docker can be install
 8. Set environmental variables. See `.env.example` for required variables to be set.
 
 ## Dev Server
+
+(or just run `./script/start`)
 
 The dev server runs the celery worker and the beat process to start all periodic tasks.
 The tasks are the loader tasks and the calculations. Make sure you have the database and RabbitMQ services running.
@@ -163,5 +170,3 @@ b9287092c49f -> cbac16278e4f (head), added biglearn knowledge models
 ```
 
 This shows the base started at `b9287092c49f` which is a version named "initial schema" which is followed by `cbac16278e4f` which is a version labeled "added biglearn knowledge models".
-
-
