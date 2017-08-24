@@ -8,6 +8,11 @@ from sparfa_server.calcs import calc_ecosystem_matrices, calc_ecosystem_pe, \
     calc_ecosystem_clues
 from sparfa_server.celery import celery
 
+import sys
+import traceback
+from logging import getLogger
+
+__logs__ = getLogger(__package__)
 
 alg_name = 'biglearn-sparfa'
 
@@ -84,8 +89,7 @@ def run_pe_calc_recurse_task():
         results.apply_async(queue='celery')
 
 
-@celery.task
-def run_clue_calc(calc):
+def run_and_save_clue_calc(calc):
     ecosystem_uuid = calc['ecosystem_uuid']
     calc_uuid = calc['calculation_uuid']
     responses = calc['responses']
@@ -116,6 +120,16 @@ def run_clue_calc(calc):
             raise Exception(
                 'Calculation {0} for ecosystem {1} was not accepted'.format(
                     calc_uuid, ecosystem_uuid))
+
+
+@celery.task
+def run_clue_calc(calc):
+    try:
+        return run_and_save_clue_calc(calc)
+    except:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+        __logs__.error(''.join(lines))
 
 
 @celery.task
