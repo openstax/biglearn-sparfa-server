@@ -38,10 +38,10 @@ def load_ecosystem_task(ecosystem_uuid):
 
 @celery.task
 def load_course_metadata_task(course_metadata):
-    load_course_data({
-        'course_uuid' = course_metadata['uuid']
-        'ecosystem_uuid' = course_metadata['initial_ecosystem_uuid']
-    })
+    load_course_data(dict(
+        course_uuid = course_metadata['uuid'],
+        ecosystem_uuid = course_metadata['initial_ecosystem_uuid']
+    ))
 
 
 @celery.task
