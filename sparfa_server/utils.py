@@ -74,8 +74,8 @@ def get_next_offset(current_offset, current_events = [], step_size=1, sequence_n
     return next_offset
 
 
-def error_handler():
-    __logs__.exception(e)
+def error_handler(error):
+    __logs__.exception(error)
 
 
 def get_try_decorator(errors=(Exception, ), on_error=error_handler):
