@@ -163,7 +163,7 @@ def select_all_course_next_sequence_offsets():
                         'ON '
                           'course_events.course_uuid = courses.uuid '
                         'GROUP BY '
-                          'courses.uuid LIMIT 50')
+                          'courses.uuid')
 
     with executer as conn:
         dbresult = conn.execute(select_statement)
