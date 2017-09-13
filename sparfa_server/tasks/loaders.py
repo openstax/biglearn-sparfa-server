@@ -21,6 +21,7 @@ from sparfa_server.models import ecosystems
 from sparfa_server.celery import celery
 
 from logging import getLogger
+import numpy as np
 
 __logs__ = getLogger(__package__)
 
@@ -72,8 +73,9 @@ def load_courses_events_task(course_events_requests):
 @celery.task
 def load_courses_updates_task():
     current_courses = select_all_course_next_sequence_offsets()
+    chunked_courses = np.array_split(current_courses, 50)
 
-    results = load_courses_events_task.chunks(current_courses, 50)
+    results = group(load_courses_events_task.si(course_events_requests) for course_events_requests in chunked_courses)
     return results.apply_async(queue='beat-one')
 
 
