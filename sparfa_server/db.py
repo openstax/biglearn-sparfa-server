@@ -155,7 +155,7 @@ def get_all_course_uuids():
 def select_all_course_next_sequence_offsets():
     select_statement = ('SELECT '
                           'courses.uuid AS course_uuid, '
-                          'coalesce((max(course_events.sequence_number)), 0) AS next_sequence_offset '
+                          '(coalesce((max(course_events.sequence_number)), -1) + 1) AS next_sequence_offset '
                         'FROM '
                           'courses '
                         'LEFT JOIN '
