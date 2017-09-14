@@ -4,12 +4,14 @@ import os
 import queue
 import threading
 import time
+
+from functools import partial
+
 from collections import OrderedDict
 from uuid import UUID
 
 import numpy as np
 from scipy.sparse import coo_matrix
-
 
 from logging import getLogger
 
@@ -78,22 +80,17 @@ def error_handler(error):
     __logs__.exception(error)
 
 
-def get_try_decorator(errors=(Exception, ), on_error=error_handler):
+def try_and(func, errors=(Exception, ), on_error=error_handler):
 
-    def try_decorator(func):
+    def try_wrapped_function(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except errors as e:
+            return on_error(e)
 
-        def try_wrapped_function(*args, **kwargs):
-            try:
-                return func(*args, **kwargs)
-            except errors as e:
-                return on_error(e)
+    return try_wrapped_function
 
-        return try_wrapped_function
-
-    return try_decorator
-
-
-try_all = get_try_decorator()
+try_all = partial(try_and)
 
 
 class Result(object):
