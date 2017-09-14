@@ -1,3 +1,5 @@
+import os
+
 from celery import group
 
 from sparfa_server import api, update_matrix_calculations, fetch_exercise_calcs
@@ -8,9 +10,9 @@ from sparfa_server.calcs import calc_ecosystem_matrices, calc_ecosystem_pe, \
     calc_ecosystem_clues
 from sparfa_server.celery import celery
 
-from sparfa_server.utils import try_all
+from sparfa_server.utils import try_log_all
 
-alg_name = 'biglearn-sparfa'
+alg_name = os.environ.get('BIGLEARN_ALGORITHM_NAME', 'biglearn-sparfa')
 
 
 @celery.task
@@ -43,7 +45,7 @@ def run_matrix_all_ecosystems_task():
     results.apply_async()
 
 
-@try_all
+@try_log_all
 def run_clue_calc(calc):
     ecosystem_uuid = calc['ecosystem_uuid']
     calc_uuid = calc['calculation_uuid']
@@ -77,7 +79,7 @@ def run_clue_calc(calc):
                     calc_uuid, ecosystem_uuid))
 
 
-@try_all
+@try_log_all
 def run_pe_calc(calc):
     ecosystem_uuid = calc['ecosystem_uuid']
     calc_uuid = calc['calculation_uuid']
@@ -102,8 +104,8 @@ def run_pe_calc(calc):
 
 
 @celery.task
-def run_pe_calc_task():
-    return run_pe_calc()
+def run_pe_calc_task(calc):
+    return run_pe_calc(calc)
 
 
 @celery.task
@@ -125,8 +127,8 @@ def run_pe_calcs_recurse_task():
 
 
 @celery.task
-def run_clue_calc_task():
-    return run_clue_calc()
+def run_clue_calc_task(calc):
+    return run_clue_calc(calc)
 
 
 @celery.task

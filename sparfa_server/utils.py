@@ -90,7 +90,7 @@ def try_and(func, errors=(Exception, ), on_error=error_handler):
 
     return try_wrapped_function
 
-try_all = partial(try_and)
+try_log_all = partial(try_and)
 
 
 class Result(object):
