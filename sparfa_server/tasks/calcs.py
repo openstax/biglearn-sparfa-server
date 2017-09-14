@@ -43,50 +43,6 @@ def run_matrix_all_ecosystems_task():
     results.apply_async()
 
 
-@celery.task
-@try_all
-def run_pe_calc(calc):
-    ecosystem_uuid = calc['ecosystem_uuid']
-    calc_uuid = calc['calculation_uuid']
-    Q_ids = calc['exercise_uuids']
-    student_uuid = calc['student_uuid']
-
-    exercise_uuids = calc_ecosystem_pe(ecosystem_uuid=ecosystem_uuid,
-                                       student_uuid=student_uuid,
-                                       exercise_uuids=Q_ids)
-
-    if exercise_uuids:
-
-        response = update_exercise_calcs(alg_name, calc_uuid,
-                                         exercise_uuids)
-
-        if response['calculation_status'] == 'calculation_accepted':
-            return response
-        else:
-            raise Exception(
-                'Calculation {0} for ecosystem {1} was not accepted'.format(
-                    calc_uuid, ecosystem_uuid))
-
-
-@celery.task
-def run_pe_calc_task():
-    calcs = fetch_exercise_calcs(alg_name)
-
-    if calcs:
-        results = group(run_pe_calc.s(calc) for calc in calcs)
-        results.apply_async(queue='beat-two')
-
-
-@celery.task()
-def run_pe_calc_recurse_task():
-    calcs = fetch_exercise_calcs(alg_name)
-
-    if calcs:
-        results = (group(run_pe_calc.s(calc) for calc in calcs) | run_pe_calc_recurse_task.si())
-        results.apply_async(queue='celery')
-
-
-@celery.task
 @try_all
 def run_clue_calc(calc):
     ecosystem_uuid = calc['ecosystem_uuid']
@@ -121,20 +77,72 @@ def run_clue_calc(calc):
                     calc_uuid, ecosystem_uuid))
 
 
+@try_all
+def run_pe_calc(calc):
+    ecosystem_uuid = calc['ecosystem_uuid']
+    calc_uuid = calc['calculation_uuid']
+    Q_ids = calc['exercise_uuids']
+    student_uuid = calc['student_uuid']
+
+    exercise_uuids = calc_ecosystem_pe(ecosystem_uuid=ecosystem_uuid,
+                                       student_uuid=student_uuid,
+                                       exercise_uuids=Q_ids)
+
+    if exercise_uuids:
+
+        response = update_exercise_calcs(alg_name, calc_uuid,
+                                         exercise_uuids)
+
+        if response['calculation_status'] == 'calculation_accepted':
+            return response
+        else:
+            raise Exception(
+                'Calculation {0} for ecosystem {1} was not accepted'.format(
+                    calc_uuid, ecosystem_uuid))
+
+
 @celery.task
-def run_clue_calc_task():
-    calcs = fetch_clue_calcs(alg_name=alg_name)
+def run_pe_calc_task():
+    return run_pe_calc()
+
+
+@celery.task
+def run_pe_calcs_task():
+    calcs = fetch_exercise_calcs(alg_name)
 
     if calcs:
-        results = group(run_clue_calc.s(calc) for calc in calcs)
+        results = group(run_pe_calc_task.s(calc) for calc in calcs)
         results.apply_async(queue='beat-two')
 
 
-@celery.task()
-def run_clue_calc_recurse_task():
+@celery.task
+def run_pe_calcs_recurse_task():
+    calcs = fetch_exercise_calcs(alg_name)
+
+    if calcs:
+        results = (group(run_pe_calc_task.s(calc) for calc in calcs) | run_pe_calcs_recurse_task.si())
+        results.apply_async(queue='celery')
+
+
+@celery.task
+def run_clue_calc_task():
+    return run_clue_calc()
+
+
+@celery.task
+def run_clue_calcs_task():
     calcs = fetch_clue_calcs(alg_name=alg_name)
 
     if calcs:
-        results = (group(run_clue_calc.s(calc) for calc in calcs) | run_clue_calc_recurse_task.si())
+        results = group(run_clue_calc_task.s(calc) for calc in calcs)
+        results.apply_async(queue='beat-two')
+
+
+@celery.task
+def run_clue_calcs_recurse_task():
+    calcs = fetch_clue_calcs(alg_name=alg_name)
+
+    if calcs:
+        results = (group(run_clue_calc_task.s(calc) for calc in calcs) | run_clue_calcs_recurse_task.si())
         results.apply_async(queue='celery')
 

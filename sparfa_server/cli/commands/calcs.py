@@ -2,11 +2,11 @@ import click
 
 from celery import group
 from sparfa_server.tasks.calcs import (run_matrix_calc_task,
-                                       run_pe_calc_task,
-                                       run_clue_calc_task,
+                                       run_pe_calcs_task,
+                                       run_clue_calcs_task,
                                        run_matrix_all_ecosystems_task,
-                                       run_pe_calc_recurse_task,
-                                       run_clue_calc_recurse_task)
+                                       run_pe_calcs_recurse_task,
+                                       run_clue_calcs_recurse_task)
 
 import logging
 
@@ -42,7 +42,7 @@ def calc_pes():
     """
     Calculate PEs
     """
-    run_pe_calc_task.delay()
+    run_pe_calcs_task.delay()
     __logs__.info('Initial ecosystem calculations running')
 
 
@@ -51,18 +51,18 @@ def calc_clues():
     """
     Calculate CLUEs
     """
-    run_clue_calc_task.delay()
+    run_clue_calcs_task.delay()
     __logs__.info('Initial ecosystem calculations running')
 
 
 @calcs.command()
 def calc_clue_initial():
-    run_clue_calc_recurse_task.delay()
+    run_clue_calcs_recurse_task.delay()
 
 
 @calcs.command()
 def calc_pe_initial():
-    run_pe_calc_recurse_task.delay()
+    run_pe_calcs_recurse_task.delay()
 
 
 @calcs.command()
@@ -70,5 +70,5 @@ def calc_initial():
     """
     Calculate all queued up calculations
     """
-    all_calcs = (run_matrix_all_ecosystems_task.si() | group(run_pe_calc_recurse_task.si(), run_clue_calc_recurse_task.si()))
+    all_calcs = (run_matrix_all_ecosystems_task.si() | group(run_pe_calcs_recurse_task.si(), run_clue_calcs_recurse_task.si()))
     all_calcs.delay()
