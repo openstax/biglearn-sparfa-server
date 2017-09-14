@@ -66,7 +66,7 @@ def load_courses_events_task(course_events_requests):
         next_course_events_requests = load_courses(course_events_requests)
 
         if len(next_course_events_requests):
-            load_courses_events_task.apply_async(next_course_events_requests, queue='beat-one')
+            load_courses_events_task.apply_async((next_course_events_requests,), queue='beat-one')
 
 
 @celery.task
