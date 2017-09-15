@@ -94,6 +94,20 @@ def upsert_into_do_update(mtable, mvalues, columns):
     return do_update_stmt
 
 
+def update_ecosystem_matrix(matrix_values):
+    return upsert_into_do_update(
+        ecosystem_matrices,
+        matrix_values,
+        columns=['w_matrix',
+               'd_matrix',
+               'C_idx_by_id',
+               'Q_idx_by_id',
+               'L_idx_by_id',
+               'H_mask_NCxNQ'
+               ]
+    )
+
+
 @executer
 def get_ecosystem_by_id(ecosystem_id):
     return select([ecosystems]).where(
@@ -130,6 +144,37 @@ def get_all_ecosystem_uuids():
 def select_max_sequence_offset(course_uuid):
     return select([func.max(course_events.c.sequence_number)]).where(
         course_events.c.course_uuid == course_uuid)
+
+
+@executer(fetch_all=True)
+def get_all_course_uuids():
+    return select([courses.c.uuid])
+
+
+# TODO may convert this to sqlalchemy query as opposed to raw query
+def select_all_course_next_sequence_offsets():
+    select_statement = ('SELECT '
+                          'courses.uuid AS course_uuid, '
+                          '(coalesce((max(course_events.sequence_number)), -1) + 1) AS next_sequence_offset '
+                        'FROM '
+                          'courses '
+                        'LEFT JOIN '
+                          'course_events '
+                        'ON '
+                          'course_events.course_uuid = courses.uuid '
+                        'GROUP BY '
+                          'courses.uuid')
+
+    with executer as conn:
+        dbresult = conn.execute(select_statement)
+        rows = dbresult.fetchall()
+
+        results = [{
+            'course_uuid':      str(row['course_uuid']),
+            'sequence_offset':  row['next_sequence_offset']
+        } for row in rows]
+
+    return results
 
 
 @executer(fetch_all=True)

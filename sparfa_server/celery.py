@@ -4,6 +4,8 @@ from datetime import timedelta
 from celery import Celery
 from kombu import Queue, Exchange
 
+from sparfa_server.utils import make_database_url
+
 celery = Celery(os.environ.get('CELERY_APP_NAME', 'sparfa'))
 
 def make_celery_url():
@@ -16,32 +18,37 @@ def make_celery_url():
 
 celery.conf.update(
     BROKER_URL=make_celery_url(),
-    CELERY_ANNOTATIONS={
-        'sparfa_server.tasks.loaders.load_courses_task':
-            {
-                'rate_limit': '2/h'
-            }
-    },
+    CELERY_RESULT_BACKEND='db+' + make_database_url(),
     CELERYBEAT_SCHEDULE={
         'load_ecosystems': {
             'task': 'sparfa_server.tasks.loaders.load_ecosystems_task',
-            'schedule': timedelta(minutes=2)
+            'schedule': timedelta(seconds=2),
+            'options': {'queue' : 'beat-one'}
         },
-        'load_courses': {
-            'task': 'sparfa_server.tasks.loaders.load_courses_task',
-            'schedule': timedelta(minutes=10)
+        'load_courses_metadata': {
+            'task': 'sparfa_server.tasks.loaders.load_courses_metadata_task',
+            'schedule': timedelta(seconds=2),
+            'options': {'queue' : 'beat-one'}
+        },
+        'load_courses_updates': {
+            'task': 'sparfa_server.tasks.loaders.load_courses_updates_task',
+            'schedule': timedelta(seconds=2),
+            'options': {'queue' : 'beat-one'}
         },
         'run_matrix_calc': {
             'task': 'sparfa_server.tasks.calcs.run_matrix_calc_task',
-            'schedule': timedelta(minutes=10)
+            'schedule': timedelta(seconds=2),
+            'options': {'queue' : 'beat-one'}
         },
         'run_pe_calc': {
             'task': 'sparfa_server.tasks.calcs.run_pe_calc_task',
-            'schedule': timedelta(minutes=10)
+            'schedule': timedelta(seconds=2),
+            'options': {'queue' : 'beat-two'}
         },
         'run_clue_calc': {
             'task': 'sparfa_server.tasks.calcs.run_clue_calc_task',
-            'schedule': timedelta(minutes=10)
+            'schedule': timedelta(seconds=2),
+            'options': {'queue' : 'beat-two'}
         }
     },
     CELERY_ACCEPT_CONTENT=['json'],
@@ -53,9 +60,15 @@ celery.conf.update(
     CELERY_QUEUES=[
         Queue('celery',
               routing_key='celery',
-              exchange=Exchange('celery', type='direct', durable=True))
+              exchange=Exchange('celery', type='direct', durable=True)),
+        Queue('beat-one',
+              routing_key='beat-one',
+              exchange=Exchange('beat-one', type='direct', durable=True)),
+        Queue('beat-two',
+              routing_key='beat-two',
+              exchange=Exchange('beat-two', type='direct', durable=True))
     ],
-    CELERYD_PREFETCH_MULTIPLIER=1,
+    CELERYD_PREFETCH_MULTIPLIER=1
 )
 
 

@@ -4,24 +4,37 @@ import os
 import queue
 import threading
 import time
+
+from functools import partial
+
 from collections import OrderedDict
 from uuid import UUID
 
 import numpy as np
+from scipy.sparse import coo_matrix
+
+from logging import getLogger
+
+__logs__ = getLogger(__package__)
 
 
-def dump_matrix(array):
-    memfile = io.BytesIO()
-    np.save(memfile, array)
-    memfile.seek(0)
-    return json.dumps(memfile.read().decode('latin-1'))
+def dump_sparse_matrix(array):
+    sparse_matrix = coo_matrix(array)
+    return json.dumps({
+        "data":     sparse_matrix.data.tolist(),
+        "row":      sparse_matrix.row.tolist(),
+        "col":      sparse_matrix.col.tolist(),
+        "shape":    sparse_matrix.shape
+    })
 
 
-def load_matrix(text):
-    memfile = io.BytesIO()
-    memfile.write(json.loads(text).encode('latin-1'))
-    memfile.seek(0)
-    return np.load(memfile)
+def load_sparse_matrix(text):
+    sparse_json = json.loads(text)
+    sparse_matrix = coo_matrix((sparse_json.get('data'),
+                                (sparse_json.get('row'), sparse_json.get('col'))
+                                ), shape = sparse_json.get('shape'))
+
+    return sparse_matrix.toarray()
 
 
 def load_mapping(text):
@@ -32,7 +45,6 @@ def load_mapping(text):
 
 def delay(interval):
     time.sleep(interval)
-
 
 def make_database_url():
     return 'postgresql+psycopg2://{0}:{1}@{2}:{3}/{4}'.format(
@@ -62,6 +74,23 @@ def get_next_offset(current_offset, current_events = [], step_size=1, sequence_n
             next_offset = new_max_sequence_offset + 1
 
     return next_offset
+
+
+def error_handler(error):
+    __logs__.exception(error)
+
+
+def try_and(func, errors=(Exception, ), on_error=error_handler):
+
+    def try_wrapped_function(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except errors as e:
+            return on_error(e)
+
+    return try_wrapped_function
+
+try_log_all = partial(try_and)
 
 
 class Result(object):

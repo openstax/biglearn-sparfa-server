@@ -12,6 +12,7 @@ from .api import (
     fetch_matrix_calculations,
     update_matrix_calculations,
     fetch_pending_ecosystems,
+    fetch_pending_courses_metadata,
     fetch_exercise_calcs,
     fetch_clue_calcs,
 )

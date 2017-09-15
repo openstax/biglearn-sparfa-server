@@ -1,90 +1,150 @@
+import os
+
+from celery import group
+
 from sparfa_server import api, update_matrix_calculations, fetch_exercise_calcs
 from sparfa_server.api import update_exercise_calcs, fetch_clue_calcs, \
     update_clue_calcs
+from sparfa_server.db import update_ecosystem_matrix, get_all_ecosystem_uuids
 from sparfa_server.calcs import calc_ecosystem_matrices, calc_ecosystem_pe, \
     calc_ecosystem_clues
 from sparfa_server.celery import celery
 
+from sparfa_server.utils import try_log_all
 
-alg_name = 'biglearn-sparfa'
+alg_name = os.environ.get('BIGLEARN_ALGORITHM_NAME', 'biglearn-sparfa')
 
-# need to make this task shorter.
-# task_time_limit increased for now.
-# otherwise, celery force restarts the worker
-@celery.task(
-    task_time_limit=1200
-)
+
+@celery.task
+def run_ecosystem_matrix_calc(calc, alg_name):
+    result = calc_ecosystem_matrices(calc['ecosystem_uuid'])
+    update_ecosystem_matrix(result)
+    update_matrix_calculations(alg_name, calc['calculation_uuid'])
+
+
+@celery.task
 def run_matrix_calc_task():
-    calc_uuids = api.fetch_matrix_calculations(alg_name)
+    calcs = api.fetch_matrix_calculations(alg_name)
 
-    if calc_uuids:
-        for calc_uuid in calc_uuids:
-            calc_ecosystem_matrices(calc_uuid['ecosystem_uuid'])
-
-            update_matrix_calculations(alg_name, calc_uuid)
+    if calcs:
+        results = group(run_ecosystem_matrix_calc.s(calc, alg_name) for calc in calcs)
+        results.apply_async(queue='beat-one')
 
 
 @celery.task
-def run_pe_calc_task():
-    calc_uuids = fetch_exercise_calcs(alg_name)
+def run_ecosystem_matrix_calc_simple(ecosystem_uuid, alg_name):
+    result = calc_ecosystem_matrices(ecosystem_uuid)
+    update_ecosystem_matrix(result)
 
-    if calc_uuids:
-        for calc in calc_uuids:
-            ecosystem_uuid = calc['ecosystem_uuid']
-            calc_uuid = calc['calculation_uuid']
-            Q_ids = calc['exercise_uuids']
-            student_uuid = calc['student_uuid']
-
-            ordered_Q_infos = calc_ecosystem_pe(ecosystem_uuid=ecosystem_uuid,
-                                                student_uuid=student_uuid,
-                                                exercise_uuids=Q_ids)
-
-            if ordered_Q_infos:
-
-                exercise_uuids = [info.Q_id for info in ordered_Q_infos]
-
-                response = update_exercise_calcs(alg_name, calc_uuid,
-                                                 exercise_uuids)
-
-                if response['calculation_status'] == 'calculation_accepted':
-                    continue
-                else:
-                    raise Exception(
-                        'Calculation {0} for ecosystem {1} was not accepted'.format(
-                            calc_uuid, ecosystem_uuid))
 
 @celery.task
-def run_clue_calc_task():
+def run_matrix_all_ecosystems_task():
+    all_ecosystem_uuids = get_all_ecosystem_uuids()
+
+    results = group(run_ecosystem_matrix_calc_simple.s(ecosystem_uuid, alg_name) for ecosystem_uuid in all_ecosystem_uuids)
+    results.apply_async()
+
+
+@try_log_all
+def run_clue_calc(calc):
+    ecosystem_uuid = calc['ecosystem_uuid']
+    calc_uuid = calc['calculation_uuid']
+    responses = calc['responses']
+    student_uuids = calc['student_uuids']
+    exercise_uuids = calc['exercise_uuids']
+
+    clue_mean, clue_min, clue_max = calc_ecosystem_clues(
+        ecosystem_uuid=ecosystem_uuid,
+        student_uuids=student_uuids,
+        exercise_uuids=exercise_uuids,
+        responses=responses
+    )
+
+    if (clue_mean and clue_min and clue_max) is not None:
+
+        response = update_clue_calcs(
+            alg_name=alg_name,
+            calc_uuid=calc_uuid,
+            ecosystem_uuid=ecosystem_uuid,
+            clue_min=clue_min,
+            clue_max=clue_max,
+            clue_most_likely=clue_mean,
+            clue_is_real=True
+        )
+        if response['calculation_status'] == 'calculation_accepted':
+            return response
+        else:
+            raise Exception(
+                'Calculation {0} for ecosystem {1} was not accepted'.format(
+                    calc_uuid, ecosystem_uuid))
+
+
+@try_log_all
+def run_pe_calc(calc):
+    ecosystem_uuid = calc['ecosystem_uuid']
+    calc_uuid = calc['calculation_uuid']
+    Q_ids = calc['exercise_uuids']
+    student_uuid = calc['student_uuid']
+
+    exercise_uuids = calc_ecosystem_pe(ecosystem_uuid=ecosystem_uuid,
+                                       student_uuid=student_uuid,
+                                       exercise_uuids=Q_ids)
+
+    if exercise_uuids:
+
+        response = update_exercise_calcs(alg_name, calc_uuid,
+                                         exercise_uuids)
+
+        if response['calculation_status'] == 'calculation_accepted':
+            return response
+        else:
+            raise Exception(
+                'Calculation {0} for ecosystem {1} was not accepted'.format(
+                    calc_uuid, ecosystem_uuid))
+
+
+@celery.task
+def run_pe_calc_task(calc):
+    return run_pe_calc(calc)
+
+
+@celery.task
+def run_pe_calcs_task():
+    calcs = fetch_exercise_calcs(alg_name)
+
+    if calcs:
+        results = group(run_pe_calc_task.s(calc) for calc in calcs)
+        results.apply_async(queue='beat-two')
+
+
+@celery.task
+def run_pe_calcs_recurse_task():
+    calcs = fetch_exercise_calcs(alg_name)
+
+    if calcs:
+        results = (group(run_pe_calc_task.s(calc) for calc in calcs) | run_pe_calcs_recurse_task.si())
+        results.apply_async(queue='celery')
+
+
+@celery.task
+def run_clue_calc_task(calc):
+    return run_clue_calc(calc)
+
+
+@celery.task
+def run_clue_calcs_task():
     calcs = fetch_clue_calcs(alg_name=alg_name)
 
     if calcs:
-        for calc in calcs:
-            ecosystem_uuid = calc['ecosystem_uuid']
-            calc_uuid = calc['calculation_uuid']
-            responses = calc['responses']
-            student_uuids = calc['student_uuids']
-            exercise_uuids = calc['exercise_uuids']
+        results = group(run_clue_calc_task.s(calc) for calc in calcs)
+        results.apply_async(queue='beat-two')
 
-            clue_mean, clue_min, clue_max = calc_ecosystem_clues(
-                ecosystem_uuid=ecosystem_uuid,
-                student_uuids=student_uuids,
-                exercise_uuids=exercise_uuids,
-                responses=responses
-            )
 
-            response = update_clue_calcs(
-                alg_name=alg_name,
-                calc_uuid=calc_uuid,
-                ecosystem_uuid=ecosystem_uuid,
-                clue_min=clue_min,
-                clue_max=clue_max,
-                clue_most_likely=clue_mean,
-                clue_is_real=True
-            )
-            if response['calculation_status'] == 'calculation_accepted':
-                continue
-            else:
-                raise Exception(
-                    'Calculation {0} for ecosystem {1} was not accepted'.format(
-                        calc_uuid, ecosystem_uuid))
+@celery.task
+def run_clue_calcs_recurse_task():
+    calcs = fetch_clue_calcs(alg_name=alg_name)
+
+    if calcs:
+        results = (group(run_clue_calc_task.s(calc) for calc in calcs) | run_clue_calcs_recurse_task.si())
+        results.apply_async(queue='celery')
 

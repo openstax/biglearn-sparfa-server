@@ -1,12 +1,14 @@
 import click
 
 from sparfa_server.api import fetch_pending_ecosystems, fetch_course_uuids
-from sparfa_server.loaders import (load_ecosystem as import_ecosystem,
-                                   load_course as import_course,
-                                   run as run_loaders)
+from sparfa_server.loaders import (run as run_loaders)
 
-from sparfa_server.tasks.calcs import run_matrix_calc_task
-from sparfa_server.tasks.loaders import load_course_task
+from sparfa_server.tasks.loaders import (load_course_task,
+                                         load_ecosystem_task,
+                                         load_courses_task,
+                                         load_ecosystems_task,
+                                         load_courses_metadata_task,
+                                         load_courses_updates_task)
 
 from sparfa_server.utils import validate_uuid4
 
@@ -30,7 +32,7 @@ def load_ecosystem(ecosystem_uuid):
     error_msg = 'An invalid ecosystem UUID was provided.'
     __logs__.info('Loading ecosystem UUID {0}'.format(ecosystem_uuid))
     if validate_uuid4(ecosystem_uuid):
-        import_ecosystem(ecosystem_uuid)
+        load_ecosystem_task.delay(ecosystem_uuid)
     else:
         click.echo(error_msg)
 
@@ -47,40 +49,42 @@ def load_course(course_uuid, offset, step_size):
     """
     click.echo('Loading course UUID {0}'.format(course_uuid))
     if validate_uuid4(course_uuid):
-        import_course(course_uuid, cur_sequence_offset=offset, sequence_step_size=step_size)
+        load_course_task.delay(course_uuid, cur_sequence_offset=offset, sequence_step_size=step_size)
     else:
         click.echo('Please enter a valid UUID')
 
 
 @loaders.command()
 def load_ecosystems():
-    ecosystem_uuids = fetch_pending_ecosystems()
-
-    for eco_uuid in ecosystem_uuids:
-        import_ecosystem(eco_uuid)
-
+    load_ecosystems_task.delay()
     __logs__.info('Ecosystems have been loaded')
 
 
 @loaders.command()
 def load_courses():
-    api_course_uuids = fetch_course_uuids()
-    for course_uuid in api_course_uuids:
-        load_course_task.delay(course_uuid, cur_sequence_offset = 0)
+    load_courses_task.delay()
 
-    run_matrix_calc_task.delay()
-    __logs__.info('Initial courses and calculation tasks have been loaded')
+    __logs__.info('Initial courses have been loaded')
+
+
+@loaders.command()
+def load_courses_metadata():
+    load_courses_metadata_task.delay()
+
+    __logs__.info('Load metadata for all courses')
+
+
+@loaders.command()
+def load_courses_updates():
+    load_courses_updates_task.delay()
+
+    __logs__.info('Latest courses have been loaded')
 
 
 @loaders.command()
 def all():
-    ecosystem_uuids = fetch_pending_ecosystems()
-    api_course_uuids = fetch_course_uuids()
-
-    for eco_uuid in ecosystem_uuids:
-        import_ecosystem(eco_uuid)
-    for course_uuid in api_course_uuids:
-        load_course_task.delay(course_uuid, cur_sequence_offset = 0)
+    load_ecosystems_task.delay()
+    load_courses_task.delay()
 
     __logs__.info('Ecosystems and Courses have been loaded')
 

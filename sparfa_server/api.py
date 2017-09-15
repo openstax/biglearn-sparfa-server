@@ -2,9 +2,8 @@ import logging
 import os
 import uuid
 
-from .celery import celery
 from .client import BiglearnApi
-from .db import get_all_ecosystem_uuids
+from .db import get_all_ecosystem_uuids, get_all_course_uuids
 
 __logs__ = logging.getLogger(__name__)
 
@@ -17,13 +16,10 @@ except KeyError:
 blapi = BiglearnApi(api_token=api_token, sched_token=sched_token)
 
 
-def create_course_event_request(course_uuid,
-                                offset,
-                                max_events,
-                                request_uuid=None):
-    data = {
-        'course_event_requests': [],
-    }
+def create_course_event(course_uuid,
+                        offset,
+                        max_events,
+                        request_uuid=None):
 
     if not request_uuid:
         request_uuid = str(uuid.uuid4())
@@ -46,7 +42,20 @@ def create_course_event_request(course_uuid,
         'max_num_events': max_events
     }
 
-    data['course_event_requests'].append(event_request)
+    return event_request
+
+
+def create_course_event_request(course_uuid,
+                                offset,
+                                max_events,
+                                request_uuid=None):
+    data = {
+        'course_event_requests': [create_course_event(course_uuid,
+                                                      offset,
+                                                      max_events,
+                                                      request_uuid=request_uuid)],
+    }
+
     return data
 
 
@@ -71,7 +80,18 @@ def create_ecosystem_event_request(ecosystem_uuid, request_uuid=None):
     return data
 
 
+def create_courses_event_request(courses_data, max_events):
+
+    data = {
+        'course_event_requests':
+            [create_course_event(course['course_uuid'], course['sequence_offset'], max_events) for course in courses_data]
+    }
+
+    return data
+
+
 def fetch_course_uuids(course_uuids=None):
+    __logs__.info('Polling courses endpoint for new courses')
     course_metadatas = blapi.fetch_course_metadatas()
     if course_uuids:
         return [uuid['uuid'] for uuid in course_metadatas['course_responses'] if
@@ -80,12 +100,37 @@ def fetch_course_uuids(course_uuids=None):
     return [uuid['uuid'] for uuid in course_metadatas['course_responses']]
 
 
+def fetch_pending_courses_metadata(force=False):
+    __logs__.info('Polling courses endpoint for new courses')
+    api_course_metadatas = blapi.fetch_course_metadatas()
+
+    db_course_uuids = get_all_course_uuids()
+
+    import_course_uuids = list(
+        filter(lambda x: x['uuid'] not in db_course_uuids,
+               api_course_metadatas))
+
+    if force:
+        import_course_uuids = api_course_metadatas
+
+    return import_course_uuids
+
+
 def fetch_course_event_requests(course_uuid, offset=0, max_events=100):
     payload = create_course_event_request(course_uuid, offset, max_events)
 
     course_event_reqs = blapi.fetch_course_event_requests(payload)
 
     course_event_resps = course_event_reqs['course_event_responses'][0]
+    return course_event_resps
+
+
+def fetch_pending_course_events_requests(current_course_events_data, max_events=100):
+    payload = create_courses_event_request(current_course_events_data, max_events)
+
+    course_event_reqs = blapi.fetch_course_event_requests(payload)
+
+    course_event_resps = course_event_reqs['course_event_responses']
     return course_event_resps
 
 
@@ -137,7 +182,7 @@ def update_matrix_calculations(algorithm_name, calc_uuid):
     response = blapi.update_matrix_calcs(payload)
     return response
 
-@celery.task
+
 def fetch_pending_ecosystems(force=False):
     __logs__.info('Polling ecosystem endpoint for new ecosystems')
     api_ecosystem_uuids = fetch_ecosystem_uuids()
