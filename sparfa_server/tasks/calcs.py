@@ -28,7 +28,7 @@ def run_matrix_calcs_task():
 
     if calcs:
         results = group(run_ecosystem_matrix_calc.si(calc, alg_name) for calc in calcs)
-        results.apply_async(queue='beat-one')
+        results.apply_async(queue='calculate-matrices')
 
 
 @celery.task
@@ -114,7 +114,7 @@ def run_pe_calcs_task():
 
     if calcs:
         results = group(run_pe_calc_task.si(calc) for calc in calcs)
-        results.apply_async(queue='beat-two')
+        results.apply_async(queue='calculate-exercises')
 
 
 # Results needed for queueing up next collection of calculations only when
@@ -139,7 +139,7 @@ def run_clue_calcs_task():
 
     if calcs:
         results = group(run_clue_calc_task.si(calc) for calc in calcs)
-        results.apply_async(queue='beat-two')
+        results.apply_async(queue='calculate-clues')
 
 
 # Results needed for queueing up next collection of calculations only when

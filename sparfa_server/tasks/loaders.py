@@ -55,7 +55,7 @@ def load_ecosystems_task():
 
     if ecosystem_uuids:
         results = group(load_ecosystem_task.si(ecosystem_uuid) for ecosystem_uuid in ecosystem_uuids)
-        return results.apply_async(queue='beat-one')
+        return results.apply_async(queue='load-ecosystems')
 
 
 @celery.task
@@ -66,7 +66,7 @@ def load_courses_events_task(course_events_requests):
         next_course_events_requests = load_courses(course_events_requests)
 
         if len(next_course_events_requests):
-            load_courses_events_task.apply_async((next_course_events_requests,), queue='beat-one')
+            load_courses_events_task.apply_async((next_course_events_requests,), queue='load-courses')
 
 
 @celery.task
@@ -77,7 +77,7 @@ def load_courses_updates_task():
                         for course_index in range(0, len(current_courses), chunked_courses_size)]
 
     results = group(load_courses_events_task.si(course_events_requests) for course_events_requests in chunked_courses)
-    return results.apply_async(queue='beat-one')
+    return results.apply_async(queue='load-courses')
 
 
 @celery.task
@@ -86,7 +86,7 @@ def load_courses_metadata_task():
 
     if len(pending_courses_metadata):
         results = group(load_course_metadata_task.si(course_metadata) for course_metadata in pending_courses_metadata)
-        return results.apply_async(queue='beat-one')
+        return results.apply_async(queue='load-courses')
 
 
 @celery.task
