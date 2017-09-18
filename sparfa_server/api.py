@@ -102,18 +102,18 @@ def fetch_course_uuids(course_uuids=None):
 
 def fetch_pending_courses_metadata(force=False):
     __logs__.info('Polling courses endpoint for new courses')
-    api_course_metadatas = blapi.fetch_course_metadatas()
+    course_metadatas = blapi.fetch_course_metadatas()
 
     db_course_uuids = get_all_course_uuids()
 
-    import_course_uuids = list(
+    import_course_metadatas = list(
         filter(lambda x: x['uuid'] not in db_course_uuids,
-               api_course_metadatas))
+               course_metadatas['course_responses']))
 
     if force:
-        import_course_uuids = api_course_metadatas
+        import_course_metadatas = course_metadatas
 
-    return import_course_uuids
+    return import_course_metadatas
 
 
 def fetch_course_event_requests(course_uuid, offset=0, max_events=100):
