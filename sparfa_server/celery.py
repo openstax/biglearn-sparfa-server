@@ -36,17 +36,17 @@ celery.conf.update(
             'options': {'queue' : 'beat-one'}
         },
         'run_matrix_calc': {
-            'task': 'sparfa_server.tasks.calcs.run_matrix_calc_task',
+            'task': 'sparfa_server.tasks.calcs.run_matrix_calcs_task',
             'schedule': timedelta(seconds=2),
             'options': {'queue' : 'beat-one'}
         },
         'run_pe_calc': {
-            'task': 'sparfa_server.tasks.calcs.run_pe_calc_task',
+            'task': 'sparfa_server.tasks.calcs.run_pe_calcs_task',
             'schedule': timedelta(seconds=2),
             'options': {'queue' : 'beat-two'}
         },
         'run_clue_calc': {
-            'task': 'sparfa_server.tasks.calcs.run_clue_calc_task',
+            'task': 'sparfa_server.tasks.calcs.run_clue_calcs_task',
             'schedule': timedelta(seconds=2),
             'options': {'queue' : 'beat-two'}
         }

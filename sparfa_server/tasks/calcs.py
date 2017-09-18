@@ -23,11 +23,11 @@ def run_ecosystem_matrix_calc(calc, alg_name):
 
 
 @celery.task
-def run_matrix_calc_task():
+def run_matrix_calcs_task():
     calcs = api.fetch_matrix_calculations(alg_name)
 
     if calcs:
-        results = group(run_ecosystem_matrix_calc.s(calc, alg_name) for calc in calcs)
+        results = group(run_ecosystem_matrix_calc.si(calc, alg_name) for calc in calcs)
         results.apply_async(queue='beat-one')
 
 
@@ -41,7 +41,7 @@ def run_ecosystem_matrix_calc_simple(ecosystem_uuid, alg_name):
 def run_matrix_all_ecosystems_task():
     all_ecosystem_uuids = get_all_ecosystem_uuids()
 
-    results = group(run_ecosystem_matrix_calc_simple.s(ecosystem_uuid, alg_name) for ecosystem_uuid in all_ecosystem_uuids)
+    results = group(run_ecosystem_matrix_calc_simple.si(ecosystem_uuid, alg_name) for ecosystem_uuid in all_ecosystem_uuids)
     results.apply_async()
 
 
@@ -113,7 +113,7 @@ def run_pe_calcs_task():
     calcs = fetch_exercise_calcs(alg_name)
 
     if calcs:
-        results = group(run_pe_calc_task.s(calc) for calc in calcs)
+        results = group(run_pe_calc_task.si(calc) for calc in calcs)
         results.apply_async(queue='beat-two')
 
 
@@ -122,7 +122,7 @@ def run_pe_calcs_recurse_task():
     calcs = fetch_exercise_calcs(alg_name)
 
     if calcs:
-        results = (group(run_pe_calc_task.s(calc) for calc in calcs) | run_pe_calcs_recurse_task.si())
+        results = (group(run_pe_calc_task.si(calc) for calc in calcs) | run_pe_calcs_recurse_task.si())
         results.apply_async(queue='celery')
 
 
@@ -136,7 +136,7 @@ def run_clue_calcs_task():
     calcs = fetch_clue_calcs(alg_name=alg_name)
 
     if calcs:
-        results = group(run_clue_calc_task.s(calc) for calc in calcs)
+        results = group(run_clue_calc_task.si(calc) for calc in calcs)
         results.apply_async(queue='beat-two')
 
 
@@ -145,6 +145,6 @@ def run_clue_calcs_recurse_task():
     calcs = fetch_clue_calcs(alg_name=alg_name)
 
     if calcs:
-        results = (group(run_clue_calc_task.s(calc) for calc in calcs) | run_clue_calcs_recurse_task.si())
+        results = (group(run_clue_calc_task.si(calc) for calc in calcs) | run_clue_calcs_recurse_task.si())
         results.apply_async(queue='celery')
 
