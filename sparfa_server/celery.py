@@ -63,12 +63,21 @@ celery.conf.update(
         Queue('celery',
               routing_key='celery',
               exchange=Exchange('celery', type='direct', durable=True)),
-        Queue('beat-one',
-              routing_key='beat-one',
-              exchange=Exchange('beat-one', type='direct', durable=True)),
-        Queue('beat-two',
-              routing_key='beat-two',
-              exchange=Exchange('beat-two', type='direct', durable=True))
+        Queue('load-courses',
+              routing_key='load-courses',
+              exchange=Exchange('load-courses', type='direct', durable=True)),
+        Queue('load-ecosystems',
+              routing_key='load-ecosystems',
+              exchange=Exchange('load-ecosystems', type='direct', durable=True)),
+        Queue('calculate-clues',
+              routing_key='calculate-clues',
+              exchange=Exchange('calculate-clues', type='direct', durable=True)),
+        Queue('calculate-exercises',
+              routing_key='calculate-exercises',
+              exchange=Exchange('calculate-exercises', type='direct', durable=True)),
+        Queue('calculate-matrices',
+              routing_key='calculate-matrices',
+              exchange=Exchange('calculate-matrices', type='direct', durable=True))
     ],
     worker_prefetch_multiplier=0
 )
