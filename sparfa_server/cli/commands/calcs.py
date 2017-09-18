@@ -1,7 +1,7 @@
 import click
 
 from celery import group
-from sparfa_server.tasks.calcs import (run_matrix_calc_task,
+from sparfa_server.tasks.calcs import (run_matrix_calcs_task,
                                        run_pe_calcs_task,
                                        run_clue_calcs_task,
                                        run_matrix_all_ecosystems_task,
@@ -24,7 +24,7 @@ def calc_ecosystem_matrix():
     """
     Calculate all ecosystem matrices
     """
-    run_matrix_calc_task.delay()
+    run_matrix_calcs_task.delay()
     __logs__.info('Initial ecosystem calculations running')
 
 
