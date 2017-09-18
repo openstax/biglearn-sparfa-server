@@ -12,6 +12,7 @@ from celery.signals import (
 from sparfa_server.executer import Executer
 from sparfa_server.models import (
     ecosystems,
+    courses,
     course_events,
     ecosystem_exercises,
     containers,
