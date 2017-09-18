@@ -117,7 +117,9 @@ def run_pe_calcs_task():
         results.apply_async(queue='beat-two')
 
 
-@celery.task
+# Results needed for queueing up next collection of calculations only when
+# current set have completed calculation
+@celery.task(ignore_result=False)
 def run_pe_calcs_recurse_task():
     calcs = fetch_exercise_calcs(alg_name)
 
@@ -140,7 +142,9 @@ def run_clue_calcs_task():
         results.apply_async(queue='beat-two')
 
 
-@celery.task
+# Results needed for queueing up next collection of calculations only when
+# current set have completed calculation
+@celery.task(ignore_result=False)
 def run_clue_calcs_recurse_task():
     calcs = fetch_clue_calcs(alg_name=alg_name)
 

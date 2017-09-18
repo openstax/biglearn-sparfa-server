@@ -17,47 +17,49 @@ def make_celery_url():
     )
 
 celery.conf.update(
-    BROKER_URL=make_celery_url(),
-    CELERY_RESULT_BACKEND='db+' + make_database_url(),
-    CELERYBEAT_SCHEDULE={
+    broker_url=make_celery_url(),
+    task_ignore_result=True,
+    result_backend='db+' + make_database_url(),
+    result_compression='gzip',
+    beat_schedule={
         'load_ecosystems': {
             'task': 'sparfa_server.tasks.loaders.load_ecosystems_task',
             'schedule': timedelta(seconds=2),
-            'options': {'queue' : 'beat-one'}
+            'options': {'queue' : 'load-ecosystems'}
         },
         'load_courses_metadata': {
             'task': 'sparfa_server.tasks.loaders.load_courses_metadata_task',
             'schedule': timedelta(seconds=2),
-            'options': {'queue' : 'beat-one'}
+            'options': {'queue' : 'load-courses'}
         },
         'load_courses_updates': {
             'task': 'sparfa_server.tasks.loaders.load_courses_updates_task',
-            'schedule': timedelta(seconds=2),
-            'options': {'queue' : 'beat-one'}
+            'schedule': timedelta(seconds=30),
+            'options': {'queue' : 'load-courses'}
         },
         'run_matrix_calc': {
             'task': 'sparfa_server.tasks.calcs.run_matrix_calc_task',
             'schedule': timedelta(seconds=2),
-            'options': {'queue' : 'beat-one'}
+            'options': {'queue' : 'calculate-matrices'}
         },
         'run_pe_calc': {
             'task': 'sparfa_server.tasks.calcs.run_pe_calc_task',
             'schedule': timedelta(seconds=2),
-            'options': {'queue' : 'beat-two'}
+            'options': {'queue' : 'calculate-exercises'}
         },
         'run_clue_calc': {
             'task': 'sparfa_server.tasks.calcs.run_clue_calc_task',
             'schedule': timedelta(seconds=2),
-            'options': {'queue' : 'beat-two'}
+            'options': {'queue' : 'calculate-clues'}
         }
     },
-    CELERY_ACCEPT_CONTENT=['json'],
-    CELERY_TASK_SERIALIZER='json',
-    CELERY_IMPORTS=(
+    accept_content=['json'],
+    task_serializer='json',
+    imports=(
         'sparfa_server.tasks.loaders',
         'sparfa_server.tasks.calcs'
     ),
-    CELERY_QUEUES=[
+    task_queues=[
         Queue('celery',
               routing_key='celery',
               exchange=Exchange('celery', type='direct', durable=True)),
@@ -68,7 +70,7 @@ celery.conf.update(
               routing_key='beat-two',
               exchange=Exchange('beat-two', type='direct', durable=True))
     ],
-    CELERYD_PREFETCH_MULTIPLIER=1
+    worker_prefetch_multiplier=0
 )
 
 
