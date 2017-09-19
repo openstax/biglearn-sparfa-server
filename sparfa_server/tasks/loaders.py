@@ -11,9 +11,7 @@ from sparfa_server.db import (
     max_sequence_offset,
     select_all_course_next_sequence_offsets)
 from sparfa_server.loaders import (
-    load_exercises,
-    load_ecosystem_exercises,
-    load_containers,
+    load_ecosystem,
     load_course,
     load_course_data,
     load_courses)
@@ -26,14 +24,7 @@ __logs__ = getLogger(__package__)
 
 @celery.task
 def load_ecosystem_task(ecosystem_uuid):
-    contents_data, exercises_data = fetch_ecosystem_event_requests(ecosystem_uuid)
-
-    upsert_into_do_nothing(ecosystems, dict(uuid=ecosystem_uuid))
-
-    res = chain(
-        load_exercises.si(ecosystem_uuid, exercises_data),
-        load_ecosystem_exercises.si(ecosystem_uuid, exercises_data),
-        load_containers.si(ecosystem_uuid, contents_data))()
+    return load_ecosystem(ecosystem_uuid)
 
 
 @celery.task

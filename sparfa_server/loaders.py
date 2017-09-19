@@ -8,7 +8,7 @@ from .api import (
     fetch_pending_ecosystems,
     fetch_course_uuids,
     fetch_pending_course_events_requests)
-from .celery import celery
+
 from .models import (
     ecosystems,
     exercises,
@@ -60,7 +60,6 @@ def event_handler(course_uuid, event):
     return
 
 
-@celery.task
 def load_containers(ecosystem_uuid, contents_data):
     container_uuids = [c['container_uuid'] for c in contents_data]
     parent_uuids = [c['container_parent_uuid'] for c in
@@ -98,7 +97,6 @@ def load_containers(ecosystem_uuid, contents_data):
     return
 
 
-@celery.task
 def load_ecosystem_exercises(ecosystem_uuid, exercises_data):
     eco_exercise_values = []
     for ex in exercises_data:
@@ -113,7 +111,6 @@ def load_ecosystem_exercises(ecosystem_uuid, exercises_data):
     return
 
 
-@celery.task
 def load_exercises(ecosystem_uuid, exercises_data):
     __logs__.info(
         'Importing {} exercises for ecosystem {}'.format(len(exercises_data),
