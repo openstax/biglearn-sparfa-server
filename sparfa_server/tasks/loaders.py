@@ -52,8 +52,8 @@ def load_ecosystems_task():
 @celery.task
 def load_courses_events_task(course_events_requests):
     if len(course_events_requests):
-        __logs__.info('Loading course events')
-        __logs__.info(course_events_requests)
+        __logs__.debug('Loading course events')
+        __logs__.debug(course_events_requests)
         next_course_events_requests = load_courses(course_events_requests)
 
         if len(next_course_events_requests):
@@ -63,7 +63,7 @@ def load_courses_events_task(course_events_requests):
 @celery.task
 def load_courses_updates_task():
     current_courses = select_all_course_next_sequence_offsets()
-    chunked_courses_size = 1000
+    chunked_courses_size = 50
     chunked_courses = [current_courses[course_index : (course_index + chunked_courses_size)]
                         for course_index in range(0, len(current_courses), chunked_courses_size)]
 
