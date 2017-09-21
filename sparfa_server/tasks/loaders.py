@@ -63,7 +63,7 @@ def load_courses_events_task(course_events_requests):
 @celery.task
 def load_courses_updates_task():
     current_courses = select_all_course_next_sequence_offsets()
-    chunked_courses_size = 50
+    chunked_courses_size = 500
     chunked_courses = [current_courses[course_index : (course_index + chunked_courses_size)]
                         for course_index in range(0, len(current_courses), chunked_courses_size)]
 

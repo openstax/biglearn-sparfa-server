@@ -147,26 +147,14 @@ def load_ecosystem(ecosystem_uuid):
 
 
 def handle_course(cur_event_data, sequence_step_size = 1, previous_sequence_offset = 0):
-    cur_events = cur_event_data['events']
-    sequence_offset = cur_events[0]['sequence_number'] if len(cur_events) > 0 else previous_sequence_offset
-    course_uuid = cur_event_data['course_uuid']
-    is_end = cur_event_data['is_end']
-    is_gap = cur_event_data['is_gap']
 
-    __logs__.debug('Fetching course events for {} '
-        'with {} offset '
-        '{} number of events returned '
-        'where is_end = {} and is_gap = {}'.format(
-        course_uuid, sequence_offset, len(cur_events), is_end, is_gap
-    ))
+    for event in cur_event_data['events']:
+        event_handler(cur_event_data['course_uuid'], event)
 
-    for event in cur_events:
-        event_handler(course_uuid, event)
-
-    if is_end or is_gap:
+    if cur_event_data['is_end'] or cur_event_data['is_gap']:
         return None
 
-    cur_sequence_offset = get_next_offset(cur_events, previous_sequence_offset, sequence_step_size)
+    cur_sequence_offset = get_next_offset(cur_event_data['events'], previous_sequence_offset, sequence_step_size)
 
     return cur_sequence_offset
 
@@ -181,7 +169,8 @@ def load_course(course_uuid, cur_sequence_offset = None, sequence_step_size = 1)
                                                      cur_sequence_offset)
 
         cur_sequence_offset = handle_course(cur_event_data,
-                                            sequence_step_size=sequence_step_size)
+                                            sequence_step_size = sequence_step_size,
+                                            previous_sequence_offset = cur_sequence_offset)
 
         if cur_sequence_offset is None:
             break
