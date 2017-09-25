@@ -32,7 +32,7 @@ def load_sparse_matrix(text):
     sparse_json = json.loads(text)
     sparse_matrix = coo_matrix((sparse_json.get('data'),
                                 (sparse_json.get('row'), sparse_json.get('col'))
-                                ), shape = sparse_json.get('shape'))
+                                ), shape=sparse_json.get('shape'))
 
     return sparse_matrix.toarray()
 
@@ -65,7 +65,7 @@ def validate_uuid4(uuid_string):
     return val.hex == uuid_string.replace('-', '')
 
 
-def get_next_offset(current_events = [], previous_sequence_offset = 0, step_size = 1, sequence_number_key = 'sequence_number'):
+def get_next_offset(current_events=[], previous_sequence_offset=0, step_size=1, sequence_number_key='sequence_number'):
     next_offset = previous_sequence_offset
 
     if len(current_events) is not 0:

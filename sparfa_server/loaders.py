@@ -146,7 +146,7 @@ def load_ecosystem(ecosystem_uuid):
     return dict(success=True, msg='ecosystem_loaded_sucessfully')
 
 
-def handle_course(cur_event_data, sequence_step_size = 1, previous_sequence_offset = 0):
+def handle_course(cur_event_data, sequence_step_size=1, previous_sequence_offset=0):
 
     for event in cur_event_data['events']:
         event_handler(cur_event_data['course_uuid'], event)
@@ -159,7 +159,7 @@ def handle_course(cur_event_data, sequence_step_size = 1, previous_sequence_offs
     return cur_sequence_offset
 
 
-def load_course(course_uuid, cur_sequence_offset = None, sequence_step_size = 1):
+def load_course(course_uuid, cur_sequence_offset=None, sequence_step_size=1):
 
     if cur_sequence_offset is None:
         cur_sequence_offset = max_sequence_offset(course_uuid)
@@ -169,8 +169,8 @@ def load_course(course_uuid, cur_sequence_offset = None, sequence_step_size = 1)
                                                      cur_sequence_offset)
 
         cur_sequence_offset = handle_course(cur_event_data,
-                                            sequence_step_size = sequence_step_size,
-                                            previous_sequence_offset = cur_sequence_offset)
+                                            sequence_step_size=sequence_step_size,
+                                            previous_sequence_offset=cur_sequence_offset)
 
         if cur_sequence_offset is None:
             break
