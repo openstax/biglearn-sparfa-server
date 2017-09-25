@@ -34,7 +34,7 @@ celery.conf.update(
         },
         'load_courses_updates': {
             'task': 'sparfa_server.tasks.loaders.load_courses_updates_task',
-            'schedule': timedelta(seconds=30),
+            'schedule': timedelta(seconds=3),
             'options': {'queue' : 'load-courses'}
         },
         'run_matrix_calc': {

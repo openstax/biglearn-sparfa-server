@@ -8,7 +8,7 @@ from .api import (
     fetch_pending_ecosystems,
     fetch_course_uuids,
     fetch_pending_course_events_requests)
-from .celery import celery
+
 from .models import (
     ecosystems,
     exercises,
@@ -20,6 +20,8 @@ from .models import (
     courses)
 from .db import max_sequence_offset, upsert_into_do_nothing
 from .utils import delay, get_next_offset
+
+import sparfa_server.state as sparfa_state
 
 __logs__ = logging.getLogger(__name__)
 
@@ -60,7 +62,6 @@ def event_handler(course_uuid, event):
     return
 
 
-@celery.task
 def load_containers(ecosystem_uuid, contents_data):
     container_uuids = [c['container_uuid'] for c in contents_data]
     parent_uuids = [c['container_parent_uuid'] for c in
@@ -98,7 +99,6 @@ def load_containers(ecosystem_uuid, contents_data):
     return
 
 
-@celery.task
 def load_ecosystem_exercises(ecosystem_uuid, exercises_data):
     eco_exercise_values = []
     for ex in exercises_data:
@@ -113,7 +113,6 @@ def load_ecosystem_exercises(ecosystem_uuid, exercises_data):
     return
 
 
-@celery.task
 def load_exercises(ecosystem_uuid, exercises_data):
     __logs__.info(
         'Importing {} exercises for ecosystem {}'.format(len(exercises_data),
@@ -147,32 +146,20 @@ def load_ecosystem(ecosystem_uuid):
     return dict(success=True, msg='ecosystem_loaded_sucessfully')
 
 
-def handle_course(cur_event_data, sequence_step_size=1):
-    cur_events = cur_event_data['events']
-    sequence_offset = cur_events[0]['sequence_number'] if len(cur_events) > 0 else 0
-    course_uuid = cur_event_data['course_uuid']
-    is_end = cur_event_data['is_end']
-    is_gap = cur_event_data['is_gap']
+def handle_course(cur_event_data, sequence_step_size=1, previous_sequence_offset=0):
 
-    __logs__.debug('Fetchings course events for {} '
-        'with {} offset '
-        '{} number of events returned '
-        'where is_end = {} and is_gap = {}'.format(
-        course_uuid, sequence_offset, len(cur_events), is_end, is_gap
-    ))
+    for event in cur_event_data['events']:
+        event_handler(cur_event_data['course_uuid'], event)
 
-    for event in cur_events:
-        event_handler(course_uuid, event)
-
-    if is_end or is_gap:
+    if cur_event_data['is_end'] or cur_event_data['is_gap']:
         return None
 
-    cur_sequence_offset = get_next_offset(sequence_offset, cur_events, sequence_step_size)
+    cur_sequence_offset = get_next_offset(cur_event_data['events'], previous_sequence_offset, sequence_step_size)
 
     return cur_sequence_offset
 
 
-def load_course(course_uuid, cur_sequence_offset = None, sequence_step_size=1):
+def load_course(course_uuid, cur_sequence_offset=None, sequence_step_size=1):
 
     if cur_sequence_offset is None:
         cur_sequence_offset = max_sequence_offset(course_uuid)
@@ -182,7 +169,8 @@ def load_course(course_uuid, cur_sequence_offset = None, sequence_step_size=1):
                                                      cur_sequence_offset)
 
         cur_sequence_offset = handle_course(cur_event_data,
-                                            sequence_step_size=sequence_step_size)
+                                            sequence_step_size=sequence_step_size,
+                                            previous_sequence_offset=cur_sequence_offset)
 
         if cur_sequence_offset is None:
             break
@@ -191,9 +179,18 @@ def load_course(course_uuid, cur_sequence_offset = None, sequence_step_size=1):
 
 
 def load_courses(course_event_requests):
+
+    course_sequence_offsets = dict([[course_event['course_uuid'], course_event['sequence_offset']]
+        for course_event in course_event_requests])
+
+    sparfa_state.set('course_sequence_offsets', **course_sequence_offsets)
+
     course_events = fetch_pending_course_events_requests(course_event_requests)
 
-    next_sequence_offsets = [handle_course(course_event) for course_event in course_events]
+    next_sequence_offsets = [
+        handle_course(
+            course_event, previous_sequence_offset=sparfa_state.get('course_sequence_offsets')[course_event['course_uuid']]
+        ) for course_event in course_events]
 
     next_course_event_requests = [{
             'course_uuid': course_events[course_index]['course_uuid'],
