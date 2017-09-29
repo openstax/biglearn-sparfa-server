@@ -53,7 +53,7 @@ def run_clue_calc(calc):
     student_uuids = calc['student_uuids']
     exercise_uuids = calc['exercise_uuids']
 
-    clue_mean, clue_min, clue_max = calc_ecosystem_clues(
+    clue_mean, clue_min, clue_max, clue_is_real = calc_ecosystem_clues(
         ecosystem_uuid=ecosystem_uuid,
         student_uuids=student_uuids,
         exercise_uuids=exercise_uuids,
@@ -69,7 +69,7 @@ def run_clue_calc(calc):
             clue_min=clue_min,
             clue_max=clue_max,
             clue_most_likely=clue_mean,
-            clue_is_real=True
+            clue_is_real=clue_is_real
         )
         if response['calculation_status'] == 'calculation_accepted':
             return response
@@ -151,4 +151,3 @@ def run_clue_calcs_recurse_task():
     if calcs:
         results = (group(run_clue_calc_task.si(calc) for calc in calcs) | run_clue_calcs_recurse_task.si())
         results.apply_async(queue='celery')
-

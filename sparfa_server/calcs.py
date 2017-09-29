@@ -156,7 +156,7 @@ def calc_ecosystem_clues(ecosystem_uuid,
                          exercise_uuids,
                          responses):
 
-    clue_mean, clue_min, clue_max = None, None, None
+    clue_mean, clue_min, clue_max, clue_is_real = None, None, None, None
 
     m = select_ecosystem_matrices(ecosystem_uuid)
 
@@ -223,8 +223,10 @@ def calc_ecosystem_clues(ecosystem_uuid,
                                           )
 
         valid_exercise_uuids = [uuid for uuid in exercise_uuids if uuid in Q_idx_by_id]
-        clue_mean, clue_min, clue_max = algs.calc_clue_interval(confidence=.5,
-                                                                target_L_ids=student_uuids,
-                                                                target_Q_ids=valid_exercise_uuids)
+        clue_mean, clue_min, clue_max, clue_is_real = algs.calc_clue_interval(
+            confidence=.5,
+            target_L_ids=student_uuids,
+            target_Q_ids=valid_exercise_uuids
+        )
 
-    return clue_mean, clue_min, clue_max
+    return clue_mean, clue_min, clue_max, clue_is_real
