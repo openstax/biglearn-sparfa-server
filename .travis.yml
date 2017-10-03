@@ -22,12 +22,8 @@ cache:
 
 # command to install dependencies
 
-install:
-  - pip install --process-dependency-links .[dev]
-  - pip install codecov
-
 script:
-  - python setup.py test
+  - ./script/test
 
 after_success:
   - codecov

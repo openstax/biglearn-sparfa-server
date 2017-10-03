@@ -1,0 +1,16 @@
+#!/bin/bash
+set -e
+
+cd "$(dirname "$0")/.."
+
+# Start up the virtualenv if not running in travis-ci
+
+[[ "${VIRTUAL_ENV}" ]] || source .venv/bin/activate
+
+echo "==> Installing test packages and code coverage"
+pip install --process-dependency-links .[dev]
+pip install codecov
+
+
+echo "==> Running Tests"
+python setup.py test
