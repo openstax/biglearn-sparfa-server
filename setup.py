@@ -48,6 +48,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "alembic==0.9.2",
+        "boto==2.48.0",
         "celery==4.1.0",
         "click==6.7",
         "configobj==5.0.6",
