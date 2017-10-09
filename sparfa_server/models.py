@@ -65,6 +65,9 @@ courses = sa.Table('courses', metadata,
                              unique=True),
                    sa.Column('ecosystem_uuid',
                              UUID,
+                             nullable=False),
+                   sa.Column('next_sequence_number',
+                             sa.Integer,
                              nullable=False)
                    )
 
