@@ -12,7 +12,7 @@ class DevExceptionEmail(object):
     AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', '')
     EXCEPTION_SENDER = os.getenv('EXCEPTION_EMAIL_SENDER', 'sender@localhost')
     EXCEPTION_RECIPIENTS = os.getenv('EXCEPTION_EMAIL_RECIPIENTS', 'recipients@localhost')
-    EXCEPTION_SUBJECT = "[Biglearn-SPARFA-Server] A {} exception occurred in Celery task with ID {}"
+    EXCEPTION_SUBJECT = "[Biglearn-SPARFA-Server] A {} occurred in Celery task with ID {}"
     EXCEPTION_TEXT = dedent("""
       A {} occurred in Celery task with ID {} at {:%Y-%m-%d %H:%M:%S %Z}
 
@@ -26,18 +26,18 @@ class DevExceptionEmail(object):
     """).strip()
 
     def __init__(self, exc, task_id, args, kwargs, einfo):
-        self.sender = EXCEPTION_SENDER
-        self.recipients = EXCEPTION_RECIPIENTS
-        self.subject = EXCEPTION_SUBJECT.format(exc.__class__.__name__, task_id)
-        self.text = EXCEPTION_TEXT.format(
+        self.sender = self.EXCEPTION_SENDER
+        self.recipients = self.EXCEPTION_RECIPIENTS
+        self.subject = self.EXCEPTION_SUBJECT.format(exc.__class__.__name__, task_id)
+        self.text = self.EXCEPTION_TEXT.format(
           exc.__class__.__name__, task_id, datetime.now(), exc, einfo.traceback, args, kwargs
         )
 
     def send(self):
-        connection = boto.ses.connect_to_region(
-            AWS_REGION,
-            aws_access_key_id=AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+        connection = ses.connect_to_region(
+            self.AWS_REGION,
+            aws_access_key_id=self.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=self.AWS_SECRET_ACCESS_KEY
         )
 
         return connection.send_email(
