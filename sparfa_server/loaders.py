@@ -18,7 +18,12 @@ from .models import (
     responses,
     course_events,
     courses)
-from .db import max_sequence_offset, upsert_into_do_nothing
+
+from .db import (
+    max_sequence_offset,
+    upsert_into_do_nothing,
+    update_courses_next_sequence_numbers)
+
 from .utils import delay, get_next_offset
 
 import sparfa_server.state as sparfa_state
@@ -151,12 +156,13 @@ def handle_course(cur_event_data, sequence_step_size=1, previous_sequence_offset
     for event in cur_event_data['events']:
         event_handler(cur_event_data['course_uuid'], event)
 
-    if cur_event_data['is_end'] or cur_event_data['is_gap']:
-        return None
-
     cur_sequence_offset = get_next_offset(cur_event_data['events'], previous_sequence_offset, sequence_step_size)
 
     return cur_sequence_offset
+
+
+def is_course_events_end(course_event_data):
+    return course_event_data['is_end'] or course_event_data['is_gap']
 
 
 def load_course(course_uuid, cur_sequence_offset=None, sequence_step_size=1):
@@ -172,9 +178,13 @@ def load_course(course_uuid, cur_sequence_offset=None, sequence_step_size=1):
                                             sequence_step_size=sequence_step_size,
                                             previous_sequence_offset=cur_sequence_offset)
 
-        if cur_sequence_offset is None:
-            break
+        update_courses_next_sequence_numbers([{
+            'course_uuid': course_uuid,
+            'sequence_offset': cur_sequence_offset
+        }])
 
+        if is_course_events_end(cur_event_data):
+            break
     return
 
 
@@ -187,15 +197,19 @@ def load_courses(course_event_requests):
 
     course_events = fetch_pending_course_events_requests(course_event_requests)
 
-    next_sequence_offsets = [
-        handle_course(
-            course_event, previous_sequence_offset=sparfa_state.get('course_sequence_offsets')[course_event['course_uuid']]
-        ) for course_event in course_events]
+    all_next_course_event_requests = [{
+            'course_uuid': course_event['course_uuid'],
+            'sequence_offset': handle_course(
+                course_event,
+                previous_sequence_offset=sparfa_state.get('course_sequence_offsets')[course_event['course_uuid']]
+            )
+        } for course_event in course_events]
 
-    next_course_event_requests = [{
-            'course_uuid': course_events[course_index]['course_uuid'],
-            'sequence_offset': offset
-        }  for course_index, offset in enumerate(next_sequence_offsets) if offset is not None]
+    update_courses_next_sequence_numbers(all_next_course_event_requests)
+
+    next_course_event_requests = [next_course_event_request
+        for course_index, next_course_event_request in enumerate(all_next_course_event_requests)
+        if not is_course_events_end(course_events[course_index])]
 
     return next_course_event_requests
 
