@@ -152,9 +152,18 @@ def get_all_course_uuids():
     return select([courses.c.uuid])
 
 
-@executer(fetch_all=True)
 def select_all_course_next_sequence_offsets():
-    return select([courses.c.uuid.label('course_uuid'), courses.c.next_sequence_number.label('sequence_offset')])
+    with executer as connection:
+        stmt = select([courses.c.uuid, courses.c.next_sequence_number])
+        dbresult = connection.execute(stmt)
+        rows = dbresult.fetchall()
+
+        results = [{
+            'course_uuid':      str(row['uuid']),
+            'sequence_offset':  row['next_sequence_number']
+        } for row in rows]
+
+    return results
 
 
 @executer
