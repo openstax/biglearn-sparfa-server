@@ -68,7 +68,8 @@ courses = sa.Table('courses', metadata,
                              nullable=False),
                    sa.Column('next_sequence_number',
                              sa.Integer,
-                             nullable=False)
+                             nullable=False,
+                             server_default=0)
                    )
 
 course_events = sa.Table('course_events', metadata,
