@@ -70,7 +70,7 @@ def get_next_offset(current_events=[], previous_sequence_offset=0, step_size=1, 
 
     if len(current_events) is not 0:
         new_max_sequence_offset = max([current_event[sequence_number_key] for current_event in current_events])
-        if new_max_sequence_offset > previous_sequence_offset:
+        if new_max_sequence_offset >= previous_sequence_offset:
             next_offset = new_max_sequence_offset + 1
 
     return next_offset
