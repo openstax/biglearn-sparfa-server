@@ -3,7 +3,7 @@ services:
   db:
     image: postgres:9.6
     ports:
-    - '127.0.0.1:5432:5432'
+      - '127.0.0.1:5445:5432'
   rabbit:
     image: rabbitmq:3.6-management-alpine
     ports:
