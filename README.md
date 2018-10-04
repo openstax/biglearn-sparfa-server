@@ -88,9 +88,9 @@ Docker and Docker Compose. This should work on any OS that docker can be install
 
     `make initdb`
 
-## SPARFa Server
+## SPARFA Server
 
-The SPARFa server runs the celery worker and the beat process to start all periodic tasks.
+The SPARFA server runs the celery worker and the beat process to start all periodic tasks.
 The tasks are the loader tasks and the calculations.
 Make sure you have the database and RabbitMQ services running.
 
