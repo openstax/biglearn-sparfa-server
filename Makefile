@@ -1,7 +1,7 @@
 .PHONY: clean clean-test clean-pyc clean-build docs help
 .DEFAULT_GOAL := help
 
-DB := bl_sparfa_server
+DB_FILE := bl_sparfa_server
 
 clean: clean-build clean-pyc clean-test
 
@@ -29,16 +29,27 @@ test: ## run tests quickly with the default Python
 docs: ## generate Sphinx HTML documentation
 
 initdb:
-	psql -h 127.0.0.1 -p 5432 -d postgres -U postgres -c "DROP DATABASE IF EXISTS bl_sparfa_server"
-	psql -h 127.0.0.1 -p 5432 -d postgres -U postgres -c "CREATE DATABASE bl_sparfa_server ENCODING 'UTF8'"
-	xz -d -k dev/$(DB).sql.xz
-	psql -h 127.0.0.1 -p 5432 -d $(DB) -U postgres -v ON_ERROR_STOP=1 -1 -f dev/$(DB).sql
-	rm dev/$(DB).sql
+	. .env && \
+	psql -h $${DB_HOST} -p $${DB_PORT} -d postgres -U postgres \
+	-c "DROP USER IF EXISTS $${DB_USER}" && \
+	psql -h $${DB_HOST} -p $${DB_PORT} -d postgres -U postgres \
+	-c "CREATE USER $${DB_USER} WITH SUPERUSER PASSWORD '$${DB_PASSWORD}'" && \
+	psql -h $${DB_HOST} -p $${DB_PORT} -d postgres -U $${DB_USER} \
+	-c "DROP DATABASE IF EXISTS $${DB_NAME}" && \
+	psql -h $${DB_HOST} -p $${DB_PORT} -d postgres -U postgres \
+	-c "CREATE DATABASE $${DB_NAME} ENCODING 'UTF8'" && \
+	xz -d -k dev/$(DB_FILE).sql.xz && \
+	psql -h $${DB_HOST} -p $${DB_PORT} -d $${DB_NAME} -U $${DB_USER} -v ON_ERROR_STOP=1 -1 \
+	-f dev/$(DB_FILE).sql && \
 	alembic upgrade head
+	rm dev/$(DB_FILE).sql
 
 venv:
 	python3 -m venv .venv && \
 		source .venv/bin/activate && \
+		cd ../biglearn-sparfa-algs && \
+		pip install -e . && \
+		cd - && \
 		pip install -e .
 
 help:
@@ -49,4 +60,3 @@ help:
 	@echo "clean-test		Remove test artifacts"
 	@echo "test				Run tests quickly with default python"
 	@echo "initdb			Initialize the database and run migrations"
-
