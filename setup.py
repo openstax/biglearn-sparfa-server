@@ -25,11 +25,9 @@ def make_sparfa_algs_dependency_link():
 
     if environment == 'travis' or environment == "production":
         github_token = os.environ['GITHUB_TOKEN']
-        github_user = os.environ['GITHUB_USER']
-        dlink = ('git+https://{0}:x-oauth-basic@github.com/{1}/'
+        dlink = ('git+https://{0}:x-oauth-basic@github.com/openstax/'
                  'biglearn-sparfa-algs.git/'
-                 '@master#egg=sparfa-algs-0.0.1'.format(github_token,
-                                                        github_user))
+                 '@master#egg=sparfa-algs-0.0.1'.format(github_token))
         return dlink
     else:
         dlink = ('git+https://github.com/openstax/biglearn-sparfa-algs.git/'
