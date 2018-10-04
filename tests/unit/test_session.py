@@ -24,13 +24,13 @@ class TestClientSession:
     def test_build_url(self):
         s = self.build_session()
         url = s.build_url('api', 'fetch_ecosystem_metadatas')
-        assert url == 'https://biglearn-dev.openstax.org/fetch_ecosystem_metadatas'
+        assert url == 'https://biglearn-api-dev.openstax.org/fetch_ecosystem_metadatas'
 
     def test_build_url_caches_built_urls(self):
         """Test that building a URL caches it"""
         s = self.build_session()
         url = s.build_url('api', 'fetch_ecosystem_metadatas')
-        url_parts = ('https://biglearn-dev.openstax.org', 'fetch_ecosystem_metadatas')
+        url_parts = ('https://biglearn-api-dev.openstax.org', 'fetch_ecosystem_metadatas')
         assert url_parts in session.__url_cache__
         assert url in session.__url_cache__.values()
 
@@ -43,4 +43,4 @@ class TestClientSession:
     def test_build_url_defaults_to_api(self):
         s = self.build_session()
         url = s.build_url()
-        assert url == 'https://biglearn-dev.openstax.org'
+        assert url == 'https://biglearn-api-dev.openstax.org'

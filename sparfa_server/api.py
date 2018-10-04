@@ -7,11 +7,8 @@ from .db import get_all_ecosystem_uuids, get_all_course_uuids
 
 __logs__ = logging.getLogger(__name__)
 
-try:
-    api_token = os.environ['BIGLEARN_API_TOKEN']
-    sched_token = os.environ['BIGLEARN_SCHED_TOKEN']
-except KeyError:
-    raise Exception('Have you set env vars for biglearn tokens?')
+api_token = os.environ['BIGLEARN_API_TOKEN']
+sched_token = os.environ['BIGLEARN_SCHED_TOKEN']
 
 blapi = BiglearnApi(api_token=api_token, sched_token=sched_token)
 

@@ -1,12 +1,11 @@
 language: python
-python:
-  - "3.7"
+python: 3.7
 
 dist: xenial
 sudo: required
 
 addons:
-  postgresql: "9.6"
+  postgresql: 9.6
   apt:
     sources:
       - ubuntu-toolchain-r-test

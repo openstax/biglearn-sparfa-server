@@ -8,21 +8,21 @@ from sparfa_server.api import update_exercise_calcs, fetch_clue_calcs, \
 from sparfa_server.db import update_ecosystem_matrix, get_all_ecosystem_uuids
 from sparfa_server.calcs import calc_ecosystem_matrices, calc_ecosystem_pe, \
     calc_ecosystem_clues
-from sparfa_server.celery import celery
+from sparfa_server.celery import celery, task
 
 from sparfa_server.utils import try_log_all
 
 alg_name = os.environ.get('BIGLEARN_ALGORITHM_NAME', 'biglearn-sparfa')
 
 
-@celery.task
+@task
 def run_ecosystem_matrix_calc(calc, alg_name):
     result = calc_ecosystem_matrices(calc['ecosystem_uuid'])
     update_ecosystem_matrix(result)
     update_matrix_calculations(alg_name, calc['calculation_uuid'])
 
 
-@celery.task
+@task
 def run_matrix_calcs_task():
     calcs = api.fetch_matrix_calculations(alg_name)
 
@@ -31,13 +31,13 @@ def run_matrix_calcs_task():
         results.apply_async(queue='calculate-matrices')
 
 
-@celery.task
+@task
 def run_ecosystem_matrix_calc_simple(ecosystem_uuid, alg_name):
     result = calc_ecosystem_matrices(ecosystem_uuid)
     update_ecosystem_matrix(result)
 
 
-@celery.task
+@task
 def run_matrix_all_ecosystems_task():
     all_ecosystem_uuids = get_all_ecosystem_uuids()
 
@@ -103,12 +103,12 @@ def run_pe_calc(calc):
                     calc_uuid, ecosystem_uuid))
 
 
-@celery.task
+@task
 def run_pe_calc_task(calc):
     return run_pe_calc(calc)
 
 
-@celery.task
+@task
 def run_pe_calcs_task():
     calcs = fetch_exercise_calcs(alg_name)
 
@@ -119,7 +119,7 @@ def run_pe_calcs_task():
 
 # Results needed for queueing up next collection of calculations only when
 # current set have completed calculation
-@celery.task(ignore_result=False)
+@task(ignore_result=False)
 def run_pe_calcs_recurse_task():
     calcs = fetch_exercise_calcs(alg_name)
 
@@ -128,12 +128,12 @@ def run_pe_calcs_recurse_task():
         results.apply_async(queue='celery')
 
 
-@celery.task
+@task
 def run_clue_calc_task(calc):
     return run_clue_calc(calc)
 
 
-@celery.task
+@task
 def run_clue_calcs_task():
     calcs = fetch_clue_calcs(alg_name=alg_name)
 
@@ -144,7 +144,7 @@ def run_clue_calcs_task():
 
 # Results needed for queueing up next collection of calculations only when
 # current set have completed calculation
-@celery.task(ignore_result=False)
+@task(ignore_result=False)
 def run_clue_calcs_recurse_task():
     calcs = fetch_clue_calcs(alg_name=alg_name)
 

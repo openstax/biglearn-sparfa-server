@@ -10,8 +10,8 @@ def chunkify(lst, size):
 
 
 ## NOTE: These names might change in the near future.
-bl_api_base = 'https://biglearn-dev.openstax.org'
-bl_scheduler_base = 'https://biglearnworker-dev.openstax.org'
+bl_api_base = 'https://biglearn-api-dev.openstax.org'
+bl_scheduler_base = 'https://biglearn-scheduler-dev.openstax.org'
 
 
 def fetch_ecosystem_metadata():

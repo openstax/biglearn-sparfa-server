@@ -24,7 +24,7 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr htmlcov/
 
 test: ## run tests quickly with the default Python
-	python setup.py test
+	. .env && python3 setup.py test
 
 docs: ## generate Sphinx HTML documentation
 

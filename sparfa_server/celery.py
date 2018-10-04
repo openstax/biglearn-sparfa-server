@@ -2,6 +2,7 @@ import os
 from datetime import timedelta
 
 from celery import Celery
+from celery_once import QueueOnce
 from kombu import Queue, Exchange
 
 from sparfa_server.utils import make_database_url
@@ -79,8 +80,20 @@ celery.conf.update(
               routing_key='calculate-matrices',
               exchange=Exchange('calculate-matrices', type='direct', durable=True))
     ],
-    worker_prefetch_multiplier=0
+    ONCE={
+        'backend': 'celery_once.backends.Redis',
+        'settings': {
+            'url': 'redis://localhost:6379/0',
+            'default_timeout': 60 * 60 # Should be longer than the longest-running task
+        }
+    }
 )
+
+
+def task(*args, **kwargs):
+    defaults = {'base': QueueOnce, 'once': {'graceful': True}}
+    defaults.update(kwargs)
+    return celery.task(*args, **defaults)
 
 
 def start(argv):

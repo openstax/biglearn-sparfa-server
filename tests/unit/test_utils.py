@@ -6,7 +6,7 @@ def test_make_database_url_defaults():
 
     db_url = make_database_url()
 
-    assert db_url == 'postgresql+psycopg2://postgres:@127.0.0.1:5432/bl_sparfa_server'
+    assert db_url == 'postgresql+psycopg2://bl_sparfa_server:bl_sparfa_server@localhost:5445/bl_sparfa_server'
 
 
 def test_make_database_url_with_env_vars():
@@ -21,4 +21,3 @@ def test_make_database_url_with_env_vars():
     db_url = make_database_url()
 
     assert db_url == 'postgresql+psycopg2://leonardo:cowabungadude@ninjaturtlefood.org:5433/dominoes'
-

@@ -24,8 +24,9 @@ class BiglearnSession(requests.Session):
         })
 
         self.base_urls = dict(
-            api=os.environ.get('BIGLEARN_API_URL', 'https://biglearn-dev.openstax.org'),
-            scheduler=os.environ.get('BIGLEARN_SCHED_URL', 'https://biglearnworker-dev.openstax.org')
+            api=os.environ.get('BIGLEARN_API_URL', 'https://biglearn-api-dev.openstax.org'),
+            scheduler=os.environ.get('BIGLEARN_SCHED_URL',
+                                     'https://biglearn-scheduler-dev.openstax.org')
         )
 
     def token_auth(self, api_token, sched_token):
