@@ -2,8 +2,8 @@ language: python
 python:
   - "3.7"
 
-dist: trusty
-sudo: false
+dist: xenial
+sudo: required
 
 addons:
   postgresql: "9.6"
