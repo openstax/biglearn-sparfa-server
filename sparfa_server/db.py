@@ -152,30 +152,35 @@ def get_all_course_uuids():
     return select([courses.c.uuid])
 
 
-# TODO may convert this to sqlalchemy query as opposed to raw query
 def select_all_course_next_sequence_offsets():
-    select_statement = ('SELECT '
-                          'courses.uuid AS course_uuid, '
-                          '(coalesce((max(course_events.sequence_number)), -1) + 1) AS next_sequence_offset '
-                        'FROM '
-                          'courses '
-                        'LEFT JOIN '
-                          'course_events '
-                        'ON '
-                          'course_events.course_uuid = courses.uuid '
-                        'GROUP BY '
-                          'courses.uuid')
-
-    with executer as conn:
-        dbresult = conn.execute(select_statement)
+    with executer as connection:
+        stmt = select([courses.c.uuid, courses.c.next_sequence_number])
+        dbresult = connection.execute(stmt)
         rows = dbresult.fetchall()
 
         results = [{
-            'course_uuid':      str(row['course_uuid']),
-            'sequence_offset':  row['next_sequence_offset']
+            'course_uuid':      str(row['uuid']),
+            'sequence_offset':  row['next_sequence_number']
         } for row in rows]
 
     return results
+
+
+@executer
+def update_courses_next_sequence_numbers(next_course_event_requests):
+    update_values = [
+        ("('{course_uuid}'::uuid, {sequence_offset})").format(**next_course_event_request)
+        for next_course_event_request in next_course_event_requests
+    ]
+
+    update_query_values = ', '.join(update_values)
+
+    return ('UPDATE courses SET '
+                'next_sequence_number = updates.next_sequence_number '
+            'FROM (VALUES '
+                '{update_query_values}'
+            ') AS updates(uuid, next_sequence_number) '
+            'WHERE updates.uuid = courses.uuid').format(update_query_values=update_query_values)
 
 
 @executer(fetch_all=True)

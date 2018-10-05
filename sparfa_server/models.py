@@ -65,7 +65,11 @@ courses = sa.Table('courses', metadata,
                              unique=True),
                    sa.Column('ecosystem_uuid',
                              UUID,
-                             nullable=False)
+                             nullable=False),
+                   sa.Column('next_sequence_number',
+                             sa.Integer,
+                             nullable=False,
+                             server_default='0')
                    )
 
 course_events = sa.Table('course_events', metadata,
