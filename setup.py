@@ -46,7 +46,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "alembic==0.9.2",
-        "celery==4.1.0",
+        "celery==4.2.1",
         "click==6.7",
         "configobj==5.0.6",
         "dateparser==0.6.0",
