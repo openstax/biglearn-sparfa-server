@@ -1,99 +1,130 @@
-import logging
-import os
-import uuid
+from logging import getLogger
+from uuid import uuid4
+from json import dumps
+from requests import Session
 
-from .client import BiglearnApi
-from .db import get_all_ecosystem_uuids, get_all_course_uuids
+from . import __version__
+from exceptions import check_status_code
 
-__logs__ = logging.getLogger(__name__)
+__logs__ = getLogger(__name__)
 
-api_token = os.environ['BIGLEARN_API_TOKEN']
-sched_token = os.environ['BIGLEARN_SCHED_TOKEN']
+class BiglearnClient(object):
+    """The base object for all objects that require a session.
 
-blapi = BiglearnApi(api_token=api_token, sched_token=sched_token)
+    The :class:`BiglearnClient <BiglearnClient>` object provides some useful
+    attributes and methods to Biglearn client classes.
+    """
 
+    def __init__(self, base_url, session=None):
+        if session is None:
+            session = Session()
+        elif hasattr(session, 'session'):
+            session = session.session()
 
-def create_partial_course_event_request(course_uuid,
-                                        offset,
-                                        request_uuid=None):
+        session.headers.update({
+            # Always send and receive JSON
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        })
 
-    if not request_uuid:
-        request_uuid = str(uuid.uuid4())
+        self._base_url = '/'.join([str(base_url), 'api'])
+        self.session = session
 
-    event_request = {
-        'request_uuid': request_uuid,
-        'event_types': [
-            'create_course',
-            'prepare_course_ecosystem',
-            'update_course_ecosystem',
-            'update_roster',
-            'update_course_active_dates',
-            'update_globally_excluded_exercises',
-            'update_course_excluded_exercises',
-            'create_update_assignment',
-            'record_response'
-        ],
-        'course_uuid': course_uuid,
-        'sequence_number_offset': offset,
-    }
+    def _url_for(self, api_endpoint):
+        """Builds an API url based on the base_url setting and the given endpoint"""
+        return '/'.join([self._base_url, str(api_endpoint)])
 
-    return event_request
+    def _request(self, method, api_endpoint, data_dict=None, **kwargs):
+        """Sends a request to another Biglearn server"""
+        url = self._url_for(api_endpoint)
+        data = None if data_dict is None else dumps(data_dict)
 
+        __logs__.debug('%s %s with %s, %s', method, url, data, kwargs)
+        request_method = getattr(self.session, method)
+        response = request_method(url, data, **kwargs)
 
-def create_course_event_request(course_uuid,
-                                offset,
-                                max_events=1000,
-                                request_uuid=None):
+        check_status_code(response)
 
-    data = {
-        'course_event_requests':
-            [create_partial_course_event_request(course_uuid, offset, request_uuid)],
-        'max_num_events': max_events,
-    }
+        return response.json()
 
-    return data
+    def post(self, api_endpoint, data_dict=None, **kwargs):
+        """Sends a post request to another Biglearn server"""
+        return self._request('post', api_endpoint, data_dict=data_dict, **kwargs)
 
 
-def create_course_event_requests(courses_data, max_events=1000):
+class BiglearnApi(BiglearnClient):
+    """Communicates with the biglearn-api server."""
 
-    data = {
-        'course_event_requests':
-            [create_partial_course_event_request(course['course_uuid'], course['sequence_offset']) for course in courses_data],
-        'max_num_events': max_events,
-    }
+    def __init__(self, token, session=None):
+        super().__init__(base_url=BIGLEARN_API_URL, session=session)
 
-    return data
+        self.session.headers.update({
+            'Biglearn-Api-Token': token,
+            'User-Agent': 'Biglearn-API Python API client {0}'.format(__version__),
+        })
+
+    def fetch_ecosystem_metadatas(self):
+        return self.post('fetch_ecosystem_metadatas')
+
+    def fetch_ecosystem_events(self, ecosystem_event_requests, max_num_events=1000):
+        return self.post('fetch_ecosystem_events', {
+            'ecosystem_event_requests': ecosystem_event_requests,
+            'max_num_events': max_num_events
+        })
+
+    def fetch_course_metadatas(self):
+        return self.post('fetch_course_metadatas')
+
+    def fetch_course_events(self, course_event_requests, max_num_events=1000):
+        return self.post('fetch_course_events', {
+            'course_event_requests': course_event_requests,
+            'max_num_events': max_num_events
+        })
 
 
-def create_partial_ecosystem_event_request(ecosystem_uuid,
-                                           offset,
-                                           request_uuid=None):
+class BiglearnScheduler(BiglearnClient):
+    """Communicates with the biglearn-scheduler server."""
 
-    if not request_uuid:
-        request_uuid = str(uuid.uuid4())
+    def __init__(self, token, session=None):
+        super().__init__(base_url=BIGLEARN_SCHED_URL, session=session)
 
-    event_request = {
-        'request_uuid': request_uuid,
-        'event_types': ['create_ecosystem'],
-        'ecosystem_uuid': ecosystem_uuid,
-        'sequence_number_offset': offset,
-    }
+        self.session.headers.update({
+            'Biglearn-Scheduler-Token': token,
+            'User-Agent': 'Biglearn-Scheduler Python API client {0}'.format(__version__),
+        })
 
-    return event_request
+    def fetch_ecosystem_matrix_updates(self, request):
+        url = self._build_url('scheduler', 'fetch_ecosystem_matrix_updates')
+        json = self._json(self.fetch(url, data=request), 200)
+        return self.post('fetch_ecosystem_matrix_updates')
 
+    def update_matrix_calcs(self, request):
+        url = self._build_url('scheduler', 'ecosystem_matrices_updated')
+        json = self._json(self.fetch(url, data=request), 200)
+        return json
 
-def create_ecosystem_event_request(ecosystem_uuid,
-                                   offset,
-                                   max_events=1000,
-                                   request_uuid=None):
+    def fetch_exercise_calcs(self, request):
+        url = self._build_url('scheduler', 'fetch_exercise_calculations')
+        json = self._json(self.fetch(url, data=request), 200)
+        return json
 
-    data = {
-        'ecosystem_event_requests':
-            [create_partial_ecosystem_event_request(ecosystem_uuid, offset, request_uuid)],
-        'max_num_events': max_events,
-    }
+    def update_exercise_calcs(self, request):
+        url = self._build_url('scheduler', 'update_exercise_calculations')
+        json = self._json(self.fetch(url, data=request), 200)
+        return json
 
-    return data
+    def fetch_clue_calcs(self, request):
+        url = self._build_url('scheduler', 'fetch_clue_calculations')
+        json = self._json(self.fetch(url, data=request), 200)
+        return json
+
+    def update_clue_calcs(self, request):
+        url = self._build_url('scheduler', 'update_clue_calculations')
+        json = self._json(self.fetch(url, data=request), 200)
+        return json
+
+blapi = BiglearnApi(BIGLEARN_API_TOKEN)
+blsched = BiglearnScheduler(BIGLEARN_SCHED_TOKEN)
 
 
 def fetch_course_uuids(course_uuids=None):
@@ -110,7 +141,7 @@ def fetch_pending_courses_metadata(force=False):
     __logs__.info('Polling courses endpoint for new courses')
     course_metadatas = blapi.fetch_course_metadatas()
 
-    db_course_uuids = get_all_course_uuids()
+    db_course_uuids = session.query(Course.uuid).all()
 
     import_course_metadatas = list(
         filter(lambda x: x['uuid'] not in db_course_uuids,
@@ -193,7 +224,7 @@ def fetch_pending_ecosystems(force=False):
     __logs__.info('Polling ecosystem endpoint for new ecosystems')
     api_ecosystem_uuids = fetch_ecosystem_uuids()
 
-    db_ecosystem_uuids = get_all_ecosystem_uuids()
+    db_ecosystem_uuids = session.query(Ecosystem.uuid).all()
 
     import_ecosystem_uuids = list(
         filter(lambda x: x not in db_ecosystem_uuids,

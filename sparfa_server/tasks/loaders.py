@@ -6,17 +6,13 @@ from sparfa_server import (
     fetch_course_uuids,
     fetch_ecosystem_event_requests,
     fetch_course_event_requests)
-from sparfa_server.db import (
-    upsert_into_do_nothing,
-    max_sequence_offset,
-    select_all_course_next_sequence_offsets)
 from sparfa_server.loaders import (
     load_ecosystem,
     load_course,
     load_course_data,
     load_courses)
 from sparfa_server.models import ecosystems
-from sparfa_server.celery import celery, task
+from sparfa_server.celery import task
 
 from logging import getLogger
 
@@ -62,7 +58,7 @@ def load_courses_events_task(course_events_requests):
 
 @task
 def load_courses_updates_task():
-    current_courses = select_all_course_next_sequence_offsets()
+    current_courses = session.query(Course.uuid, Course.sequence_number).all()
     chunked_courses_size = 500
     chunked_courses = [current_courses[course_index : (course_index + chunked_courses_size)]
                         for course_index in range(0, len(current_courses), chunked_courses_size)]

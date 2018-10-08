@@ -1,21 +1,21 @@
-import os
+from os import environ
+from sys import exit
 
-import click
-import sys
+from click import group, option
 
 
-@click.group()
+@group()
 def server():
     """Manage Server commands"""
 
 
 @server.command()
-@click.option('--worker/--no-worker',
-              default=True,
-              help="Whether or not to run the celery worker process")
-@click.option('--beat/--no-beat',
-              default=True,
-              help="Whether or not to run the celery beat process")
+@option('--worker/--no-worker',
+        default=True,
+        help="Whether or not to run the celery worker process")
+@option('--beat/--no-beat',
+        default=True,
+        help="Whether or not to run the celery beat process")
 def server(worker, beat):
     """
     Run the development worker and scheduler
@@ -26,7 +26,7 @@ def server(worker, beat):
         raise click.ClickException(
             'cannot import honcho: did you run `pip install -e .` yet?')
 
-    os.environ['PYTHONUNBUFFERED'] = 'true'
+    environ['PYTHONUNBUFFERED'] = 'true'
 
     m = Manager()
 
@@ -38,4 +38,4 @@ def server(worker, beat):
 
     m.loop()
 
-    sys.exit(m.returncode)
+    exit(m.returncode)

@@ -1,39 +1,24 @@
-import os
-import re
-import sys
-
+from sys import version_info
 from setuptools import setup, find_packages
 
-if sys.version_info < (3, 5):
-    raise RuntimeError('Biglearn-sparfa-server requires Python 3.5+')
+from .__about__ import __version__
+from .config import PY_ENV, GITHUB_TOKEN
 
-__version__ = ''
-with open('sparfa_server/__about__.py', 'r') as fd:
-    reg = re.compile(r'__version__ = [\'"]([^\'"]*)[\'"]')
-    for line in fd:
-        m = reg.match(line)
-        if m:
-            __version__ = m.group(1)
-            break
+if version_info < (3, 5):
+    raise RuntimeError('Biglearn-sparfa-server requires Python 3.5+')
 
 if not __version__:
     raise RuntimeError('Cannot find version information')
 
-
-def make_sparfa_algs_dependency_link():
-    environment = os.environ.get('PY_ENV')
-
-    if environment == 'travis' or environment == "production":
-        github_token = os.environ['GITHUB_TOKEN']
-        dlink = ('git+https://{0}:x-oauth-basic@github.com/openstax/'
-                 'biglearn-sparfa-algs.git/'
-                 '@master#egg=sparfa-algs-0.0.1'.format(github_token))
-        return dlink
-    else:
-        dlink = ('git+https://github.com/openstax/biglearn-sparfa-algs.git/'
-                 '@master#egg=sparfa-algs-0.0.1')
-        return dlink
-
+if PY_ENV == 'travis' or PY_ENV == "production":
+    BIGLEARN_SPARFA_ALGS_DEPENDENCY_LINK = (
+        'git+https://{0}:x-oauth-basic@github.com/openstax/biglearn-sparfa-algs.git/'
+        '@master#egg=sparfa-algs-0.0.1'.format(GITHUB_TOKEN)
+    )
+else:
+    BIGLEARN_SPARFA_ALGS_DEPENDENCY_LINK = (
+        'git+https://github.com/openstax/biglearn-sparfa-algs.git/@master#egg=sparfa-algs-0.0.1'
+    )
 
 setup(
     name='biglearn-sparfa-server',
@@ -52,19 +37,20 @@ setup(
         "celery-once==2.0.0",
         "click==6.7",
         "configobj==5.0.6",
-        "dateparser==0.6.0",
+        "dateparser==0.7.0",
         "frozendict==1.2",
         "humanize==0.5.1",
         "kombu==4.2.1",
-        "Mako==1.0.6",
-        "MarkupSafe==1.0",
+        "mako==1.0.6",
+        "markupSafe==1.0",
         "numpy==1.15.2",
         "pgcli==1.6.0",
         "pgspecial==1.8.0",
         "prompt-toolkit==1.0.14",
         "psycopg2==2.7.1",
-        "Pygments==2.2.0",
+        "pygments==2.2.0",
         "python-dateutil==2.6.0",
+        "python-dotenv==0.9.1",
         "python-editor==1.0.3",
         "pytz==2017.2",
         "redis==2.10.6",
@@ -75,13 +61,13 @@ setup(
         "setproctitle==1.1.10",
         "six==1.10.0",
         "sparfa-algs==0.0.1",
-        "SQLAlchemy==1.1.9",
+        "sqlalchemy==1.2.12",
         "sqlparse==0.2.3",
         "tzlocal==1.4",
         "vine==1.1.4",
         "wcwidth==0.1.7",
     ],
-    dependency_links=[make_sparfa_algs_dependency_link()],
+    dependency_links=[BIGLEARN_SPARFA_ALGS_DEPENDENCY_LINK],
     extras_require={
         'dev': [
             'atomicwrites==1.2.1',
@@ -89,21 +75,24 @@ setup(
             'coverage==4.5.1',
             'furl==0.5.7',
             'jsonschema==2.5.1',
-            'mirakuru==1.0.0',
             'more-itertools==4.3.0',
             'orderedmultidict==1.0',
             'pluggy==0.7.1',
             'pook==0.2.3',
-            'port-for==0.4',
             'psutil==5.4.7',
             'py==1.6.0',
             'pytest==3.8.2',
             'pytest-cov==2.5.1',
-            'pytest-postgresql==1.3.4',
             'pytest-runner==2.11.1',
             'pytest-cov==2.5.1',
+            'pyyaml==3.13',
+            'multidict==4.4.2',
             'pook==0.2.3',
-            'xmltodict==0.10.2'
+            'vcrpy==2.0',
+            'vcrpy-unittest==0.1.7',
+            'wrapt==1.10.11',
+            'xmltodict==0.10.2',
+            'yarl==1.2.6'
         ]
     },
     tests_require=[

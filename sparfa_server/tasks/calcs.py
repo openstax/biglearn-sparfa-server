@@ -5,10 +5,10 @@ from celery import group
 from sparfa_server import api, update_matrix_calculations, fetch_exercise_calcs
 from sparfa_server.api import update_exercise_calcs, fetch_clue_calcs, \
     update_clue_calcs
-from sparfa_server.db import update_ecosystem_matrix, get_all_ecosystem_uuids
+from sparfa_server.db import update_ecosystem_matrix
 from sparfa_server.calcs import calc_ecosystem_matrices, calc_ecosystem_pe, \
     calc_ecosystem_clues
-from sparfa_server.celery import celery, task
+from sparfa_server.celery import task
 
 from sparfa_server.utils import try_log_all
 
@@ -39,7 +39,7 @@ def run_ecosystem_matrix_calc_simple(ecosystem_uuid, alg_name):
 
 @task
 def run_matrix_all_ecosystems_task():
-    all_ecosystem_uuids = get_all_ecosystem_uuids()
+    all_ecosystem_uuids = session.query(Ecosystem.uuid).all()
 
     results = group(run_ecosystem_matrix_calc_simple.si(ecosystem_uuid, alg_name) for ecosystem_uuid in all_ecosystem_uuids)
     results.apply_async()
@@ -117,17 +117,6 @@ def run_pe_calcs_task():
         results.apply_async(queue='calculate-exercises')
 
 
-# Results needed for queueing up next collection of calculations only when
-# current set have completed calculation
-@task(ignore_result=False)
-def run_pe_calcs_recurse_task():
-    calcs = fetch_exercise_calcs(alg_name)
-
-    if calcs:
-        results = (group(run_pe_calc_task.si(calc) for calc in calcs) | run_pe_calcs_recurse_task.si())
-        results.apply_async(queue='celery')
-
-
 @task
 def run_clue_calc_task(calc):
     return run_clue_calc(calc)
@@ -140,14 +129,3 @@ def run_clue_calcs_task():
     if calcs:
         results = group(run_clue_calc_task.si(calc) for calc in calcs)
         results.apply_async(queue='calculate-clues')
-
-
-# Results needed for queueing up next collection of calculations only when
-# current set have completed calculation
-@task(ignore_result=False)
-def run_clue_calcs_recurse_task():
-    calcs = fetch_clue_calcs(alg_name=alg_name)
-
-    if calcs:
-        results = (group(run_clue_calc_task.si(calc) for calc in calcs) | run_clue_calcs_recurse_task.si())
-        results.apply_async(queue='celery')

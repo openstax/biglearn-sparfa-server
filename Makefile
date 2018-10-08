@@ -1,50 +1,30 @@
-.PHONY: clean clean-test clean-pyc clean-build docs help
+.PHONY: clean clean-build clean-pyc clean-test initdb test venv help
 .DEFAULT_GOAL := help
 
 DB_FILE := bl_sparfa_server
 
 clean: clean-build clean-pyc clean-test
 
-clean-build: ## remove build artifacts
+clean-build:
+	rm -fr .eggs/
 	rm -fr build/
 	rm -fr dist/
-	rm -fr .eggs/
-	find . -name '*.egg-info' -exec rm -fr {} +
 	find . -name '*.egg' -exec rm -f {} +
+	find . -name '*.egg-info' -exec rm -fr {} +
 
-clean-pyc: ## remove Python file artifacts
+clean-pyc:
+	find . -name '__pycache__' -exec rm -fr {} +
+	find . -name '*~' -exec rm -f {} +
 	find . -name '*.pyc' -exec rm -f {} +
 	find . -name '*.pyo' -exec rm -f {} +
-	find . -name '*~' -exec rm -f {} +
-	find . -name '__pycache__' -exec rm -fr {} +
 
-clean-test: ## remove test and coverage artifacts
+clean-test:
+	rm -fr .cache/
 	rm -fr .tox/
-	rm -f .coverage
+	rm -f  cov.xml
 	rm -fr htmlcov/
 
-test: ## run tests quickly with the default Python
-	. .env && python3 setup.py test
-
-docs: ## generate Sphinx HTML documentation
-
-initdb:
-	. .env && \
-	psql -h $${DB_HOST} -p $${DB_PORT} -d postgres -U postgres \
-	-c "DROP USER IF EXISTS $${DB_USER}" && \
-	psql -h $${DB_HOST} -p $${DB_PORT} -d postgres -U postgres \
-	-c "CREATE USER $${DB_USER} WITH SUPERUSER PASSWORD '$${DB_PASSWORD}'" && \
-	psql -h $${DB_HOST} -p $${DB_PORT} -d postgres -U $${DB_USER} \
-	-c "DROP DATABASE IF EXISTS $${DB_NAME}" && \
-	psql -h $${DB_HOST} -p $${DB_PORT} -d postgres -U postgres \
-	-c "CREATE DATABASE $${DB_NAME} ENCODING 'UTF8'" && \
-	xz -d -k dev/$(DB_FILE).sql.xz && \
-	psql -h $${DB_HOST} -p $${DB_PORT} -d $${DB_NAME} -U $${DB_USER} -v ON_ERROR_STOP=1 -1 \
-	-f dev/$(DB_FILE).sql && \
-	alembic upgrade head
-	rm dev/$(DB_FILE).sql
-
-venv:
+.venv:
 	python3 -m venv .venv && \
 		source .venv/bin/activate && \
 		cd ../biglearn-sparfa-algs && \
@@ -52,11 +32,34 @@ venv:
 		cd - && \
 		pip install -e .
 
+initdb: .venv
+	. .env && \
+	psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
+	-c "DROP USER IF EXISTS $${PG_USER}" && \
+	psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
+	-c "CREATE USER $${PG_USER} WITH SUPERUSER PASSWORD '$${PG_PASSWORD}'" && \
+	psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U $${PG_USER} \
+	-c "DROP DATABASE IF EXISTS $${PG_DB}" && \
+	psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
+	-c "CREATE DATABASE $${PG_DB} ENCODING 'UTF8'" && \
+	xz -d -k dev/$(DB_FILE).sql.xz && \
+	psql -h $${PG_HOST} -p $${PG_PORT} -d $${PG_DB} -U $${PG_USER} -v ON_ERROR_STOP=1 -1 \
+	-f dev/$(DB_FILE).sql && \
+	alembic upgrade head
+	rm dev/$(DB_FILE).sql
+
+test: .venv
+	. .env && python3 setup.py test
+
+venv: .venv
+
 help:
-	@echo "The following targets are available"
-	@echo "clean			Remove build, test, and file artifacts"
-	@echo "clean-build 		Remove build artifacts"
-	@echo "clean-pyc		Remove file artifacts"
-	@echo "clean-test		Remove test artifacts"
-	@echo "test				Run tests quickly with default python"
-	@echo "initdb			Initialize the database and run migrations"
+	@echo "The following targets are available:"
+	@echo "clean       Remove build, file, and test artifacts"
+	@echo "clean-build Remove build artifacts"
+	@echo "clean-pyc   Remove file artifacts"
+	@echo "clean-test  Remove test artifacts"
+	@echo "initdb      Initialize the database and run migrations"
+	@echo "test        Run tests quickly with python3"
+	@echo "venv        Initialize the python3 virtualenv"
+	@echo "help        Print this list of targets"

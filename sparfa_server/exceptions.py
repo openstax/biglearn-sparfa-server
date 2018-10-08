@@ -1,5 +1,3 @@
-
-
 class BiglearnError(Exception):
     """The base exception class."""
 
@@ -30,13 +28,6 @@ class BiglearnError(Exception):
         return self.msg
 
 
-class ResponseError(BiglearnError):
-    """The base exception for errors stemming from Biglearn API or Scheduler
-    responses
-    """
-    pass
-
-
 class TransportError(BiglearnError):
     """Catch-all exception for errors coming from Requests."""
 
@@ -58,18 +49,28 @@ class ConnectionError(TransportError):
     msg_format = 'A connection-level exception occurred: {0}'
 
 
-class NotFoundError(ResponseError):
-    """Exception class for 406 responses"""
+class ResponseError(BiglearnError):
+    """The base exception for errors stemming from Biglearn API or Scheduler responses"""
     pass
 
 
 class ClientError(ResponseError):
-    """Catch-all for 400 responses that aren't specific errors."""
+    """Exception class for 4xx responses"""
     pass
 
 
-class BadRequest(ResponseError):
+class BadRequest(ClientError):
     """Exception class for 400 responses"""
+    pass
+
+
+class Forbidden(ClientError):
+    """Exception class for 403 responses"""
+    pass
+
+
+class NotFoundError(ClientError):
+    """Exception class for 404 responses"""
     pass
 
 
@@ -77,15 +78,33 @@ class ServerError(ResponseError):
     """Exception class for 5xx responses."""
     pass
 
+
+class BadGateway(ServerError):
+    """Exception class for 502 responses"""
+    pass
+
+
+class ServiceUnavailable(ServerError):
+    """Exception class for 503 responses"""
+    pass
+
+
+class GatewayTimeout(ServerError):
+    """Exception class for 504 responses"""
+    pass
+
 # TODO: Add in other HTTP exception classes ex. 403, 406, etc.
 error_classes = {
     400: BadRequest,
+    403: Forbidden,
     404: NotFoundError,
-
+    502: BadGateway,
+    503: ServiceUnavailable,
+    504: GatewayTimeout
 }
 
 
-def error_for(response):
+def response_error_for(response):
     """Returns the appropriate initialized exception class for a response"""
     klass = error_classes.get(response.status_code)
     if klass is None:
@@ -93,4 +112,4 @@ def error_for(response):
             klass = ClientError
         if 500 <= response.status_code < 600:
             klass = ServerError
-    return klass(response)
+    return None if klass is None else klass(response)

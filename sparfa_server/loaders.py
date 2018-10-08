@@ -1,235 +1,186 @@
-import logging
-
-from sqlalchemy.exc import StatementError
-
-from .api import (
-    fetch_ecosystem_event_requests,
-    fetch_course_event_requests,
-    fetch_pending_ecosystems,
-    fetch_course_uuids,
-    fetch_pending_course_events_requests)
-
-from .models import (
-    ecosystems,
-    exercises,
-    ecosystem_exercises,
-    container_exercises,
-    containers,
-    responses,
-    course_events,
-    courses)
-from .db import max_sequence_offset, upsert_into_do_nothing
-from .utils import delay, get_next_offset
-
-import sparfa_server.state as sparfa_state
-
-__logs__ = logging.getLogger(__name__)
+from .utils import log_exceptions
+from .api import blapi
+from .models import Ecosystem, PageExercise, Course, Response
 
 
-def load_course_data(event):
-    course_uuid = event['course_uuid']
-    ecosystem_uuid = event['ecosystem_uuid']
+@log_exceptions
+def load_ecosystem_metadata():
+    responses = blapi.fetch_ecosystem_metadata()
+    ecosystem_uuids = [response['ecosystem_uuid'] for response in responses]
 
-    course_values = dict(
-        uuid=course_uuid,
-        ecosystem_uuid=ecosystem_uuid
-    )
-
-    upsert_into_do_nothing(courses, course_values)
-    return
-
-
-def event_handler(course_uuid, event):
-    event_type = event['event_type']
-    __logs__.info(
-        'Event handler processing event type of {}'.format(event_type))
-
-    if event_type == 'create_course':
-        load_course_data(event['event_data'])
-    elif event_type == 'record_response':
-        load_response(event['event_data'])
-
-    course_event_values = dict(
-        uuid=event['event_uuid'],
-        sequence_number=event['sequence_number'],
-        event_type=event_type,
-        event_data=event['event_data'],
-        course_uuid=course_uuid
-    )
-
-    upsert_into_do_nothing(course_events, course_event_values)
-
-    return
-
-
-def load_containers(ecosystem_uuid, contents_data):
-    container_uuids = [c['container_uuid'] for c in contents_data]
-    parent_uuids = [c['container_parent_uuid'] for c in
-                    contents_data]
-    page_modules = set(container_uuids) - set(parent_uuids)
-
-    container_values = []
-    container_exercise_values = []
-    for c in contents_data:
-        container_uuid = c['container_uuid']
-        container = dict(
-            uuid=container_uuid,
-            container_parent_uuid=c['container_parent_uuid'],
-            container_cnx_identity=c['container_cnx_identity'],
-            ecosystem_uuid=ecosystem_uuid,
-            is_page_module=container_uuid in page_modules
+    with transaction as session:
+        existing_ecosystem_uuids = set(
+            session.query(Ecosystem.uuid).filter(Ecosystem.uuid.in_(ecosystem_uuids)).all()
         )
-        container_values.append(container)
 
-        pools = c['pools']
+        ecosystem_values = [{
+            'uuid': response['ecosystem_uuid'],
+            'sequence_number': 0
+        } for response in responses if response['ecosystem_uuid'] not in existing_ecosystem_uuids]
 
-        if pools:
-            for pool in pools:
-                if pool['exercise_uuids']:
-                    for ex_uuid in pool['exercise_uuids']:
-                        container_exercise = dict(
-                            ecosystem_uuid=ecosystem_uuid,
-                            container_uuid=container_uuid,
-                            exercise_uuid=ex_uuid
-                        )
-                        container_exercise_values.append(container_exercise)
-    upsert_into_do_nothing(container_exercises, container_exercise_values)
-    upsert_into_do_nothing(containers, container_values)
-
-    return
+        session.upsert(Ecosystem, ecosystem_values)
 
 
-def load_ecosystem_exercises(ecosystem_uuid, exercises_data):
-    eco_exercise_values = []
-    for ex in exercises_data:
-        eco_exercise = dict(
-            ecosystem_uuid=ecosystem_uuid,
-            exercise_uuid=ex['exercise_uuid']
+@log_exceptions
+def load_ecosystem_events(self, session, event_types=['create_ecosystem'], batch_size=1000):
+    ecosystems = []
+    with transaction as session:
+        # Group ecosystems in chunks of batch_size and send those requests at once
+        for ecosystem in session.query(Ecosystem).yield_per(batch_size):
+            ecosystems.append(ecosystem)
+            while len(ecosystems) >= batch_size:
+                ecosystems = self._load_grouped_ecosystem_events(session, ecosystems)
+        # Keep loading events until we completely exhaust all ecosystems
+        while ecosystems:
+            ecosystems = self._load_grouped_ecosystem_events(session, ecosystems)
+
+
+def _load_grouped_ecosystem_events(self, session, ecosystems):
+    ecosystems_by_req_uuid = [{uuid4(): ecosystem} for ecosystem in ecosystems]
+    event_requests = [{
+        'ecosystem_uuid': ecosystem.uuid,
+        'sequence_number_offset': ecosystem.sequence_number,
+        'event_types': ['create_ecosystem'],
+        'request_uuid': request_uuid
+    } for request_uuid, ecosystem in ecosystems_by_request_uuid.items()]
+
+    responses = blapi.fetch_ecosystem_events(event_requests)
+
+    ecosystems = []
+    ecosystem_values = []
+    page_exercise_values = []
+    for response in responses:
+        ecosystem = ecosystems_by_req_uuid[response['request_uuid']]
+
+        for event in response['events']:
+            event_type = event['event_type']
+            if event_type == 'create_ecosystem':
+                ecosystem_uuid = event['ecosystem_uuid']
+                contents = event['book']['contents']
+                parent_uuids = set([content['container_parent_uuid'] for content in contents])
+
+                for content in contents:
+                    container_uuid = content['container_uuid']
+                    if container_uuid in parent_uuids:
+                        # Ignore non-page containers (chapters, units)
+                        # We only care about pages here because we only use
+                        # the book_container_uuids as hints for the C matrix
+                        # There are no exercises directly associated with a chapter in Tutor
+                        # All exercises belong to a specific page, so they will all appear here
+                        continue
+
+                    exercise_uuids = set()
+                    for pool in content['pools']:
+                        for exercise_uuid in pool['exercise_uuids']:
+                            exercise_uuids.add(exercise_uuid)
+
+                    for exercise_uuid in exercise_uuids:
+                        page_exercise_values.append({
+                            'ecosystem_uuid': ecosystem_uuid,
+                            'page_uuid': container_uuid,
+                            'exercise_uuid': exercise_uuid
+                        })
+            else:
+                raise ServerError('received unexpected event type: {}'.format(event_type))
+
+            ecosystem.sequence_number = event['sequence_number'] + 1
+
+        if response['is_end'] or response['is_gap']:
+            ecosystem_values.append({
+                'uuid': ecosystem.uuid,
+                'sequence_number': ecosystem.sequence_number
+            })
+        else:
+            ecosystems.append(ecosystem)
+
+    if page_exercise_values:
+        session.upsert(PageExercise, page_exercise_values)
+    if ecosystem_values:
+        session.upsert(Ecosystem, ecosystem_values, conflict_update_columns=['sequence_number'])
+
+    return ecosystems
+
+
+@log_exceptions
+def load_course_metadata():
+    responses = blapi.fetch_course_metadata()
+    course_uuids = [response['course_uuid'] for response in responses]
+
+    with transaction as session:
+        existing_course_uuids = set(
+            session.query(Course.uuid).filter(Course.uuid.in_(course_uuids)).all()
         )
-        eco_exercise_values.append(eco_exercise)
 
-    upsert_into_do_nothing(ecosystem_exercises, eco_exercise_values)
+        course_values = [{
+            'uuid': response['course_uuid'],
+            'sequence_number': 0
+        } for response in responses if response['course_uuid'] not in existing_course_uuids]
 
-    return
-
-
-def load_exercises(ecosystem_uuid, exercises_data):
-    __logs__.info(
-        'Importing {} exercises for ecosystem {}'.format(len(exercises_data),
-                                                         ecosystem_uuid))
-    exercise_values = []
-    for ex in exercises_data:
-        exercise = dict(
-            uuid=ex['exercise_uuid'],
-            group_uuid=ex['group_uuid'],
-            los=ex['los'],
-            version=ex['version']
-        )
-        exercise_values.append(exercise)
-
-    upsert_into_do_nothing(exercises, exercise_values)
-    return
+        session.upsert(Course, course_values)
 
 
-def load_ecosystem(ecosystem_uuid):
-    contents_data, exercises_data = fetch_ecosystem_event_requests(ecosystem_uuid)
-
-    try:
-        upsert_into_do_nothing(ecosystems, dict(uuid=ecosystem_uuid))
-    except StatementError:
-        raise Exception('Are you sure that is a valid UUID?')
-
-    load_exercises(ecosystem_uuid, exercises_data)
-    load_ecosystem_exercises(ecosystem_uuid, exercises_data)
-    load_containers(ecosystem_uuid, contents_data)
-
-    return dict(success=True, msg='ecosystem_loaded_sucessfully')
-
-
-def handle_course(cur_event_data, sequence_step_size=1, previous_sequence_offset=0):
-
-    for event in cur_event_data['events']:
-        event_handler(cur_event_data['course_uuid'], event)
-
-    if cur_event_data['is_end'] or cur_event_data['is_gap']:
-        return None
-
-    cur_sequence_offset = get_next_offset(cur_event_data['events'], previous_sequence_offset, sequence_step_size)
-
-    return cur_sequence_offset
+@log_exceptions
+def load_course_events(self, session, event_types=['record_response'], batch_size=1000):
+    courses = []
+    with transaction as session:
+        # Group courses in chunks of batch_size and send those requests at once
+        for course in session.query(Course).yield_per(batch_size):
+            courses.append(course)
+            while len(courses) >= batch_size:
+                courses = self._load_grouped_course_events(session, courses)
+        # Keep loading events until we completely exhaust all courses
+        while courses:
+            courses = self._load_grouped_course_events(session, courses)
 
 
-def load_course(course_uuid, cur_sequence_offset=None, sequence_step_size=1):
+def _load_grouped_course_events(self, session, courses):
+    courses_by_req_uuid = [{uuid4(): course} for course in courses]
+    event_requests = [{
+        'course_uuid': course.uuid,
+        'sequence_number_offset': course.sequence_number,
+        'event_types': ['record_response'],
+        'request_uuid': request_uuid
+    } for request_uuid, course in courses_by_request_uuid.items()]
 
-    if cur_sequence_offset is None:
-        cur_sequence_offset = max_sequence_offset(course_uuid)
+    responses = blapi.fetch_course_events(event_requests)
 
-    while True:
-        cur_event_data = fetch_course_event_requests(course_uuid,
-                                                     cur_sequence_offset)
+    courses = []
+    course_values = []
+    response_values = []
+    for response in responses:
+        course = courses_by_req_uuid[response['request_uuid']]
 
-        cur_sequence_offset = handle_course(cur_event_data,
-                                            sequence_step_size=sequence_step_size,
-                                            previous_sequence_offset=cur_sequence_offset)
+        for event in response['events']:
+            event_type = event['event_type']
+            if event_type == 'record_response':
+                response_values.append({
+                    'uuid': event['response_uuid'],
+                    'course_uuid': event['course_uuid'],
+                    'ecosystem_uuid': event['ecosystem_uuid'],
+                    'trial_uuid': event['trial_uuid'],
+                    'student_uuid': event['student_uuid'],
+                    'exercise_uuid': event['exercise_uuid'],
+                    'is_correct': event['is_correct'],
+                    'is_real_response': event.get('is_real_response', True),
+                    'responded_at': event['responded_at'],
+                    'sequence_number': event['sequence_number']
+                })
+            else:
+                raise ServerError('received unexpected event type: {}'.format(event_type))
 
-        if cur_sequence_offset is None:
-            break
+            course.sequence_number = event['sequence_number'] + 1
 
-    return
+        if response['is_end'] or response['is_gap']:
+            course_values.append({
+                'uuid': course.uuid,
+                'sequence_number': course.sequence_number
+            })
+        else:
+            courses.append(course)
 
+    if response_values:
+        session.upsert(Response, response_values)
+    if course_values:
+        session.upsert(Course, course_values, conflict_update_columns=['sequence_number'])
 
-def load_courses(course_event_requests):
-
-    course_sequence_offsets = dict([[course_event['course_uuid'], course_event['sequence_offset']]
-        for course_event in course_event_requests])
-
-    sparfa_state.set('course_sequence_offsets', **course_sequence_offsets)
-
-    course_events = fetch_pending_course_events_requests(course_event_requests)
-
-    next_sequence_offsets = [
-        handle_course(
-            course_event, previous_sequence_offset=sparfa_state.get('course_sequence_offsets')[course_event['course_uuid']]
-        ) for course_event in course_events]
-
-    next_course_event_requests = [{
-            'course_uuid': course_events[course_index]['course_uuid'],
-            'sequence_offset': offset
-        }  for course_index, offset in enumerate(next_sequence_offsets) if offset is not None]
-
-    return next_course_event_requests
-
-
-def load_response(event_data):
-    response_values = dict(course_uuid=event_data['course_uuid'],
-                           ecosystem_uuid=event_data['ecosystem_uuid'],
-                           exercise_uuid=event_data['exercise_uuid'],
-                           is_correct=event_data['is_correct'],
-                           uuid=event_data['response_uuid'],
-                           student_uuid=event_data['student_uuid'],
-                           is_real_response=event_data.get('is_real_response', True),
-                           responded_at=event_data['responded_at'],
-                           sequence_number=event_data['sequence_number'],
-                           trial_uuid=event_data['trial_uuid'],
-                           )
-    upsert_into_do_nothing(responses, response_values)
-    return
-
-
-def run(delay_time=600):
-    try:
-        while True:
-            # Poll for new ecosystems
-            eco_uuids = fetch_pending_ecosystems(force=False)
-            api_course_uuids = fetch_course_uuids()
-
-            if eco_uuids:
-                for eco_uuid in eco_uuids:
-                    load_ecosystem(eco_uuid)
-
-            for course_uuid in api_course_uuids:
-                load_course(course_uuid)
-
-            delay(delay_time)
-    except (KeyboardInterrupt, SystemExit):
-        pass
+    return courses

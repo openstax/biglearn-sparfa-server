@@ -1,11 +1,15 @@
-version: '2'
+version: '3'
 services:
   db:
     image: postgres:9.6
     ports:
-      - '127.0.0.1:5445:5432'
+      - 127.0.0.1:5445:5432
   rabbit:
     image: rabbitmq:3.6-management-alpine
     ports:
-      - '127.0.0.1:5672:5672'
-      - '127.0.0.1:15672:15672'
+      - 127.0.0.1:5665:5672
+      - 127.0.0.1:15665:15672
+  redis:
+    image: redis:4.0.11
+    ports:
+      - 127.0.0.1:6336:6379

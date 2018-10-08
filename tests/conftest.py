@@ -1,55 +1,56 @@
-
-import pytest
+from pytest import yield_fixture
+from psycopg2 import connect
+from alembic.config import Config
 from alembic.command import upgrade
+from redis import Redis
+from celery_once import backends
 from click.testing import CliRunner
 
-from alembic.config import Config as AlembicConfig
-from pytest_postgresql.factories import (init_postgresql_database,
-                                         drop_postgresql_database,
-                                         get_config)
+from sparfa_server.config import PG_HOST, PG_PORT, PG_USER, PG_PASSWORD
+from sparfa_server.celery import celery
 from sparfa_server.client import BiglearnApi
 from unit.helper import create_session_mock
 
 
-@pytest.yield_fixture(scope='session')
-def config_database(request):
-    connection_string = 'postgresql+psycopg2://{0}@{1}:{2}/{3}'
+@yield_fixture(scope='session')
+def pg():
+    with connect(host=PG_HOST, port=PG_PORT, user=PG_USER, password=PG_PASSWORD) as conn:
+        try:
+            with conn.cursor() as cursor:
+                # (Re)create the database
+                cursor.execute('DROP DATABASE IF EXISTS {0};'.format(db))
+                cursor.execute('CREATE DATABASE {0};'.format(db))
 
-    config = get_config(request)
-    pg_host = config.get('host')
-    pg_port = config.get('port') or 5432
-    pg_user = config.get('user')
-    pg_db = config.get('db', 'tests')
+            # Migrate the database
+            upgrade(Config('alembic.ini'), 'head')
 
-    # Create the database
-    init_postgresql_database(pg_user, pg_host, pg_port, pg_db)
-
-    config = AlembicConfig('alembic.ini')
-    upgrade(config, 'head')
-
-    yield connection_string.format(pg_user, pg_host, pg_port, pg_db)
-
-    # Ensure database gets dropped
-    drop_postgresql_database(pg_user, pg_host, pg_port, pg_db, '9.6')
+            yield conn
+        finally:
+            with conn.cursor() as cursor:
+                # Ensure the database gets dropped
+                cursor.execute('DROP DATABASE IF EXISTS {0};'.format(db))
 
 
-@pytest.yield_fixture(scope='session')
-def db(config_database):
-    from sparfa_server.executer import Executer
-
-    executer = Executer(connection_string=config_database)
-
-    with executer as conn:
-        yield conn
+@yield_fixture(scope='session')
+def redis():
+    rr = Redis()
+    rr.flushdb()
+    yield rr
 
 
-@pytest.yield_fixture(scope='function')
+@yield_fixture(scope='session')
+def celery(redis):
+    backends.redis.redis = redis
+    yield celery
+
+
+@yield_fixture(scope='function')
 def test_session():
     blapi = BiglearnApi(session=create_session_mock())
     yield blapi
 
 
-@pytest.yield_fixture
+@yield_fixture
 def cli():
     runner = CliRunner()
     with runner.isolated_filesystem():

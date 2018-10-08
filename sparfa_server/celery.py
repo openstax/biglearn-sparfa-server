@@ -1,56 +1,53 @@
-import os
 from datetime import timedelta
 
 from celery import Celery
-from celery_once import QueueOnce
 from kombu import Queue, Exchange
+from celery_once import QueueOnce
 
-from sparfa_server.utils import make_database_url
+from .config import AMQP_HOST, AMQP_PORT, AMQP_USER, AMQP_PASSWORD, CELERY_APP_NAME
+from .redis import REDIS_URL, redis
+from .pg import engine
 
-celery = Celery(os.environ.get('CELERY_APP_NAME', 'sparfa'))
-
-def make_celery_url():
-    return 'amqp://{0}:{1}@{2}:{3}'.format(
-        os.environ.get('CELERY_USER', 'guest'),
-        os.environ.get('CELERY_PASSWORD', 'guest'),
-        os.environ.get('CELERY_HOST', '127.0.0.1'),
-        os.environ.get('CELERY_PORT', '5672'),
-    )
-
+celery = Celery(CELERY_APP_NAME)
 celery.conf.update(
-    broker_url=make_celery_url(),
+    broker_url=AMQP_URL,
     task_ignore_result=True,
-    result_backend='db+' + make_database_url(),
+    result_backend=REDIS_URL,
     result_compression='gzip',
     beat_schedule={
-        'load_ecosystems': {
-            'task': 'sparfa_server.tasks.loaders.load_ecosystems_task',
-            'schedule': timedelta(seconds=2),
-            'options': {'queue' : 'load-ecosystems'}
+        'load_ecosystem_metadata': {
+            'task': 'sparfa_server.tasks.loaders.load_ecosystem_metadata_task',
+            'schedule': timedelta(seconds=1),
+            'options': {'queue' : 'load-ecosystem-metadata'}
         },
-        'load_courses_metadata': {
-            'task': 'sparfa_server.tasks.loaders.load_courses_metadata_task',
-            'schedule': timedelta(seconds=2),
-            'options': {'queue' : 'load-courses'}
+        'load_ecosystem_events': {
+            'task': 'sparfa_server.tasks.loaders.load_ecosystem_events_task',
+            'schedule': timedelta(seconds=1),
+            'options': {'queue' : 'load-ecosystem-events'}
         },
-        'load_courses_updates': {
-            'task': 'sparfa_server.tasks.loaders.load_courses_updates_task',
-            'schedule': timedelta(seconds=3),
-            'options': {'queue' : 'load-courses'}
+        'load_course_metadata': {
+            'task': 'sparfa_server.tasks.loaders.load_course_metadata_task',
+            'schedule': timedelta(seconds=1),
+            'options': {'queue' : 'load-course-metadata'}
         },
-        'run_matrix_calc': {
-            'task': 'sparfa_server.tasks.calcs.run_matrix_calcs_task',
-            'schedule': timedelta(seconds=2),
-            'options': {'queue' : 'calculate-matrices'}
+        'load_courses_events': {
+            'task': 'sparfa_server.tasks.loaders.load_courses_events_task',
+            'schedule': timedelta(seconds=1),
+            'options': {'queue' : 'load-course-events'}
         },
-        'run_pe_calc': {
-            'task': 'sparfa_server.tasks.calcs.run_pe_calcs_task',
-            'schedule': timedelta(seconds=2),
+        'calculate_ecosystem_matrices': {
+            'task': 'sparfa_server.tasks.calcs.calculate_ecosystem_matrices_task',
+            'schedule': timedelta(seconds=1),
+            'options': {'queue' : 'calculate-ecosystem-matrices'}
+        },
+        'calculate_exercises': {
+            'task': 'sparfa_server.tasks.calcs.calculate_exercises_task',
+            'schedule': timedelta(seconds=1),
             'options': {'queue' : 'calculate-exercises'}
         },
-        'run_clue_calc': {
-            'task': 'sparfa_server.tasks.calcs.run_clue_calcs_task',
-            'schedule': timedelta(seconds=2),
+        'calculate_clues': {
+            'task': 'sparfa_server.tasks.calcs.calculate_clues_task',
+            'schedule': timedelta(seconds=1),
             'options': {'queue' : 'calculate-clues'}
         }
     },
@@ -61,40 +58,56 @@ celery.conf.update(
         'sparfa_server.tasks.calcs'
     ),
     task_queues=[
-        Queue('celery',
-              routing_key='celery',
-              exchange=Exchange('celery', type='direct', durable=True)),
-        Queue('load-courses',
-              routing_key='load-courses',
-              exchange=Exchange('load-courses', type='direct', durable=True)),
-        Queue('load-ecosystems',
-              routing_key='load-ecosystems',
-              exchange=Exchange('load-ecosystems', type='direct', durable=True)),
-        Queue('calculate-clues',
-              routing_key='calculate-clues',
-              exchange=Exchange('calculate-clues', type='direct', durable=True)),
+        Queue('load-course-metadata',
+              routing_key='load-course-metadata',
+              exchange=Exchange('load-course-metadata', type='direct', durable=False),
+              durable=False),
+        Queue('load-course-events',
+              routing_key='load-course-events',
+              exchange=Exchange('load-course-events', type='direct', durable=False),
+              durable=False),
+        Queue('load-ecosystem-metadata',
+              routing_key='load-ecosystem-metadata',
+              exchange=Exchange('load-ecosystem-metadata', type='direct', durable=False),
+              durable=False),
+        Queue('load-ecosystem-events',
+              routing_key='load-ecosystem-events',
+              exchange=Exchange('load-ecosystem-events', type='direct', durable=False),
+              durable=False),
+        Queue('calculate-ecosystem-matrices',
+              routing_key='calculate-ecosystem-matrices',
+              exchange=Exchange('calculate-ecosystem-matrices', type='direct', durable=False),
+              durable=False),
         Queue('calculate-exercises',
               routing_key='calculate-exercises',
-              exchange=Exchange('calculate-exercises', type='direct', durable=True)),
-        Queue('calculate-matrices',
-              routing_key='calculate-matrices',
-              exchange=Exchange('calculate-matrices', type='direct', durable=True))
+              exchange=Exchange('calculate-exercises', type='direct', durable=False),
+              durable=False),
+        Queue('calculate-clues',
+              routing_key='calculate-clues',
+              exchange=Exchange('calculate-clues', type='direct', durable=False),
+              durable=False)
     ],
     ONCE={
         'backend': 'celery_once.backends.Redis',
         'settings': {
-            'url': 'redis://localhost:6379/0',
-            'default_timeout': 60 * 60 # Should be longer than the longest-running task
+            'url': REDIS_URL,
+            'default_timeout': 60 * 60 # should be longer than the longest-running task
         }
     }
 )
 
 
+# Subprocesses cannot share file descriptors, so we explicitly reset all the connections here
+@worker_process_init.connect
+def reset_connections(**kwargs):
+    engine.dispose()
+    redis.connection_pool.reset()
+
+
+# Sets default task arguments
+# All sparfa-server tasks should use this instead of using @celery.task directly
+@wraps(celery.task)
 def task(*args, **kwargs):
     defaults = {'base': QueueOnce, 'once': {'graceful': True}}
     defaults.update(kwargs)
     return celery.task(*args, **defaults)
-
-
-def start(argv):
-    celery.start(argv)

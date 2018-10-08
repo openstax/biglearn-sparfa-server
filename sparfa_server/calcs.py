@@ -2,15 +2,13 @@ import json
 
 from sparfa_algs.sgd.sparfa_algs import SparfaAlgs
 
-from sparfa_server.db import (
-    upsert_into_do_update,
-    select_ecosystem_exercises,
+from .db import (
     select_ecosystem_responses,
     select_exercise_page_modules,
     select_ecosystem_page_modules,
     select_student_responses,
     select_ecosystem_matrices, select_responses_by_response_uuids)
-from sparfa_server.utils import (
+from .utils import (
     dump_sparse_matrix,
     load_sparse_matrix,
     load_mapping)
@@ -19,32 +17,27 @@ from logging import getLogger
 
 __logs__ = getLogger(__package__)
 
-def gen_ecosystem_hints(ecosystem_uuid, exercise_uuids):
-    page_modules = select_exercise_page_modules(exercise_uuids,
-                                                ecosystem_uuid)
-    hints = []
-    for mod in page_modules:
-        hint = dict(
-            Q_id=mod.exercise_uuid,
-            C_id=mod.container_uuid
-        )
-        hints.append(hint)
-    return hints
-
 
 def gen_ecosystem_responses(ecosystem_uuid):
-    responses = select_ecosystem_responses(ecosystem_uuid)
+    responses = session.query(Response).filter(Response.ecosystem_uuid == ecosystem_uuid).all()
 
     return [{'L_id': r.student_uuid, 'Q_id': r.exercise_uuid,
              'correct?': r.is_correct} for r in responses]
 
 
 def calc_ecosystem_matrices(ecosystem_uuid):
-    Q_ids = select_ecosystem_exercises(ecosystem_uuid)
+    page_exercises = session.query(
+        PageExercise.page_uuid,
+        PageExercise.exercise_uuid
+    ).filter(PageExercise.ecosystem_uuid == ecosystem_uuid).all()
 
-    C_ids = select_ecosystem_page_modules(ecosystem_uuid)
+    C_ids = [page_exercise.page_uuid for page_exercise in page_exercises]
+    Q_ids = [page_exercise.exercise_uuid for page_exercise in page_exercises]
 
-    hints = gen_ecosystem_hints(ecosystem_uuid, Q_ids)
+    hints = [{
+        'Q_id': page_exercise.exercise_uuid,
+        'C_id': page_exercise.book_container_uuid
+    } for page_exercise in page_exercises]
 
     responses = gen_ecosystem_responses(ecosystem_uuid)
 
@@ -69,6 +62,12 @@ def calc_ecosystem_matrices(ecosystem_uuid):
     }
 
     return matrix_values
+
+
+def get_ecosystem_matrix_by_ecosystem_uuid(ecosystem_uuid):
+    return session.query(EcosystemMatrix).filter(
+        EcosystemMatrix.ecosystem_uuid == ecosystem_uuid
+    ).first()
 
 
 def calc_ecosystem_pe(ecosystem_uuid, student_uuid, exercise_uuids):
@@ -101,9 +100,11 @@ def calc_ecosystem_pe(ecosystem_uuid, student_uuid, exercise_uuids):
 
         valid_exercise_uuids = [uuid for uuid in exercise_uuids if uuid in Q_idx_by_id]
 
-        responses = select_student_responses(ecosystem_uuid,
-                                             student_uuid,
-                                             valid_exercise_uuids)
+        responses = session.query(Response).filter(
+            Response.ecosystem_uuid == ecosystem_uuid,
+            Response.student_uuid == student_uuid,
+            Response.exercise_uuid.in_(valid_exercise_uuids)
+        ).all()
 
 
         # TODO make algs.tesr work with responses with dates already parsed
@@ -188,7 +189,7 @@ def calc_ecosystem_clues(ecosystem_uuid,
 
         response_uuids = [r['response_uuid'] for r in responses]
 
-        responses = select_responses_by_response_uuids(response_uuids)
+        responses = session.query(Response).filter(Response.uuid.in_(response_uuids)).all()
 
         # Quick sanity check that the length of responses is the same
         if len(response_uuids) != len(responses):

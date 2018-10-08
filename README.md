@@ -1,5 +1,3 @@
-
-
 [![codecov](https://codecov.io/gh/openstax/biglearn-sparfa-server/branch/master/graph/badge.svg)](https://codecov.io/gh/openstax/biglearn-sparfa-server)
 [![travis](https://travis-ci.org/openstax/biglearn-sparfa-server.svg?branch=master)](https://travis-ci.org/openstax/biglearn-sparfa-server)
 
@@ -28,13 +26,10 @@ The instructions assume you have previously installed [Homebrew](http://brew.sh/
 
 Install the following packages:
 
-```
-brew install \
-    postgresql
-    python3
-```
+`brew install postgresql python3`
 
-> NOTE: Unfortunately you need to install the postgresql package, because Homebrew does not currently provide a standalone libpq package.
+> NOTE: Unfortunately you need to install the postgresql package,
+        because Homebrew does not currently provide a standalone libpq package.
 
 ### Cloning the repos
 
@@ -45,6 +40,7 @@ brew install \
 The following external services are required:
 
 - PostgreSQL 9.6+
+- Redis
 - RabbitMQ 3.6+
 
 How you install these services is up to you, but the easiest way is by using
@@ -102,8 +98,6 @@ The migrations are stored in the directory `migrations/versions`.
 Each migration file begins with a hash and includes part of the
 revision message that was posted at the command line.
 
-`b9287092c49f_initial_schema.py`
-
 ## Running Alembic Commands
 
 ### Autogenerating migrations
@@ -153,12 +147,3 @@ This will upgrade the database 1 version from the current version.
 In order to view the revisions in order the `history` command can be used.
 
 `alembic history`
-
-This will output:
-
-```
-b9287092c49f -> cbac16278e4f (head), added biglearn knowledge models
-<base> -> b9287092c49f, initial schema
-```
-
-This shows the base started at `b9287092c49f` which is a version named "initial schema" which is followed by `cbac16278e4f` which is a version labeled "added biglearn knowledge models".
