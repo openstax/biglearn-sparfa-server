@@ -1,23 +1,25 @@
+from logging import getLogger
+from functools import wraps, partial
+
+__logs__ = getLogger(__name__)
+
 class BiglearnError(Exception):
     """The base exception class."""
 
     def __init__(self, resp):
-        super(BiglearnError, self).__init__(resp)
+        super().__init__(resp)
         #: Response code that triggered the error
         self.response = resp
         self.code = resp.status_code
-        self.errors = []
         try:
-            error = resp.json()
-            #: List of errors provided by GitHub
-            if error.get('errors'):
-                self.msg = error.get('errors')
-        except:  # Amazon S3 error
+            errors = resp.json().get('errors')
+            if errors:
+                self.msg = errors
+        except:
             self.msg = resp.content or '[No message]'
 
     def __repr__(self):
-        return '<{0} [{1}]>'.format(self.__class__.__name__,
-                                    self.msg or self.code)
+        return '<{0} [{1}]>'.format(self.__class__.__name__, self.msg or self.code)
 
     def __str__(self):
         return '{0} {1}'.format(self.code, self.msg)
@@ -26,27 +28,6 @@ class BiglearnError(Exception):
     def message(self):
         """The actual message returned by the API."""
         return self.msg
-
-
-class TransportError(BiglearnError):
-    """Catch-all exception for errors coming from Requests."""
-
-    msg_format = 'An error occurred while making a request to Biglearn API: {0}'
-
-    def __init__(self, exception):
-        super().__init__(exception)
-        self.exception = exception
-        self.msg = self.msg_format.format(str(exception))
-
-    def __str__(self):
-        return '{0}: {1}'.format(type(self.exception), self.msg)
-
-
-class ConnectionError(TransportError):
-    """Exception for errors in connecting to
-    or reading data from Biglearn API"""
-
-    msg_format = 'A connection-level exception occurred: {0}'
 
 
 class ResponseError(BiglearnError):
@@ -69,7 +50,7 @@ class Forbidden(ClientError):
     pass
 
 
-class NotFoundError(ClientError):
+class NotFound(ClientError):
     """Exception class for 404 responses"""
     pass
 
@@ -93,23 +74,38 @@ class GatewayTimeout(ServerError):
     """Exception class for 504 responses"""
     pass
 
-# TODO: Add in other HTTP exception classes ex. 403, 406, etc.
-error_classes = {
+
+_error_classes = {
     400: BadRequest,
     403: Forbidden,
-    404: NotFoundError,
+    404: NotFound,
     502: BadGateway,
     503: ServiceUnavailable,
     504: GatewayTimeout
 }
 
 
-def response_error_for(response):
-    """Returns the appropriate initialized exception class for a response"""
-    klass = error_classes.get(response.status_code)
+def check_status_code(response):
+    """Raises the appropriate exception for a response if it has an abnormal status code"""
+    klass = _error_classes[response.status_code]
     if klass is None:
         if 400 <= response.status_code < 500:
             klass = ClientError
         if 500 <= response.status_code < 600:
             klass = ServerError
-    return None if klass is None else klass(response)
+    if klass is not None:
+        raise klass(response)
+
+
+def log_exceptions(func, exceptions):
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except exceptions as e:
+            return __logs__.exception(e)
+
+    return wrapped
+
+
+log_exceptions = partial(log_exceptions, (Exception,))

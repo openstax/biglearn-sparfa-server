@@ -1,11 +1,11 @@
-import click
-from sparfa_server.celery import start
+from click import command, pass_context
+
+from ..celery import start
 
 
-@click.command(add_help_option=False,  # --help is passed through to Celery
-               context_settings={'allow_extra_args': True,
-                                 'ignore_unknown_options': True})
-@click.pass_context
+@command(add_help_option=False,  # --help is passed through to Celery
+         context_settings={'allow_extra_args': True, 'ignore_unknown_options': True})
+@pass_context
 def celery(ctx):
     """
     Run Celery commands.

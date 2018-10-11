@@ -1,6 +1,6 @@
 from celery.result import AsyncResult, EagerResult
 
-from sparfa_server.tasks.loaders import load_ecosystems_task
+from .tasks.loaders import load_ecosystems_task
 
 
 class TestCelery(object):

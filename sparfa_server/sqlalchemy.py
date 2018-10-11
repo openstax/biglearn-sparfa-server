@@ -1,14 +1,15 @@
-import logging
 from contextlib import contextmanager
+from logging import getLogger, INFO
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.session import Session as Base
+from sqlalchemy.orm.session import Session
 from sqlalchemy.dialects.postgresql import insert
 
-from .config import PY_ENV, PG_URL
+from ..config import PG_URL, PY_ENV
 
-class BiglearnSession(Base):
+
+class BiglearnSession(Session):
     def upsert(self, model, values, conflict_index_elements=None, conflict_update_columns=None):
         """
         The upsert will first attempt to insert the given values into this table.
@@ -47,8 +48,10 @@ class BiglearnSession(Base):
 
         return self.execute(stmt)
 
+
 engine = create_engine(PG_URL)
 Session = sessionmaker(bind=engine, class_=BiglearnSession)
+
 
 # https://docs.sqlalchemy.org/en/latest/orm/session_basics.html
 @contextmanager
@@ -66,6 +69,4 @@ def transaction():
 
 if PY_ENV == 'development':
     # Enable query logging:
-    logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
-    # To enable query and result logging:
-    # logging.getLogger('sqlalchemy.engine').setLevel(logging.DEBUG)
+    getLogger('sqlalchemy.engine').setLevel(INFO)

@@ -1,6 +1,5 @@
 from io import BytesIO
-import os
-import sys
+from os import listdir
 
 
 def path(name, mode='r'):
@@ -10,9 +9,8 @@ def path(name, mode='r'):
 def content(path_name):
     content = path(path_name).read().strip()
     iterable = '[{0}]'.format(content)
-    if sys.version_info > (3, 0):
-        content = content.encode()
-        iterable = iterable.encode()
+    content = content.encode()
+    iterable = iterable.encode()
     return BytesIO(content), BytesIO(iterable)
 
 

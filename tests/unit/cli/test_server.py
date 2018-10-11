@@ -1,6 +1,6 @@
-import uuid
+from uuid import uuid4
 
-from sparfa_server.cli.commands import loaders as loaders_cli
+from .cli.loaders import load_ecosystem
 
 
 class TestAddCommand(object):
@@ -15,10 +15,9 @@ class TestAddCommand(object):
 
     @staticmethod
     def _gen_correct_ecosystem_uuid():
-        return uuid.uuid4()
+        return uuid4()
 
     def _import_ecosystem(self, cli, ecosystem_uuid):
-        result = cli.invoke(loaders_cli.load_ecosystem,
-                            [u'--ecosystem_uuid', ecosystem_uuid])
+        result = cli.invoke(load_ecosystem, [u'--ecosystem_uuid', ecosystem_uuid])
         assert result.exit_code == 0
         return result

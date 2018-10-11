@@ -3,8 +3,9 @@ from uuid import uuid4
 from json import dumps
 from requests import Session
 
-from . import __version__
-from exceptions import check_status_code
+from .about import __version__
+from .exceptions import check_status_code
+from .config import BIGLEARN_SCHED_ALGORITHM_NAME
 
 __logs__ = getLogger(__name__)
 
@@ -85,210 +86,44 @@ class BiglearnApi(BiglearnClient):
 class BiglearnScheduler(BiglearnClient):
     """Communicates with the biglearn-scheduler server."""
 
-    def __init__(self, token, session=None):
+    def __init__(self, token, session=None, algorithm_name=BIGLEARN_SCHED_ALGORITHM_NAME):
         super().__init__(base_url=BIGLEARN_SCHED_URL, session=session)
 
         self.session.headers.update({
             'Biglearn-Scheduler-Token': token,
             'User-Agent': 'Biglearn-Scheduler Python API client {0}'.format(__version__),
         })
+        self._algorithm_name_dict = {'algorithm_name': algorithm_name}
 
-    def fetch_ecosystem_matrix_updates(self, request):
-        url = self._build_url('scheduler', 'fetch_ecosystem_matrix_updates')
-        json = self._json(self.fetch(url, data=request), 200)
-        return self.post('fetch_ecosystem_matrix_updates')
+    def fetch_ecosystem_matrix_updates(self):
+        return self.post('fetch_ecosystem_matrix_updates', self._algorithm_name_dict)
 
-    def update_matrix_calcs(self, request):
-        url = self._build_url('scheduler', 'ecosystem_matrices_updated')
-        json = self._json(self.fetch(url, data=request), 200)
-        return json
+    def ecosystem_matrices_updated(self, ecosystem_matrix_requests):
+        for request in ecosystem_matrix_requests:
+            request.update(self._algorithm_name_dict)
 
-    def fetch_exercise_calcs(self, request):
-        url = self._build_url('scheduler', 'fetch_exercise_calculations')
-        json = self._json(self.fetch(url, data=request), 200)
-        return json
+        return self.post('ecosystem_matrices_updated',
+                         {'ecosystem_matrices_updated': ecosystem_matrix_requests})
 
-    def update_exercise_calcs(self, request):
-        url = self._build_url('scheduler', 'update_exercise_calculations')
-        json = self._json(self.fetch(url, data=request), 200)
-        return json
+    def fetch_exercise_calculations(self):
+        return self.post('fetch_exercise_calculations', self._algorithm_name_dict)
 
-    def fetch_clue_calcs(self, request):
-        url = self._build_url('scheduler', 'fetch_clue_calculations')
-        json = self._json(self.fetch(url, data=request), 200)
-        return json
+    def update_exercise_calculations(self, exercise_calculation_requests):
+        for request in exercise_calculation_requests:
+            request.update(self._algorithm_name_dict)
 
-    def update_clue_calcs(self, request):
-        url = self._build_url('scheduler', 'update_clue_calculations')
-        json = self._json(self.fetch(url, data=request), 200)
-        return json
+        return self.post('update_exercise_calculations',
+                         {'exercise_calculation_updates': exercise_calculation_requests})
+
+    def fetch_clue_calculations(self):
+        return self.post('fetch_clue_calculations', self._algorithm_name_dict)
+
+    def update_clue_calculations(self, clue_calculation_requests):
+        for request in clue_calculation_requests:
+            request.update(self._algorithm_name_dict)
+
+        return self.post('update_clue_calculations',
+                         {'clue_calculation_updates': clue_calculation_requests})
 
 blapi = BiglearnApi(BIGLEARN_API_TOKEN)
 blsched = BiglearnScheduler(BIGLEARN_SCHED_TOKEN)
-
-
-def fetch_course_uuids(course_uuids=None):
-    __logs__.info('Polling courses endpoint for new courses')
-    course_metadatas = blapi.fetch_course_metadatas()
-    if course_uuids:
-        return [uuid['uuid'] for uuid in course_metadatas['course_responses'] if
-                uuid in course_uuids]
-
-    return [uuid['uuid'] for uuid in course_metadatas['course_responses']]
-
-
-def fetch_pending_courses_metadata(force=False):
-    __logs__.info('Polling courses endpoint for new courses')
-    course_metadatas = blapi.fetch_course_metadatas()
-
-    db_course_uuids = session.query(Course.uuid).all()
-
-    import_course_metadatas = list(
-        filter(lambda x: x['uuid'] not in db_course_uuids,
-               course_metadatas['course_responses']))
-
-    if force:
-        import_course_metadatas = course_metadatas
-
-    return import_course_metadatas
-
-
-def fetch_course_event_requests(course_uuid, offset=0, max_events=1000):
-    payload = create_course_event_request(course_uuid, offset, max_events)
-
-    course_event_reqs = blapi.fetch_course_event_requests(payload)
-
-    course_event_resps = course_event_reqs['course_event_responses'][0]
-    return course_event_resps
-
-
-def fetch_pending_course_events_requests(current_course_events_data, max_events=1000):
-    payload = create_course_event_requests(current_course_events_data, max_events)
-
-    course_event_reqs = blapi.fetch_course_event_requests(payload)
-
-    course_event_resps = course_event_reqs['course_event_responses']
-    return course_event_resps
-
-
-def fetch_ecosystem_uuids(ecosystem_uuids=None):
-    ecosystem_metadatas = blapi.fetch_ecosystem_metadatas()
-    if ecosystem_uuids:
-        return [uuid['uuid'] for uuid in
-                ecosystem_metadatas['ecosystem_responses'] if
-                uuid in ecosystem_uuids]
-    else:
-        return [uuid['uuid'] for uuid in
-                ecosystem_metadatas['ecosystem_responses']]
-
-
-def fetch_ecosystem_event_requests(ecosystem_uuid, offset=0, max_events=1000):
-    payload = create_ecosystem_event_request(ecosystem_uuid, offset, max_events)
-
-    eco_event_reqs = blapi.fetch_ecosystem_event_requests(payload)
-
-    eco_event_resps = eco_event_reqs['ecosystem_event_responses'][0]
-    eco_data = eco_event_resps['events'][0]['event_data']
-
-    contents_data = eco_data['book']['contents']
-    exercises_data = eco_data['exercises']
-
-    return contents_data, exercises_data
-
-
-def fetch_matrix_calculations(algorithm_name):
-    payload = dict(algorithm_name=algorithm_name)
-
-    matrix_calcs_response = blapi.fetch_matrix_calcs(payload)
-    matrix_calcs = matrix_calcs_response['ecosystem_matrix_updates']
-
-    return matrix_calcs
-
-
-def update_matrix_calculations(algorithm_name, calc_uuid):
-    # TODO: add log message that update_matrix_calc is happening
-    payload = {
-        'ecosystem_matrices_updated': [
-            {
-                'calculation_uuid': calc_uuid,
-                'algorithm_name': algorithm_name,
-            },
-        ],
-    }
-
-    response = blapi.update_matrix_calcs(payload)
-    return response
-
-
-def fetch_pending_ecosystems(force=False):
-    __logs__.info('Polling ecosystem endpoint for new ecosystems')
-    api_ecosystem_uuids = fetch_ecosystem_uuids()
-
-    db_ecosystem_uuids = session.query(Ecosystem.uuid).all()
-
-    import_ecosystem_uuids = list(
-        filter(lambda x: x not in db_ecosystem_uuids,
-               api_ecosystem_uuids))
-
-    if force:
-        import_ecosystem_uuids = api_ecosystem_uuids
-
-    return import_ecosystem_uuids
-
-
-def fetch_exercise_calcs(alg_name):
-    # TODO: add log message that update_matrix_calc is happening
-    payload = dict(
-        algorithm_name=alg_name
-    )
-
-    response = blapi.fetch_exercise_calcs(payload)
-
-    exercise_calcs = response['exercise_calculations']
-    return exercise_calcs
-
-
-def update_exercise_calcs(alg_name, calc_uuid, exercise_uuids):
-    payload = {
-        'exercise_calculation_updates': [
-            {
-                'calculation_uuid': calc_uuid,
-                'algorithm_name': alg_name,
-                'exercise_uuids': exercise_uuids
-            }
-        ]
-    }
-    response = blapi.update_exercise_calcs(payload)
-    return response['exercise_calculation_update_responses'][0]
-
-
-def fetch_clue_calcs(alg_name):
-    payload = dict(
-        algorithm_name=alg_name
-    )
-
-    response = blapi.fetch_clue_calcs(payload)
-
-    clue_calcs = response['clue_calculations']
-    return clue_calcs
-
-
-def update_clue_calcs(alg_name, ecosystem_uuid, calc_uuid, clue_min,
-                      clue_most_likely, clue_max, clue_is_real):
-    payload = {
-        'clue_calculation_updates': [
-            {
-                'calculation_uuid': calc_uuid,
-                'algorithm_name': alg_name,
-                'clue_data': {
-                    'ecosystem_uuid': ecosystem_uuid,
-                    'minimum': clue_min,
-                    'most_likely': clue_most_likely,
-                    'maximum': clue_max,
-                    'is_real': clue_is_real
-                }
-            }
-        ]
-    }
-    response = blapi.update_clue_calcs(payload)
-    return response['clue_calculation_update_responses'][0]

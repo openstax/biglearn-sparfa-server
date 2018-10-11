@@ -6,9 +6,9 @@ from redis import Redis
 from celery_once import backends
 from click.testing import CliRunner
 
-from sparfa_server.config import PG_HOST, PG_PORT, PG_USER, PG_PASSWORD
-from sparfa_server.celery import celery
-from sparfa_server.client import BiglearnApi
+from ..config import PG_HOST, PG_PORT, PG_USER, PG_PASSWORD
+from ..celery import celery
+from ..tasks.client import BiglearnApi
 from unit.helper import create_session_mock
 
 

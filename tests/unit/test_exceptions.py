@@ -1,16 +1,14 @@
-import json
+from io import BytesIO
+from pytest import raises
+from requests import Response
 
-import io
-import pytest
-import requests
+from . import exceptions
 
-from sparfa_server import exceptions
-
-from sparfa_server.client.client import ClientCore
+from .api import BiglearnClient
 
 
 def test_boolean(test_session):
-    response = requests.Response()
+    response = Response()
     response.status_code = 200
     boolean = test_session._boolean(response=response,
                                     true_code=200,
@@ -19,17 +17,17 @@ def test_boolean(test_session):
 
 
 def test_boolean_raises_exception(test_session):
-    response = requests.Response()
+    response = Response()
     response.status_code = 512
-    response.raw = io.BytesIO()
-    with pytest.raises(exceptions.ServerError):
+    response.raw = BytesIO()
+    with raises(exceptions.ServerError):
         boolean = test_session._boolean(response=response,
                                         true_code=200,
                                         false_code=204)
 
 
 def test_boolean_false_code(test_session):
-    response = requests.Response()
+    response = Response()
     response.status_code = 204
     boolean = test_session._boolean(response=response,
                                     true_code=200,
@@ -50,10 +48,10 @@ def test_from_json(test_session):
 
 
 def test_json(test_session):
-    response = requests.Response()
+    response = Response()
     response.headers['Last-Modified'] = 'foo'
     response.headers['ETag'] = 'bar'
-    response.raw = io.BytesIO(b'{}')
+    response.raw = BytesIO(b'{}')
     response.status_code = 200
 
     json = test_session._json(response, 200)
@@ -63,8 +61,7 @@ def test_json(test_session):
 
 def test_json_status_code_does_not_match(test_session):
     """Verify JSON information is retrieved correctly."""
-    response = requests.Response()
+    response = Response()
     response.status_code = 204
 
     json = test_session._json(response, 200)
-

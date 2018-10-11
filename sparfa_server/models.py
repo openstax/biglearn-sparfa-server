@@ -2,6 +2,7 @@ from sqlalchemy import Column, Index, Integer, Boolean, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSON, UUID
 
+
 class Base(object):
     id = Column(Integer, primary_key=True)
     uuid = Column(UUID, nullable=False, index=True, unique=True)
@@ -41,20 +42,18 @@ class PageExercise(Base):
 class EcosystemMatrix(Base):
     __tablename__ = 'ecosystem_matrices'
     ecosystem_uuid = Column(UUID, nullable=False, index=True, unique=True)
-    question_concept_matrix = Column(JSON, nullable=False)
-    question_difficulty_matrix = Column(JSON, nullable=False)
-    concepts_by_uuid = Column(JSON, nullable=False)
-    questions_by_uuid = Column(JSON, nullable=False)
-    learners_by_uuid = Column(JSON, nullable=True)
-    hints_mask_matrix = Column(JSON, nullable=True)
+    W_NCxNQ = Column(JSON, nullable=False)
+    d_NQx1 = Column(JSON, nullable=False)
+    C_idx_by_id = Column(JSON, nullable=False)
+    Q_idx_by_id = Column(JSON, nullable=False)
+    H_mask_NCxNQ = Column(JSON, nullable=True)
     default_conflict_index_elements = [ecosystem_uuid]
     default_conflict_update_columns = [
-          question_concept_matrix,
-          question_difficulty_matrix,
-          concepts_by_uuid,
-          questions_by_uuid,
-          learners_by_uuid,
-          hints_mask_matrix
+          W_NCxNQ,
+          d_NQx1,
+          C_idx_by_id,
+          Q_idx_by_id,
+          H_mask_NCxNQ
     ]
 
 

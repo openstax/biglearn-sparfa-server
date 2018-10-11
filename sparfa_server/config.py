@@ -17,10 +17,12 @@ AMQP_PORT = environ.get('AMQP_PORT', '5665')
 AMQP_USER = environ.get('AMQP_USER', 'guest')
 AMQP_PASSWORD = environ.get('AMQP_PASSWORD', 'guest')
 CELERY_APP_NAME = environ.get('CELERY_APP_NAME', 'biglearn-sparfa-server')
-BIGLEARN_API_URL= environ.get('BIGLEARN_API_URL', 'https://biglearn-api-dev.openstax.org')
-BIGLEARN_API_TOKEN= environ.get('BIGLEARN_API_TOKEN')
-BIGLEARN_SCHED_URL= environ.get('BIGLEARN_SCHED_URL', 'https://biglearn-scheduler-dev.openstax.org')
-BIGLEARN_SCHED_TOKEN= environ.get('BIGLEARN_SCHED_TOKEN')
+BIGLEARN_API_URL = environ.get('BIGLEARN_API_URL', 'https://biglearn-api-dev.openstax.org')
+BIGLEARN_API_TOKEN = environ.get('BIGLEARN_API_TOKEN')
+BIGLEARN_SCHED_URL = environ.get('BIGLEARN_SCHED_URL',
+                                 'https://biglearn-scheduler-dev.openstax.org')
+BIGLEARN_SCHED_TOKEN = environ.get('BIGLEARN_SCHED_TOKEN')
+BIGLEARN_SCHED_ALGORITHM_NAME = environ.get('BIGLEARN_SCHED_ALGORITHM_NAME', 'biglearn-sparfa')
 
 # Environment-specific overrides
 if PY_ENV == 'test':

@@ -1,20 +1,19 @@
-import click
+from logging import getLogger
 
-from celery import group
-from sparfa_server.tasks.calcs import (run_matrix_calcs_task,
+from click import group
+
+from ..tasks.calcs import (run_matrix_calcs_task,
                                        run_pe_calcs_task,
                                        run_clue_calcs_task,
                                        run_matrix_all_ecosystems_task,
                                        run_pe_calcs_recurse_task,
                                        run_clue_calcs_recurse_task)
 
-import logging
 
-logging.basicConfig(level=logging.INFO)
-__logs__ = logging.getLogger(__name__)
+__logs__ = getLogger(__name__)
 
 
-@click.group()
+@group()
 def calcs():
     """Manage Loaders"""
 

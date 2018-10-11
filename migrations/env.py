@@ -1,16 +1,17 @@
 from sys import path
 from os import getcwd
 from os.path import dirname, abspath
+from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import create_engine
-from logging.config import fileConfig
+
+from ..models import Base
+from ..config import PG_URL
 
 path.append(dirname(dirname(abspath(__file__))))
 path.append(getcwd())
 
-from sparfa_server.models import Base
-from sparfa_server.config import PG_URL
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config

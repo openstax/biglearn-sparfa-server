@@ -1,7 +1,7 @@
 """initial schema
 
 Revision ID: 308ec807c85e
-Revises: 
+Revises:
 Create Date: 2018-10-11 14:38:19.857424
 
 """
@@ -29,12 +29,11 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('uuid', postgresql.UUID(), nullable=False),
     sa.Column('ecosystem_uuid', postgresql.UUID(), nullable=False),
-    sa.Column('question_concept_matrix', postgresql.JSON(astext_type=sa.Text()), nullable=False),
-    sa.Column('question_difficulty_matrix', postgresql.JSON(astext_type=sa.Text()), nullable=False),
-    sa.Column('concepts_by_uuid', postgresql.JSON(astext_type=sa.Text()), nullable=False),
-    sa.Column('questions_by_uuid', postgresql.JSON(astext_type=sa.Text()), nullable=False),
-    sa.Column('learners_by_uuid', postgresql.JSON(astext_type=sa.Text()), nullable=True),
-    sa.Column('hints_mask_matrix', postgresql.JSON(astext_type=sa.Text()), nullable=True),
+    sa.Column('W_NCxNQ', postgresql.JSON(astext_type=sa.Text()), nullable=False),
+    sa.Column('d_NQx1', postgresql.JSON(astext_type=sa.Text()), nullable=False),
+    sa.Column('C_idx_by_id', postgresql.JSON(astext_type=sa.Text()), nullable=False),
+    sa.Column('Q_idx_by_id', postgresql.JSON(astext_type=sa.Text()), nullable=False),
+    sa.Column('H_mask_NCxNQ', postgresql.JSON(astext_type=sa.Text()), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_ecosystem_matrices_ecosystem_uuid'), 'ecosystem_matrices', ['ecosystem_uuid'], unique=True)

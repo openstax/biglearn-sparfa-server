@@ -1,20 +1,12 @@
-import json
-import unittest
-
-import sparfa_server
-
-try:
-    from unittest import mock
-except ImportError:
-    import mock
-
-
-from sparfa_server.client.session import BiglearnSession
+Sessionfrom json import loads
+from unittest import TestCase
+from unittest.mock import create_autospec, Mock
+from requests import Session
 
 
 def create_mocked_session():
-    """Use mock to auto-spec a BiglearnSession and return an instance."""
-    MockedSession = mock.create_autospec(BiglearnSession)
+    """Use mock to auto-spec a Session and return an instance."""
+    MockedSession = mock.create_autospec(Session)
     return MockedSession()
 
 
@@ -31,13 +23,6 @@ def create_session_mock(*args):
     return session
 
 
-def build_url(self, *args, **kwargs):
-    """A function to proxy to the actual BiglearnSession#build_url method."""
-    # We want to assert what is happening with the actual calls to the
-    # Internet. We can proxy this.
-    return sparfa_server.client.session.BiglearnSession().build_url(*args, **kwargs)
-
-
 class UnitHelper(unittest.TestCase):
 
     """Base class for unittests."""
@@ -48,8 +33,8 @@ class UnitHelper(unittest.TestCase):
     example_data = {}
 
     def create_mocked_session(self):
-        """Use mock to auto-spec a BiglearnSession and return an instance."""
-        MockedSession = mock.create_autospec(sparfa_server.client.session.BiglearnSession)
+        """Use mock to auto-spec a Session and return an instance."""
+        MockedSession = mock.create_autospec(Session)
         return MockedSession()
 
     def create_session_mock(self, *args):
@@ -102,7 +87,7 @@ class UnitHelper(unittest.TestCase):
             call_args, call_data = call_args[:1], call_args[1]
         # If data is a dictionary (or list) and call_data exists
         if not isinstance(data, str) and call_data:
-            call_data = json.loads(call_data)
+            call_data = loads(call_data)
 
         assert args == call_args
         assert data == call_data
@@ -124,7 +109,7 @@ class UnitHelper(unittest.TestCase):
         call_args, call_data = call_args[:1], call_args[1]
         # If data is a dictionary (or list) and call_data exists
         if not isinstance(data, str) and call_data:
-            call_data = json.loads(call_data)
+            call_data = loads(call_data)
 
         assert data == call_data
         assert kwargs == call_kwargs
@@ -147,4 +132,3 @@ class UnitHelper(unittest.TestCase):
     def after_setup(self):
         """No-op method to avoid people having to override setUp."""
         pass
-
