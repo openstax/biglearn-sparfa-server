@@ -7,12 +7,9 @@ from sparfa_server.config import PY_ENV, GITHUB_TOKEN
 if version_info < (3, 5):
     raise RuntimeError('Biglearn-sparfa-server requires Python 3.5+')
 
-if not __version__:
-    raise RuntimeError('Cannot find version information')
-
-if PY_ENV == 'travis' or PY_ENV == "production":
+if PY_ENV == 'travis' or PY_ENV == 'production':
     BIGLEARN_SPARFA_ALGS_DEPENDENCY_LINK = (
-        'git+https://{0}:x-oauth-basic@github.com/openstax/biglearn-sparfa-algs.git/'
+        'git+https://{}:x-oauth-basic@github.com/openstax/biglearn-sparfa-algs.git/'
         '@master#egg=sparfa-algs-0.0.1'.format(GITHUB_TOKEN)
     )
 else:
@@ -74,6 +71,7 @@ setup(
             'attrs==18.2.0',
             'coverage==4.5.1',
             'furl==0.5.7',
+            'honcho==1.0.1',
             'jsonschema==2.5.1',
             'more-itertools==4.3.0',
             'orderedmultidict==1.0',

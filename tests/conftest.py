@@ -18,8 +18,8 @@ def pg():
         try:
             with conn.cursor() as cursor:
                 # (Re)create the database
-                cursor.execute('DROP DATABASE IF EXISTS {0};'.format(db))
-                cursor.execute('CREATE DATABASE {0};'.format(db))
+                cursor.execute('DROP DATABASE IF EXISTS {};'.format(db))
+                cursor.execute('CREATE DATABASE {};'.format(db))
 
             # Migrate the database
             upgrade(Config('alembic.ini'), 'head')
@@ -28,7 +28,7 @@ def pg():
         finally:
             with conn.cursor() as cursor:
                 # Ensure the database gets dropped
-                cursor.execute('DROP DATABASE IF EXISTS {0};'.format(db))
+                cursor.execute('DROP DATABASE IF EXISTS {};'.format(db))
 
 
 @yield_fixture(scope='session')

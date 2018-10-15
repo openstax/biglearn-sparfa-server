@@ -3,12 +3,12 @@ from os import listdir
 
 
 def path(name, mode='r'):
-    return open('tests/json/{0}'.format(name), mode)
+    return open('tests/json/{}'.format(name), mode)
 
 
 def content(path_name):
     content = path(path_name).read().strip()
-    iterable = '[{0}]'.format(content)
+    iterable = '[{}]'.format(content)
     content = content.encode()
     iterable = iterable.encode()
     return BytesIO(content), BytesIO(iterable)

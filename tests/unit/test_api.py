@@ -133,7 +133,7 @@ class TestClientSession:
         assert 'Content-Type' in s.headers
         assert s.headers['Content-Type'] == 'application/json'
         assert 'User-Agent' in s.headers
-        assert s.headers['User-Agent'] == 'Biglearn-API Python API client {0}'.format(__version__)
+        assert s.headers['User-Agent'] == 'Biglearn-API Python API client {}'.format(__version__)
 
     def test_build_url(self):
         s = self.build_session()

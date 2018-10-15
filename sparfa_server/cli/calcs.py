@@ -1,38 +1,39 @@
 from logging import getLogger
 
-from click import group
+from click import group, pass_context
 
-from ..tasks.calcs import (calculate_ecosystem_matrices as calculate_ecosystem_matrices_task,
-                           calculate_exercises as calculate_exercises_task,
-                           calculate_clues as calculate_clues_task)
+from ..tasks.calcs import (calculate_ecosystem_matrices,
+                           calculate_exercises,
+                           calculate_clues)
 
 
 @group()
-def calcs():
+def calc():
     """Manage Calculations"""
 
 
-@calcs.command()
-def calculate_ecosystem_matrices():
+@calc.command()
+def ecosystem_matrices():
     """Calculate all ecosystem matrices"""
-    calculate_ecosystem_matrices_task.delay()
+    calculate_ecosystem_matrices()
 
 
-@calcs.command()
-def calculate_exercises():
+@calc.command()
+def exercises():
     """Calculate all personalized exercises"""
-    calculate_exercises_task.delay()
+    calculate_exercises()
 
 
-@calcs.command()
-def calculate_clues():
+@calc.command()
+def clues():
     """Calculate all CLUes"""
-    calculate_clues_task.delay()
+    calculate_clues()
 
 
-@calcs.command()
+@calc.command()
 @pass_context
-def calculate_all(ctx):
+def all(ctx):
     """Run all calculations once"""
-    for command in calcs.list_commands(ctx):
-        calcs.get_command(ctx, command).invoke(ctx)
+    for command in calc.list_commands(ctx):
+        if command != 'all':
+            calc.get_command(ctx, command).invoke(ctx)

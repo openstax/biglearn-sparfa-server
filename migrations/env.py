@@ -6,8 +6,8 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import create_engine
 
-from ..models import Base
-from ..config import PG_URL
+from sparfa_server.models import Base
+from sparfa_server.config import PG_URL
 
 path.append(dirname(dirname(abspath(__file__))))
 path.append(getcwd())

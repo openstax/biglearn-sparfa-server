@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
 from sqlalchemy.dialects.postgresql import insert
 
-from ..config import PG_URL, PY_ENV
+from .config import PG_URL, PY_ENV
 
 
 class BiglearnSession(Session):

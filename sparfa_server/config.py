@@ -1,8 +1,16 @@
 from os import environ
 
+# ImportError can happen when installing the package because dotenv is not yet installed
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
+
 # General config
 PY_ENV = environ.get('PY_ENV', 'development')
-GITHUB_TOKEN = environ.get('GITHUB_TOKEN')
+GITHUB_TOKEN = environ.get('GITHUB_TOKEN', '')
 PG_HOST = environ.get('PG_HOST', 'localhost')
 PG_PORT = environ.get('PG_PORT', '5445')
 PG_USER = environ.get('PG_USER', 'bl_sparfa_server')
@@ -18,10 +26,10 @@ AMQP_USER = environ.get('AMQP_USER', 'guest')
 AMQP_PASSWORD = environ.get('AMQP_PASSWORD', 'guest')
 CELERY_APP_NAME = environ.get('CELERY_APP_NAME', 'biglearn-sparfa-server')
 BIGLEARN_API_URL = environ.get('BIGLEARN_API_URL', 'https://biglearn-api-dev.openstax.org')
-BIGLEARN_API_TOKEN = environ.get('BIGLEARN_API_TOKEN')
+BIGLEARN_API_TOKEN = environ.get('BIGLEARN_API_TOKEN', '')
 BIGLEARN_SCHED_URL = environ.get('BIGLEARN_SCHED_URL',
                                  'https://biglearn-scheduler-dev.openstax.org')
-BIGLEARN_SCHED_TOKEN = environ.get('BIGLEARN_SCHED_TOKEN')
+BIGLEARN_SCHED_TOKEN = environ.get('BIGLEARN_SCHED_TOKEN', '')
 BIGLEARN_SCHED_ALGORITHM_NAME = environ.get('BIGLEARN_SCHED_ALGORITHM_NAME', 'biglearn-sparfa')
 
 # Environment-specific overrides

@@ -1,6 +1,6 @@
 from click import command, pass_context
 
-from ..task.celery import celery as celery_task
+from ..tasks.celery import celery as celery_task
 
 
 @command(add_help_option=False,  # --help is passed through to Celery

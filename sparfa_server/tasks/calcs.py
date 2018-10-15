@@ -6,8 +6,8 @@ from sqlalchemy import text
 
 from sparfa_algs.sgd.sparfa_algs import SparfaAlgs
 
+from .celery import task
 from ..api import blsched
-from ..celery import task
 from ..sqlalchemy import transaction
 
 

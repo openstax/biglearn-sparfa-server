@@ -1,44 +1,44 @@
-from click import group, option, echo
+from click import group, pass_context
 
-from ..api import fetch_pending_ecosystems, fetch_course_uuids
-from ..tasks.loaders import (load_ecosystem_metadata as load_ecosystem_metadata_task,
-                             load_ecosystem_events as load_ecosystem_events_task,
-                             load_course_metadata as load_course_metadata_task,
-                             load_course_events as load_course_events_task)
+from ..tasks.loaders import (load_ecosystem_metadata,
+                             load_ecosystem_events,
+                             load_course_metadata,
+                             load_course_events)
 
 
 @group()
-def loaders():
+def load():
     """Manage Loaders"""
 
 
-@loaders.command()
-def load_ecosystem_metadata():
+@load.command()
+def ecosystem_metadata():
     """Load all ecosystem metadata"""
-    load_ecosystem_metadata_task.delay()
+    load_ecosystem_metadata()
 
 
-@loaders.command()
-def load_ecosystem_events():
+@load.command()
+def ecosystem_events():
     """Load all ecosystem events"""
-    load_ecosystem_events_task.delay()
+    load_ecosystem_events()
 
 
-@loaders.command()
-def load_course_metadata():
+@load.command()
+def course_metadata():
     """Load all course metadata"""
-    load_course_metadata_task.delay()
+    load_course_metadata()
 
 
-@loaders.command()
-def load_course_events():
+@load.command()
+def course_events():
     """Load all course events"""
-    load_course_events_task.delay()
+    load_course_events()
 
 
-@loaders.command()
+@load.command()
 @pass_context
-def load_all(ctx):
+def all(ctx):
     """Run all loaders once"""
-    for command in loaders.list_commands(ctx):
-        loaders.get_command(ctx, command).invoke(ctx)
+    for command in load.list_commands(ctx):
+        if command != 'all':
+            load.get_command(ctx, command).invoke(ctx)

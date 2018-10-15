@@ -28,6 +28,7 @@ class PageExercise(Base):
     ecosystem_uuid = Column(UUID, nullable=False, index=True)
     page_uuid = Column(UUID, nullable=False, index=True)
     exercise_uuid = Column(UUID, nullable=False)
+    default_conflict_index_elements = ['exercise_uuid', 'ecosystem_uuid']
 
     __table_args__ = (
         Index(
@@ -39,6 +40,20 @@ class PageExercise(Base):
     )
 
 
+class Response(Base):
+    __tablename__ = 'responses'
+    course_uuid = Column(UUID, nullable=False, index=True)
+    ecosystem_uuid = Column(UUID, nullable=False, index=True)
+    trial_uuid = Column(UUID, nullable=False, index=True, unique=True)
+    student_uuid = Column(UUID, nullable=False, index=True)
+    exercise_uuid = Column(UUID, nullable=False, index=True)
+    is_correct = Column(Boolean, nullable=False)
+    is_real_response = Column(Boolean, nullable=False)
+    responded_at = Column(DateTime, nullable=False)
+    default_conflict_index_elements = ['trial_uuid']
+    default_conflict_update_columns = ['uuid', 'is_correct', 'is_real_response', 'responded_at']
+
+
 class EcosystemMatrix(Base):
     __tablename__ = 'ecosystem_matrices'
     ecosystem_uuid = Column(UUID, nullable=False, index=True, unique=True)
@@ -47,23 +62,11 @@ class EcosystemMatrix(Base):
     C_idx_by_id = Column(JSON, nullable=False)
     Q_idx_by_id = Column(JSON, nullable=False)
     H_mask_NCxNQ = Column(JSON, nullable=True)
-    default_conflict_index_elements = [ecosystem_uuid]
+    default_conflict_index_elements = ['ecosystem_uuid']
     default_conflict_update_columns = [
-          W_NCxNQ,
-          d_NQx1,
-          C_idx_by_id,
-          Q_idx_by_id,
-          H_mask_NCxNQ
+        'W_NCxNQ',
+        'd_NQx1',
+        'C_idx_by_id',
+        'Q_idx_by_id',
+        'H_mask_NCxNQ'
     ]
-
-
-class Response(Base):
-    __tablename__ = 'responses'
-    course_uuid = Column(UUID, nullable=False, index=True)
-    ecosystem_uuid = Column(UUID, nullable=False, index=True)
-    trial_uuid = Column(UUID, nullable=False, index=True)
-    student_uuid = Column(UUID, nullable=False, index=True)
-    exercise_uuid = Column(UUID, nullable=False, index=True)
-    is_correct = Column(Boolean, nullable=False)
-    is_real_response = Column(Boolean, nullable=False)
-    responded_at = Column(DateTime, nullable=False)

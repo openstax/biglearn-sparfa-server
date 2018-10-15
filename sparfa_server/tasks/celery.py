@@ -1,12 +1,14 @@
 from datetime import timedelta
+from functools import wraps
 
 from celery import Celery
+from celery.signals import worker_process_init
 from kombu import Queue, Exchange
 from celery_once import QueueOnce
 
-from ..config import AMQP_HOST, AMQP_PORT, AMQP_USER, AMQP_PASSWORD, CELERY_APP_NAME
-from ..redis import REDIS_URL, redis
-from ..pg import engine
+from ..config import AMQP_URL, CELERY_APP_NAME, REDIS_URL
+from ..redis import redis
+from ..sqlalchemy import engine
 from ..exceptions import log_exceptions
 
 celery = Celery(CELERY_APP_NAME)
@@ -16,44 +18,44 @@ celery.conf.update(
     result_compression='gzip',
     beat_schedule={
         'load_ecosystem_metadata': {
-            'task': '.loaders.load_ecosystem_metadata_task',
+            'task': 'sparfa_server.tasks.loaders.load_ecosystem_metadata',
             'schedule': timedelta(seconds=1),
             'options': {'queue' : 'load-ecosystem-metadata'}
         },
         'load_ecosystem_events': {
-            'task': '.loaders.load_ecosystem_events_task',
+            'task': 'sparfa_server.tasks.loaders.load_ecosystem_events',
             'schedule': timedelta(seconds=1),
             'options': {'queue' : 'load-ecosystem-events'}
         },
         'load_course_metadata': {
-            'task': '.loaders.load_course_metadata_task',
+            'task': 'sparfa_server.tasks.loaders.load_course_metadata',
             'schedule': timedelta(seconds=1),
             'options': {'queue' : 'load-course-metadata'}
         },
         'load_courses_events': {
-            'task': '.loaders.load_courses_events_task',
+            'task': 'sparfa_server.tasks.loaders.load_courses_events',
             'schedule': timedelta(seconds=1),
             'options': {'queue' : 'load-course-events'}
         },
         'calculate_ecosystem_matrices': {
-            'task': '.calcs.calculate_ecosystem_matrices_task',
+            'task': 'sparfa_server.tasks.calcs.calculate_ecosystem_matrices',
             'schedule': timedelta(seconds=1),
             'options': {'queue' : 'calculate-ecosystem-matrices'}
         },
         'calculate_exercises': {
-            'task': '.calcs.calculate_exercises_task',
+            'task': 'sparfa_server.tasks.calcs.calculate_exercises',
             'schedule': timedelta(seconds=1),
             'options': {'queue' : 'calculate-exercises'}
         },
         'calculate_clues': {
-            'task': '.calcs.calculate_clues_task',
+            'task': 'sparfa_server.tasks.calcs.calculate_clues',
             'schedule': timedelta(seconds=1),
             'options': {'queue' : 'calculate-clues'}
         }
     },
     accept_content=['json'],
     task_serializer='json',
-    imports=('.loaders', '.calcs'),
+    imports=('sparfa_server.tasks.loaders', 'sparfa_server.tasks.calcs'),
     task_queues=[
         Queue('load-course-metadata',
               routing_key='load-course-metadata',

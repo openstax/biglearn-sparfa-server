@@ -1,5 +1,5 @@
 from logging import getLogger
-from functools import wraps, partial
+from functools import wraps
 
 __logs__ = getLogger(__name__)
 
@@ -8,7 +8,7 @@ class BiglearnError(Exception):
 
     def __init__(self, resp):
         super().__init__(resp)
-        #: Response code that triggered the error
+        # Response code that triggered the error
         self.response = resp
         self.code = resp.status_code
         try:
@@ -87,7 +87,7 @@ _error_classes = {
 
 def check_status_code(response):
     """Raises the appropriate exception for a response if it has an abnormal status code"""
-    klass = _error_classes[response.status_code]
+    klass = _error_classes.get(response.status_code)
     if klass is None:
         if 400 <= response.status_code < 500:
             klass = ClientError
@@ -97,7 +97,7 @@ def check_status_code(response):
         raise klass(response)
 
 
-def log_exceptions(func, exceptions):
+def log_exceptions(func, exceptions=(Exception,)):
     @wraps(func)
     def wrapped(*args, **kwargs):
         try:
@@ -106,6 +106,3 @@ def log_exceptions(func, exceptions):
             return __logs__.exception(e)
 
     return wrapped
-
-
-log_exceptions = partial(log_exceptions, (Exception,))

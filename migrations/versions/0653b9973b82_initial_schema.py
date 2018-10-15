@@ -1,8 +1,8 @@
 """initial schema
 
-Revision ID: 308ec807c85e
-Revises:
-Create Date: 2018-10-11 14:38:19.857424
+Revision ID: 0653b9973b82
+Revises: 
+Create Date: 2018-10-15 17:13:28.703780
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '308ec807c85e'
+revision = '0653b9973b82'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -74,7 +74,7 @@ def upgrade():
     op.create_index(op.f('ix_responses_ecosystem_uuid'), 'responses', ['ecosystem_uuid'], unique=False)
     op.create_index(op.f('ix_responses_exercise_uuid'), 'responses', ['exercise_uuid'], unique=False)
     op.create_index(op.f('ix_responses_student_uuid'), 'responses', ['student_uuid'], unique=False)
-    op.create_index(op.f('ix_responses_trial_uuid'), 'responses', ['trial_uuid'], unique=False)
+    op.create_index(op.f('ix_responses_trial_uuid'), 'responses', ['trial_uuid'], unique=True)
     op.create_index(op.f('ix_responses_uuid'), 'responses', ['uuid'], unique=True)
     # ### end Alembic commands ###
 
