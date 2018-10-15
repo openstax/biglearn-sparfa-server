@@ -11,6 +11,5 @@ __url__ = 'https://github.com/openstax/biglearn-sparfa-server'
 
 __all__ = (
     '__package_name__', '__title__', '__author__', '__author_email__',
-    '__license__', '__copyright__', '__version__','client_version',
-    '__version_info__', '__url__',
+    '__license__', '__copyright__', '__version__', '__version_info__', '__url__'
 )

@@ -1,8 +1,8 @@
 from sys import version_info
 from setuptools import setup, find_packages
 
-from .__about__ import __version__
-from .config import PY_ENV, GITHUB_TOKEN
+from sparfa_server import __version__
+from sparfa_server.config import PY_ENV, GITHUB_TOKEN
 
 if version_info < (3, 5):
     raise RuntimeError('Biglearn-sparfa-server requires Python 3.5+')
@@ -103,7 +103,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'sparf=sparfa_server.cli.__init__:main'
+            'sparf=sparfa_server.cli.main:main'
         ]
     },
     classifiers=[],

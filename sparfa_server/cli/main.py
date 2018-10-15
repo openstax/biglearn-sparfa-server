@@ -1,14 +1,17 @@
 from click import group, version_option, pass_context
 
-from ..__about__ import __version__
-from . import celery, server, loaders, calcs
+from .. import __version__
+from .celery import celery
+from .server import server
+from .loaders import loaders
+from .calcs import calcs
 
 
 @group()
 @version_option(version=__version__)
 @pass_context
 def cli(ctx):
-    pass
+    """CLI for biglearn-sparfa-server"""
 
 
 def main():

@@ -11,9 +11,6 @@ from ..celery import task
 from ..sqlalchemy import transaction
 
 
-__logs__ = getLogger(__name__)
-
-
 def _dump_sparse_matrix(matrix):
     sparse_matrix = coo_matrix(matrix)
     return dumps({

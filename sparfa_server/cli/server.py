@@ -1,15 +1,11 @@
 from os import environ
 from sys import exit
 
-from click import group, option
+from click import command, option
+from honcho.manager import Manager
 
 
-@group()
-def server():
-    """Manage Server commands"""
-
-
-@server.command()
+@command()
 @option('--worker/--no-worker',
         default=True,
         help="Whether or not to run the celery worker process")
@@ -17,25 +13,17 @@ def server():
         default=True,
         help="Whether or not to run the celery beat process")
 def server(worker, beat):
-    """
-    Run the development worker and scheduler
-    """
-    try:
-        from honcho.manager import Manager
-    except ImportError:
-        raise click.ClickException(
-            'cannot import honcho: did you run `pip install -e .` yet?')
-
+    """Run the celery beat process and a single celery worker (development mode)"""
     environ['PYTHONUNBUFFERED'] = 'true'
 
-    m = Manager()
+    manager = Manager()
 
     if worker:
-        m.add_process('worker', 'sparf celery worker --loglevel=info')
+        manager.add_process('worker', 'sparf celery worker --loglevel=info')
 
     if beat:
-        m.add_process('beat', 'sparf celery beat --loglevel=info')
+        manager.add_process('beat', 'sparf celery beat --loglevel=info')
 
-    m.loop()
+    manager.loop()
 
-    exit(m.returncode)
+    exit(manager.returncode)
