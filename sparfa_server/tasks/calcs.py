@@ -1,4 +1,3 @@
-from logging import getLogger
 from json import dumps, loads
 from collections import defaultdict
 
@@ -42,6 +41,7 @@ def _load_mapping(text):
 
 @task
 def calculate_ecosystem_matrices():
+    """Calculate all ecosystem matrices"""
     calculations = blsched.fetch_ecosystem_matrix_updates()
     while calculations:
         ecosystem_matrix_values = []
@@ -108,6 +108,7 @@ def calculate_ecosystem_matrices():
 
 @task
 def calculate_exercises():
+    """Calculate all personalized exercises"""
     calculations = blsched.fetch_exercise_calculations()
     while calculations:
         exercise_calculation_requests = []
@@ -238,6 +239,7 @@ def calculate_exercises():
 
 @task
 def calculate_clues():
+    """Calculate all CLUes"""
     calculations = blsched.fetch_clue_calculations()
     while calculations:
         clue_calculation_requests = []

@@ -8,6 +8,7 @@ from ..sqlalchemy import transaction
 
 @task
 def load_ecosystem_metadata():
+    """Load all ecosystem metadata"""
     responses = blapi.fetch_ecosystem_metadatas()
 
     ecosystem_values = [{
@@ -21,6 +22,7 @@ def load_ecosystem_metadata():
 
 @task
 def load_ecosystem_events(event_types=['create_ecosystem'], batch_size=1000):
+    """Load all ecosystem events"""
     ecosystems = []
     with transaction() as session:
         # Group ecosystems in chunks of batch_size and send those requests at once
@@ -105,6 +107,7 @@ def _load_grouped_ecosystem_events(session, ecosystems):
 
 @task
 def load_course_metadata():
+    """Load all course metadata"""
     responses = blapi.fetch_course_metadatas()
 
     course_values = [{
@@ -118,6 +121,7 @@ def load_course_metadata():
 
 @task
 def load_course_events(event_types=['record_response'], batch_size=1000):
+    """Load all course events"""
     courses = []
     with transaction() as session:
         # Group courses in chunks of batch_size and send those requests at once

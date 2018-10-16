@@ -14,7 +14,7 @@ from ..config import PY_ENV
         help="Whether or not to run the celery beat process")
 def server(worker, beat):
     """
-    Run the celery beat process and one worker.
+    Run the Celery beat process and one worker.
 
     For development purposes
     """

@@ -1,4 +1,4 @@
-from click import group, pass_context
+from click import group
 
 from ..tasks.loaders import (load_ecosystem_metadata,
                              load_ecosystem_events,
@@ -8,37 +8,45 @@ from ..tasks.loaders import (load_ecosystem_metadata,
 
 @group()
 def load():
-    """Run Loaders."""
+    """Run loaders."""
 
 
-@load.command()
-def ecosystem_metadata():
-    """Load all ecosystem metadata"""
+@load.group()
+def ecosystem():
+    """Run ecosystem loaders."""
+
+
+ecosystem.command(name='metadata')(load_ecosystem_metadata)
+ecosystem.command(name='events')(load_ecosystem_events)
+
+
+@ecosystem.command(name='both')
+def ecosystem_both():
+    """Run both ecosystem loaders"""
     load_ecosystem_metadata()
-
-
-@load.command()
-def ecosystem_events():
-    """Load all ecosystem events"""
     load_ecosystem_events()
 
 
-@load.command()
-def course_metadata():
-    """Load all course metadata"""
+@load.group()
+def course():
+    """Run course loaders."""
+
+
+course.command(name='metadata')(load_course_metadata)
+course.command(name='events')(load_course_events)
+
+
+@course.command(name='both')
+def course_both():
+    """Run both course loaders"""
     load_course_metadata()
-
-
-@load.command()
-def course_events():
-    """Load all course events"""
     load_course_events()
 
 
 @load.command()
-@pass_context
-def all(ctx):
+def all():
     """Run all loaders once"""
-    for command in load.list_commands(ctx):
-        if command != 'all':
-            load.get_command(ctx, command).invoke(ctx)
+    load_ecosystem_metadata()
+    load_ecosystem_events()
+    load_course_metadata()
+    load_course_events()

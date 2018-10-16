@@ -1,6 +1,6 @@
 from click import command, pass_context
 
-from ..tasks.celery import celery as celery_task
+from ..tasks.celery import celery as app
 
 
 @command(add_help_option=False,  # --help is passed through to Celery
@@ -10,7 +10,7 @@ def celery(ctx):
     """
     Run Celery commands.
 
-    This command delegates to the celery-worker command, giving access to the
-    full Celery CLI.
+    This command delegates to the celery-worker command,
+    giving access to the full Celery CLI.
     """
-    celery_task.start(argv=[ctx.command_path] + list(ctx.args))
+    app.start(argv=[ctx.command_path] + list(ctx.args))
