@@ -9,18 +9,13 @@ from ..sqlalchemy import transaction
 @task
 def load_ecosystem_metadata():
     responses = blapi.fetch_ecosystem_metadatas()
-    ecosystem_uuids = [response['uuid'] for response in responses]
+
+    ecosystem_values = [{
+        'uuid': response['uuid'],
+        'sequence_number': 0
+    } for response in responses]
 
     with transaction() as session:
-        existing_ecosystem_uuid_tuples = \
-            session.query(Ecosystem.uuid).filter(Ecosystem.uuid.in_(ecosystem_uuids)).all()
-        existing_uuids_set = set([uuid_tuple[0] for uuid_tuple in existing_ecosystem_uuid_tuples])
-
-        ecosystem_values = [{
-            'uuid': ecosystem_uuid,
-            'sequence_number': 0
-        } for ecosystem_uuid in ecosystem_uuids if ecosystem_uuid not in existing_uuids_set]
-
         session.upsert(Ecosystem, ecosystem_values)
 
 
@@ -111,18 +106,13 @@ def _load_grouped_ecosystem_events(session, ecosystems):
 @task
 def load_course_metadata():
     responses = blapi.fetch_course_metadatas()
-    course_uuids = [response['uuid'] for response in responses]
+
+    course_values = [{
+        'uuid': response['uuid'],
+        'sequence_number': 0
+    } for response in responses]
 
     with transaction() as session:
-        existing_course_uuid_tuples = \
-            session.query(Course.uuid).filter(Course.uuid.in_(course_uuids)).all()
-        existing_uuids_set = set([uuid_tuple[0] for uuid_tuple in existing_course_uuid_tuples])
-
-        course_values = [{
-            'uuid': course_uuid,
-            'sequence_number': 0
-        } for course_uuid in course_uuids if course_uuid not in existing_uuids_set]
-
         session.upsert(Course, course_values)
 
 

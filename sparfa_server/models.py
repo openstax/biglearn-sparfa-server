@@ -4,8 +4,7 @@ from sqlalchemy.dialects.postgresql import JSON, UUID
 
 
 class Base(object):
-    id = Column(Integer, primary_key=True)
-    uuid = Column(UUID, nullable=False, index=True, unique=True)
+    uuid = Column(UUID, primary_key=True)
     default_conflict_index_elements = ['uuid']
     default_conflict_update_columns = None
 
