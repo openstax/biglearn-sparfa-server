@@ -7,7 +7,7 @@ from sparfa_server.config import PY_ENV, GITHUB_TOKEN
 if version_info < (3, 5):
     raise RuntimeError('Biglearn-sparfa-server requires Python 3.5+')
 
-if PY_ENV == 'travis' or PY_ENV == 'production':
+if PY_ENV == 'ci' or PY_ENV == 'production':
     BIGLEARN_SPARFA_ALGS_DEPENDENCY_LINK = (
         'git+https://{}:x-oauth-basic@github.com/openstax/biglearn-sparfa-algs.git/'
         '@master#egg=sparfa-algs-0.0.1'.format(GITHUB_TOKEN)
@@ -32,6 +32,7 @@ setup(
         "billiard==3.5.0.4",
         "celery==4.2.1",
         "celery-once==2.0.0",
+        "celery-redbeat==0.11.1",
         "click==6.7",
         "configobj==5.0.6",
         "dateparser==0.7.0",

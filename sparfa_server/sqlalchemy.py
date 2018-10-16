@@ -21,6 +21,9 @@ class BiglearnSession(Session):
         :param conflict_update_columns: List of columns to update on uniqueness conflict
         :return:                        ResultProxy containing the result of the upsert
         """
+        if not values:
+            return
+
         insert_stmt = insert(model).values(values)
 
         if conflict_index_elements is None:
@@ -29,22 +32,21 @@ class BiglearnSession(Session):
         if conflict_update_columns is None:
             conflict_update_columns = model.default_conflict_update_columns
 
-        if conflict_update_columns is None or len(conflict_update_columns) == 0:
-            if conflict_index_elements is None or len(conflict_index_elements) == 0:
-                stmt = insert_stmt.on_conflict_do_nothing()
-            else:
-                stmt = insert_stmt.on_conflict_do_nothing(index_elements=conflict_index_elements)
-        else:
-            if conflict_index_elements is None or len(conflict_index_elements) == 0:
+        if conflict_update_columns:
+            if not conflict_index_elements:
                 raise TypeError(
-                    'conflict_index_elements must also be provided '
-                    'when conflict_update_columns is provided'
+                    'when conflict_update_columns is provided, then '
+                    'conflict_index_elements must also be provided'
                 )
 
             stmt = insert_stmt.on_conflict_do_update(
                 index_elements=conflict_index_elements,
                 set_={key: getattr(insert_stmt.excluded, key) for key in conflict_update_columns}
             )
+        elif conflict_index_elements:
+            stmt = insert_stmt.on_conflict_do_nothing(index_elements=conflict_index_elements)
+        else:
+            stmt = insert_stmt.on_conflict_do_nothing()
 
         return self.execute(stmt)
 

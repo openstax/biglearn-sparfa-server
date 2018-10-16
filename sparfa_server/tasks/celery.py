@@ -32,8 +32,8 @@ celery.conf.update(
             'schedule': timedelta(seconds=1),
             'options': {'queue' : 'load-course-metadata'}
         },
-        'load_courses_events': {
-            'task': 'sparfa_server.tasks.loaders.load_courses_events',
+        'load_course_events': {
+            'task': 'sparfa_server.tasks.loaders.load_course_events',
             'schedule': timedelta(seconds=1),
             'options': {'queue' : 'load-course-events'}
         },
@@ -53,6 +53,8 @@ celery.conf.update(
             'options': {'queue' : 'calculate-clues'}
         }
     },
+    beat_scheduler='redbeat.schedulers.RedBeatScheduler',
+    redbeat_redis_url=REDIS_URL,
     accept_content=['json'],
     task_serializer='json',
     imports=('sparfa_server.tasks.loaders', 'sparfa_server.tasks.calcs'),

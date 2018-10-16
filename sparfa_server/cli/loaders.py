@@ -8,7 +8,7 @@ from ..tasks.loaders import (load_ecosystem_metadata,
 
 @group()
 def load():
-    """Manage Loaders"""
+    """Run Loaders."""
 
 
 @load.command()

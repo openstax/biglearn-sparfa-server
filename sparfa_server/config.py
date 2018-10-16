@@ -9,7 +9,7 @@ except ImportError:
     pass
 
 # General config
-PY_ENV = environ.get('PY_ENV', 'development')
+PY_ENV = environ.get('PY_ENV', 'development').lower()
 GITHUB_TOKEN = environ.get('GITHUB_TOKEN', '')
 PG_HOST = environ.get('PG_HOST', 'localhost')
 PG_PORT = environ.get('PG_PORT', '5445')

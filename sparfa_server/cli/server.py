@@ -1,7 +1,8 @@
-from os import environ
 from sys import exit
 
 from click import command, option, ClickException
+
+from ..config import PY_ENV
 
 
 @command()
@@ -12,8 +13,13 @@ from click import command, option, ClickException
         default=True,
         help="Whether or not to run the celery beat process")
 def server(worker, beat):
-    """Run the celery beat process and a single celery worker (development mode)"""
-    environ['PYTHONUNBUFFERED'] = 'true'
+    """
+    Run the celery beat process and one worker.
+
+    For development purposes
+    """
+    if PY_ENV == 'production':
+        exit('Error: the sparf server command cannot be used in production mode')
 
     try:
         from honcho.manager import Manager

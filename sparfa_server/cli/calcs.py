@@ -9,7 +9,7 @@ from ..tasks.calcs import (calculate_ecosystem_matrices,
 
 @group()
 def calc():
-    """Manage Calculations"""
+    """Run Calculations."""
 
 
 @calc.command()
