@@ -2,8 +2,8 @@ from uuid import uuid4
 
 from .celery import task
 from ..api import blapi
-from ..models import Ecosystem, PageExercise, Course, Response
 from ..sqlalchemy import transaction
+from ..models import Ecosystem, PageExercise, Course, Response
 
 
 @task

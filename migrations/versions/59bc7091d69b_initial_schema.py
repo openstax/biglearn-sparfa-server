@@ -1,7 +1,7 @@
 """initial schema
 
 Revision ID: 59bc7091d69b
-Revises: 
+Revises:
 Create Date: 2018-10-16 13:56:39.165853
 
 """
@@ -25,15 +25,13 @@ def upgrade():
     )
     op.create_table('ecosystem_matrices',
     sa.Column('uuid', postgresql.UUID(), nullable=False),
-    sa.Column('ecosystem_uuid', postgresql.UUID(), nullable=False),
     sa.Column('W_NCxNQ', postgresql.JSON(astext_type=sa.Text()), nullable=False),
     sa.Column('d_NQx1', postgresql.JSON(astext_type=sa.Text()), nullable=False),
-    sa.Column('C_idx_by_id', postgresql.JSON(astext_type=sa.Text()), nullable=False),
-    sa.Column('Q_idx_by_id', postgresql.JSON(astext_type=sa.Text()), nullable=False),
     sa.Column('H_mask_NCxNQ', postgresql.JSON(astext_type=sa.Text()), nullable=True),
+    sa.Column('Q_idx_by_id', postgresql.JSON(astext_type=sa.Text()), nullable=False),
+    sa.Column('C_idx_by_id', postgresql.JSON(astext_type=sa.Text()), nullable=False),
     sa.PrimaryKeyConstraint('uuid')
     )
-    op.create_index(op.f('ix_ecosystem_matrices_ecosystem_uuid'), 'ecosystem_matrices', ['ecosystem_uuid'], unique=True)
     op.create_table('ecosystems',
     sa.Column('uuid', postgresql.UUID(), nullable=False),
     sa.Column('sequence_number', sa.Integer(), nullable=False),

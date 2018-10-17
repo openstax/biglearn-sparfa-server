@@ -55,17 +55,15 @@ class Response(Base):
 
 class EcosystemMatrix(Base):
     __tablename__ = 'ecosystem_matrices'
-    ecosystem_uuid = Column(UUID, nullable=False, index=True, unique=True)
     W_NCxNQ = Column(JSON, nullable=False)
     d_NQx1 = Column(JSON, nullable=False)
-    C_idx_by_id = Column(JSON, nullable=False)
-    Q_idx_by_id = Column(JSON, nullable=False)
     H_mask_NCxNQ = Column(JSON, nullable=True)
-    default_conflict_index_elements = ['ecosystem_uuid']
+    Q_idx_by_id = Column(JSON, nullable=False)
+    C_idx_by_id = Column(JSON, nullable=False)
     default_conflict_update_columns = [
         'W_NCxNQ',
         'd_NQx1',
-        'C_idx_by_id',
+        'H_mask_NCxNQ',
         'Q_idx_by_id',
-        'H_mask_NCxNQ'
+        'C_idx_by_id'
     ]

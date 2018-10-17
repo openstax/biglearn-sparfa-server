@@ -1,6 +1,8 @@
 from json import dumps, loads
 from collections import defaultdict
+from textwrap import dedent
 
+from scipy.sparse import coo_matrix
 from sqlalchemy import text
 
 from sparfa_algs.sgd.sparfa_algs import SparfaAlgs
@@ -8,6 +10,7 @@ from sparfa_algs.sgd.sparfa_algs import SparfaAlgs
 from .celery import task
 from ..api import blsched
 from ..sqlalchemy import transaction
+from ..models import Response, PageExercise, EcosystemMatrix
 
 
 def _dump_sparse_matrix(matrix):
@@ -20,23 +23,13 @@ def _dump_sparse_matrix(matrix):
     })
 
 
-def _load_sparse_matrix(text):
-    sparse_json = loads(text)
-    sparse_matrix = coo_matrix(
+def _load_sparse_matrix(string):
+    sparse_json = loads(string)
+    return coo_matrix(
         (sparse_json.get('data'),
         (sparse_json.get('row'), sparse_json.get('col'))),
         shape=sparse_json.get('shape')
-    )
-
-    return sparse_matrix.toarray()
-
-
-def _dump_mapping(mapping):
-    return dumps(list(mapping.items()))
-
-
-def _load_mapping(text):
-    return OrderedDict(loads(text))
+    ).toarray()
 
 
 @task
@@ -57,9 +50,10 @@ def calculate_ecosystem_matrices():
                 responses_by_ecosystem_uuid[response.ecosystem_uuid].append(response)
 
             page_exercises = session.query(
+                PageExercise.ecosystem_uuid,
                 PageExercise.page_uuid,
                 PageExercise.exercise_uuid
-            ).filter(PageExercise.ecosystem_uuid.in_(ecosystem_uuid)).all()
+            ).filter(PageExercise.ecosystem_uuid.in_(ecosystem_uuids)).all()
             page_exercises_by_ecosystem_uuid = defaultdict(list)
             for page_exercise in page_exercises:
                 page_exercises_by_ecosystem_uuid[page_exercise.ecosystem_uuid].append(page_exercise)
@@ -89,19 +83,19 @@ def calculate_ecosystem_matrices():
                 )
 
                 ecosystem_matrix_values.append({
-                    'ecosystem_uuid': ecosystem_uuid,
+                    'uuid': ecosystem_uuid,
                     'W_NCxNQ': _dump_sparse_matrix(algs.W_NCxNQ),
                     'd_NQx1': _dump_sparse_matrix(algs.d_NQx1),
-                    'C_idx_by_id': _dump_mapping(algs.C_idx_by_id),
-                    'Q_idx_by_id': _dump_mapping(algs.Q_idx_by_id),
+                    'C_idx_by_id': dumps(algs.C_idx_by_id),
+                    'Q_idx_by_id': dumps(algs.Q_idx_by_id),
                     'H_mask_NCxNQ': _dump_sparse_matrix(algs.H_mask_NCxNQ)
                 })
 
             session.upsert(EcosystemMatrix, ecosystem_matrix_values)
 
-            blsched.ecosystem_matrices_updated(
-                [{'calculation_uuid': calculation.uuid} for calculation in calculations]
-            )
+            blsched.ecosystem_matrices_updated([{
+                'calculation_uuid': calculation['calculation_uuid']
+            } for calculation in calculations])
 
         calculations = blsched.fetch_ecosystem_matrix_updates()
 
@@ -117,11 +111,11 @@ def calculate_exercises():
 
         with transaction() as session:
             ecosystem_matrices = session.query(EcosystemMatrix).filter(
-                EcosystemMatrix.ecosystem_uuid.in_(ecosystem_uuids)
+                EcosystemMatrix.uuid.in_(ecosystem_uuids)
             ).all()
             ecosystem_matrices_by_ecosystem_uuid = {}
             for matrix in ecosystem_matrices:
-                ecosystem_matrices_by_ecosystem_uuid[matrix.ecosystem_uuid] = matrix
+                ecosystem_matrices_by_ecosystem_uuid[matrix.uuid] = matrix
 
             # Skip calculations that don't have an ecosystem matrix
             calculations = [calc for calc in calculations
@@ -138,28 +132,32 @@ def calculate_exercises():
                 valid_exercise_uuids = [uuid for uuid in calculation['exercise_uuids']
                                         if uuid in ecosystem_matrix.Q_idx_by_id]
                 valid_exercise_uuids_by_calculation_uuid[calculation_uuid] = valid_exercise_uuids
-                values.append((ecosystem_uuid, calculation['student_uuid'], valid_exercise_uuids))
+                values.append("('{0}', '{1}', '{2}', ARRAY[{3}])".format(
+                    calculation_uuid,
+                    ecosystem_uuid,
+                    calculation['student_uuid'],
+                    ', '.join(["'{}'".format(uuid) for uuid in valid_exercise_uuids])
+                ))
 
             if len(values) == 0:
                 break
 
-            values_sql = 'VALUES ' + ', '.join([str(value) for value in values])
-            responses = session.query(Response).from_statement(text(dedent('''
-                SELECT "responses".*, "values"."calculation_uuid"
-                FROM "responses" INNER JOIN %s AS "values"
+            results = session.query('calculation_uuid', Response).from_statement(text(dedent('''
+                SELECT "values"."calculation_uuid", "responses".*
+                FROM "responses" INNER JOIN (VALUES {}) AS "values"
                     ("calculation_uuid", "ecosystem_uuid", "student_uuid", "exercise_uuids")
-                    ON "responses"."student_uuid" = "values"."student_uuid"
-                        AND "responses"."ecosystem_uuid" = "values"."ecosystem_uuid"
-                        AND "responses"."exercise_uuid" IN "values"."exercise_uuids"
-            '''.format(values_sql)).strip())).all()
+                    ON "responses"."student_uuid" = "values"."student_uuid"::uuid
+                        AND "responses"."ecosystem_uuid" = "values"."ecosystem_uuid"::uuid
+                        AND "values"."exercise_uuids"::uuid[] @> ARRAY["responses"."exercise_uuid"]
+            '''.format(', '.join(values))).strip())).all()
             responses_by_calculation_uuid = defaultdict(list)
-            for response in responses:
-                responses_by_calculation_uuid[response.calculation_uuid].append(response)
+            for result in results:
+                responses_by_calculation_uuid[result.calculation_uuid].append(result.Response)
 
             exercise_calculation_requests = []
             for calculation in calculations:
-                ecosystem_uuid = calc['ecosystem_uuid']
-                student_uuid = calc['student_uuid']
+                ecosystem_uuid = calculation['ecosystem_uuid']
+                calculation_uuid = calculation['calculation_uuid']
 
                 ecosystem_matrix = ecosystem_matrices_by_ecosystem_uuid[ecosystem_uuid]
 
@@ -167,30 +165,25 @@ def calculate_exercises():
                 d_NQx1       = _load_sparse_matrix(ecosystem_matrix.d_NQx1)
                 H_mask_NCxNQ = _load_sparse_matrix(ecosystem_matrix.H_mask_NCxNQ)
 
-                C_idx_by_id = _load_mapping(ecosystem_matrix.C_idx_by_id)
-                Q_idx_by_id = _load_mapping(ecosystem_matrix.Q_idx_by_id)
+                C_idx_by_id = loads(ecosystem_matrix.C_idx_by_id)
+                Q_idx_by_id = loads(ecosystem_matrix.Q_idx_by_id)
 
                 # Construct gradebook
-                L_ids       = [student_uuid]
-                L_idx_by_id = {L_id: idx for idx, L_id in enumerate(L_ids)}
+                L_id        = calculation['student_uuid']
+                L_idx_by_id = {L_id: 0}
 
-                NL = len(L_ids)
-                NQ = len(Q_idx_by_id)
-                NC = len(C_idx_by_id)
-
-                C_id_by_idx = {idx: C_id for C_id,idx in C_idx_by_id.items()}
-                Q_id_by_idx = {idx: Q_id for Q_id,idx in Q_idx_by_id.items()}
-
-                C_ids = [C_id_by_idx[idx] for idx in range(NC)]
-                Q_ids = [Q_id_by_idx[idx] for idx in range(NQ)]
+                C_ids = C_idx_by_id.keys()
+                Q_ids = Q_idx_by_id.keys()
 
                 valid_exercise_uuids = valid_exercise_uuids_by_calculation_uuid[calculation_uuid]
+
+                # TODO: downselect Q_idx_by_id using the valid_exercise_uuids
 
                 responses = responses_by_calculation_uuid[calculation_uuid]
 
                 # TODO make algs.tesr work with responses with dates already parsed
                 # as opposed to formatting and parsing multiple times.
-                responses = [{
+                response_dicts = [{
                     'L_id':         response.student_uuid,
                     'Q_id':         response.exercise_uuid,
                     'responded_at': response.responded_at.isoformat(),
@@ -198,33 +191,36 @@ def calculate_exercises():
                 } for response in responses]
 
                 # Create Grade book for the student
-                G_NQxNL, G_mask_NQxNL = SparfaAlgs._G_from_responses(NL=NL,
-                                                                     NQ=NQ,
-                                                                     L_idx_by_id=L_idx_by_id,
-                                                                     Q_idx_by_id=Q_idx_by_id,
-                                                                     responses=responses)
+                G_NQxNL, G_mask_NQxNL = SparfaAlgs._G_from_responses(
+                    NL=1,
+                    NQ=len(Q_ids),
+                    L_idx_by_id=L_idx_by_id,
+                    Q_idx_by_id=Q_idx_by_id,
+                    responses=response_dicts
+                )
 
                 # Create the SparfaAlgs object
-                algs, infos = SparfaAlgs.from_W_d(W_NCxNQ=W_NCxNQ,
-                                                  d_NQx1=d_NQx1,
-                                                  H_mask_NCxNQ=H_mask_NCxNQ,
-                                                  G_NQxNL=G_NQxNL,
-                                                  G_mask_NQxNL=G_mask_NQxNL,
-                                                  L_ids=L_ids,
-                                                  Q_ids=Q_ids,
-                                                  C_ids=C_ids,
-                                                  )
+                algs, infos = SparfaAlgs.from_W_d(
+                    W_NCxNQ=W_NCxNQ,
+                    d_NQx1=d_NQx1,
+                    H_mask_NCxNQ=H_mask_NCxNQ,
+                    G_NQxNL=G_NQxNL,
+                    G_mask_NQxNL=G_mask_NQxNL,
+                    L_ids=[L_id],
+                    Q_ids=Q_ids,
+                    C_ids=C_ids
+                )
 
-                ordered_Q_infos = algs.tesr(target_L_id=student_uuid,
-                                            target_Q_ids=valid_exercise_uuids,
-                                            target_responses=responses
-                                            )
-
+                ordered_Q_infos = algs.tesr(
+                    target_L_id=L_id,
+                    target_Q_ids=valid_exercise_uuids,
+                    target_responses=response_dicts
+                )
                 ordered_exercise_uuids = [info.Q_id for info in ordered_Q_infos]
 
-                # Put any unknown exercise uuids at the end of the list.
+                # Put any unknown exercise uuids at the end of the list
                 unknown_exercise_uuids = list(
-                    set(calc['exercise_uuids']) - set(ordered_exercise_uuids)
+                    set(calculation['exercise_uuids']) - set(ordered_exercise_uuids)
                 )
                 ordered_exercise_uuids.extend(unknown_exercise_uuids)
 
@@ -250,11 +246,11 @@ def calculate_clues():
 
         with transaction() as session:
             ecosystem_matrices = session.query(EcosystemMatrix).filter(
-                EcosystemMatrix.ecosystem_uuid.in_(ecosystem_uuids)
+                EcosystemMatrix.uuid.in_(ecosystem_uuids)
             ).all()
             ecosystem_matrices_by_ecosystem_uuid = {}
             for matrix in ecosystem_matrices:
-                ecosystem_matrices_by_ecosystem_uuid[matrix.ecosystem_uuid] = matrix
+                ecosystem_matrices_by_ecosystem_uuid[matrix.uuid] = matrix
 
             responses = session.query(Response).filter(Response.uuid.in_(response_uuids)).all()
             responses_by_uuid = {}
@@ -271,7 +267,6 @@ def calculate_clues():
 
             for calculation in calculations:
                 ecosystem_uuid = calculation['ecosystem_uuid']
-                student_uuids = calculation['student_uuids']
 
                 ecosystem_matrix = ecosystem_matrices_by_ecosystem_uuid[ecosystem_uuid]
 
@@ -279,27 +274,21 @@ def calculate_clues():
                 d_NQx1       = _load_sparse_matrix(ecosystem_matrix.d_NQx1)
                 H_mask_NCxNQ = _load_sparse_matrix(ecosystem_matrix.H_mask_NCxNQ)
 
-                C_idx_by_id = _load_mapping(ecosystem_matrix.C_idx_by_id)
-                Q_idx_by_id = _load_mapping(ecosystem_matrix.Q_idx_by_id)
+                C_idx_by_id = loads(ecosystem_matrix.C_idx_by_id)
+                Q_idx_by_id = loads(ecosystem_matrix.Q_idx_by_id)
 
                 # Construct gradebook
-                L_idx_by_id = {L_id: idx for idx, L_id in enumerate(student_uuids)}
+                L_ids = calculation['student_uuids']
+                L_idx_by_id = {L_id: idx for idx, L_id in enumerate(calculation['student_uuids'])}
 
-                NL = len(L_idx_by_id)
-                NQ = len(Q_idx_by_id)
-                NC = len(C_idx_by_id)
+                C_ids = C_idx_by_id.keys()
+                Q_ids = Q_idx_by_id.keys()
 
-                C_id_by_idx = {idx: C_id for C_id,idx in C_idx_by_id.items()}
-                Q_id_by_idx = {idx: Q_id for Q_id,idx in Q_idx_by_id.items()}
-                L_id_by_idx = {idx: L_id for L_id,idx in L_idx_by_id.items()}
+                # TODO: downselect Q_id_by_idx using the exercise_uuids in responses
 
-                C_ids = [C_id_by_idx[idx] for idx in range(NC)]
-                Q_ids = [Q_id_by_idx[idx] for idx in range(NQ)]
-                L_ids = [L_id_by_idx[idx] for idx in range(NL)]
-
-                valid_responses = [responses_by_uuid[response['response_uuid']]
-                                   for response in calculation['responses']
-                                   if response.exercise_uuid in Q_idx_by_id]
+                responses = [responses_by_uuid[response['response_uuid']]
+                             for response in calculation['responses']]
+                valid_responses = [resp for resp in responses if resp.exercise_uuid in Q_idx_by_id]
                 response_dicts = [{
                     'L_id':         response.student_uuid,
                     'Q_id':         response.exercise_uuid,
@@ -309,8 +298,8 @@ def calculate_clues():
 
                 # Create Grade book for the student
                 G_NQxNL, G_mask_NQxNL = SparfaAlgs._G_from_responses(
-                    NL=NL,
-                    NQ=NQ,
+                    NL=len(L_ids),
+                    NQ=len(Q_ids),
                     L_idx_by_id=L_idx_by_id,
                     Q_idx_by_id=Q_idx_by_id,
                     responses=response_dicts
@@ -323,15 +312,15 @@ def calculate_clues():
                     H_mask_NCxNQ=H_mask_NCxNQ,
                     G_NQxNL=G_NQxNL,
                     G_mask_NQxNL=G_mask_NQxNL,
-                    L_ids=student_uuids,
+                    L_ids=L_ids,
                     Q_ids=Q_ids,
                     C_ids=C_ids
                 )
 
-                valid_exercise_uuids = [response['exercise_uuid'] for response in valid_responses]
+                valid_exercise_uuids = [response.exercise_uuid for response in valid_responses]
                 clue_mean, clue_min, clue_max, clue_is_real = algs.calc_clue_interval(
                     confidence=.5,
-                    target_L_ids=student_uuids,
+                    target_L_ids=L_ids,
                     target_Q_ids=valid_exercise_uuids
                 )
 
