@@ -3,7 +3,7 @@ from uuid import uuid4
 from .celery import task
 from ..api import blapi
 from ..sqlalchemy import transaction
-from ..models import Ecosystem, PageExercise, Course, Response
+from ..models import Ecosystem, Page, Course, Response
 
 
 @task
@@ -17,7 +17,7 @@ def load_ecosystem_metadata():
     } for response in responses]
 
     with transaction() as session:
-        session.upsert(Ecosystem, ecosystem_values)
+        session.upsert_values(Ecosystem, ecosystem_values)
 
 
 @task
@@ -48,7 +48,7 @@ def _load_grouped_ecosystem_events(session, ecosystems):
 
     ecosystems = []
     ecosystem_values = []
-    page_exercise_values = []
+    page_values = []
     for response in responses:
         events = response['events']
         ecosystem = ecosystems_by_req_uuid[response['request_uuid']]
@@ -76,13 +76,12 @@ def _load_grouped_ecosystem_events(session, ecosystems):
                         for exercise_uuid in pool['exercise_uuids']:
                             exercise_uuids.add(exercise_uuid)
 
-                    for exercise_uuid in exercise_uuids:
-                        page_exercise_values.append({
-                            'uuid': str(uuid4()),
-                            'ecosystem_uuid': ecosystem_uuid,
-                            'page_uuid': container_uuid,
-                            'exercise_uuid': exercise_uuid
-                        })
+                    page_values.append({
+                        'uuid': str(uuid4()),
+                        'ecosystem_uuid': ecosystem_uuid,
+                        'page_uuid': container_uuid,
+                        'exercise_uuids': exercise_uuids
+                    })
             else:
                 raise ServerError('received unexpected event type: {}'.format(event_type))
 
@@ -97,10 +96,11 @@ def _load_grouped_ecosystem_events(session, ecosystems):
         else:
             ecosystems.append(ecosystem)
 
-    if page_exercise_values:
-        session.upsert(PageExercise, page_exercise_values)
+    if page_values:
+        session.upsert_values(Page, page_values)
     if ecosystem_values:
-        session.upsert(Ecosystem, ecosystem_values, conflict_update_columns=['sequence_number'])
+        session.upsert_values(Ecosystem, ecosystem_values,
+                              conflict_update_columns=['sequence_number'])
 
     return ecosystems
 
@@ -116,7 +116,7 @@ def load_course_metadata():
     } for response in responses]
 
     with transaction() as session:
-        session.upsert(Course, course_values)
+        session.upsert_values(Course, course_values)
 
 
 @task
@@ -183,8 +183,8 @@ def _load_grouped_course_events(session, courses):
             courses.append(course)
 
     if responses_dict:
-        session.upsert(Response, list(responses_dict.values()))
+        session.upsert_values(Response, list(responses_dict.values()))
     if course_values:
-        session.upsert(Course, course_values, conflict_update_columns=['sequence_number'])
+        session.upsert_values(Course, course_values, conflict_update_columns=['sequence_number'])
 
     return courses
