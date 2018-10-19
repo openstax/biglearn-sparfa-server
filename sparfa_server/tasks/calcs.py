@@ -259,15 +259,15 @@ def calculate_clues():
             # Skip ecosystems that don't have an ecosystem matrix
             for ecosystem_matrix in ecosystem_matrices:
                 ecosystem_uuid = ecosystem_matrix.uuid
-                Q_ids_set = set(ecosystem_matrix.Q_ids)
 
-                # Skip calculations that refer to responses or exercises we don't know about
+                # Skip calculations that refer to responses we don't know about
                 valid_calculations = [
-                    calc for calc in calculations_by_ecosystem_uuid[ecosystem_uuid]
-                    if all(
+                    calc for calc in calculations_by_ecosystem_uuid[ecosystem_uuid] if all(
                         rr['response_uuid'] in response_dicts_by_uuid for rr in calc['responses']
-                    ) and all(uuid in Q_ids_set for uuid in calc['exercise_uuids'])
+                    )
                 ]
+                if not valid_calculations:
+                    continue
 
                 algs = _sparfa_algs_from_ecosystem_matrix_Ls_Rs(
                     ecosystem_matrix=ecosystem_matrix,
@@ -281,11 +281,14 @@ def calculate_clues():
                                     for response in calc['responses']]
                 )
 
+                Q_ids_set = set(ecosystem_matrix.Q_ids)
+
                 for calculation in valid_calculations:
                     clue_mean, clue_min, clue_max, clue_is_real = algs.calc_clue_interval(
                         confidence=.5,
                         target_L_ids=calculation['student_uuids'],
-                        target_Q_ids=calculation['exercise_uuids']
+                        target_Q_ids=[uuid for uuid in calculation['exercise_uuids']
+                                      if uuid in Q_ids_set]
                     )
 
                     clue_calculation_requests.append({
