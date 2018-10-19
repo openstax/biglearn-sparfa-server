@@ -25,8 +25,8 @@ def upgrade():
     )
     op.create_table('ecosystem_matrices',
     sa.Column('uuid', postgresql.UUID(), nullable=False),
-    sa.Column('C_ids', postgresql.ARRAY(postgresql.UUID()), nullable=False),
     sa.Column('Q_ids', postgresql.ARRAY(postgresql.UUID()), nullable=False),
+    sa.Column('C_ids', postgresql.ARRAY(postgresql.UUID()), nullable=False),
     sa.Column('d_data', postgresql.ARRAY(sa.FLOAT()), nullable=False),
     sa.Column('w_data', postgresql.ARRAY(sa.FLOAT()), nullable=False),
     sa.Column('w_row', postgresql.ARRAY(sa.INTEGER()), nullable=False),

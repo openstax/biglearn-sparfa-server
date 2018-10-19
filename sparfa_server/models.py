@@ -6,6 +6,8 @@ from sqlalchemy.dialects.postgresql import ARRAY, BOOLEAN, FLOAT, INTEGER, TIMES
 from scipy.sparse import coo_matrix
 from numpy import array
 
+from sparfa_algs.sgd.sparfa_algs import SparfaAlgs
+
 
 class Base(object):
     uuid = Column(UUID, primary_key=True)
@@ -74,8 +76,8 @@ class Response(Base):
 
 class EcosystemMatrix(Base):
     __tablename__ = 'ecosystem_matrices'
-    C_ids = Column(ARRAY(UUID), nullable=False)
     Q_ids = Column(ARRAY(UUID), nullable=False)
+    C_ids = Column(ARRAY(UUID), nullable=False)
     d_data = Column(ARRAY(FLOAT), nullable=False)
     w_data = Column(ARRAY(FLOAT), nullable=False)
     w_row = Column(ARRAY(INTEGER), nullable=False)
@@ -83,17 +85,6 @@ class EcosystemMatrix(Base):
     h_mask_data = Column(ARRAY(BOOLEAN), nullable=False)
     h_mask_row = Column(ARRAY(INTEGER), nullable=False)
     h_mask_col = Column(ARRAY(INTEGER), nullable=False)
-    default_conflict_update_columns = [
-        'C_ids',
-        'Q_ids',
-        'd_data',
-        'w_data',
-        'w_row',
-        'w_col',
-        'h_mask_data',
-        'h_mask_row',
-        'h_mask_col'
-    ]
 
     @property
     def NC(self):
@@ -140,3 +131,56 @@ class EcosystemMatrix(Base):
     @d_NQx1.setter
     def d_NQx1(self, arr):
         self.d_data = arr.flatten().tolist()
+
+    @staticmethod
+    def _response_dicts_for_algs_from_responses(responses):
+        return [resp if isinstance(resp, dict) else resp.dict_for_algs for resp in responses]
+
+    @classmethod
+    def from_ecosystem_uuid_pages_responses(cls, ecosystem_uuid, pages, responses):
+        page_dicts = [page if isinstance(page, dict) else page.dict for page in pages]
+        response_dicts = cls._response_dicts_for_algs_from_responses(responses)
+
+        hints = [{
+            'Q_id': exercise_uuid,
+            'C_id': page['page_uuid']
+        } for page in page_dicts for exercise_uuid in page['exercise_uuids']]
+
+        algs, __ = SparfaAlgs.from_Ls_Qs_Cs_Hs_Rs(
+            L_ids=[response['student_uuid'] for response in response_dicts],
+            Q_ids=[hint['Q_id'] for hint in hints],
+            C_ids=[page['page_uuid'] for page in page_dicts],
+            hints=hints,
+            responses=response_dicts
+        )
+
+        return cls(
+            uuid=ecosystem_uuid,
+            Q_ids=algs.Q_ids,
+            C_ids=algs.C_ids,
+            d_NQx1=algs.d_NQx1,
+            W_NCxNQ=algs.W_NCxNQ,
+            H_mask_NCxNQ=algs.H_mask_NCxNQ
+        )
+
+    def to_sparfa_algs_with_student_uuids_responses(self, student_uuids, responses):
+        G_NQxNL, G_mask_NQxNL = SparfaAlgs.convert_Rs(
+            responses=self._response_dicts_for_algs_from_responses(responses),
+            L_ids=student_uuids,
+            Q_ids=self.Q_ids
+        )
+
+        # All Q's and C's in W and H must also be in Q_ids and C_ids
+        # There are no restrictions on L_ids, so they can be downselected ahead of time
+        algs, __ = SparfaAlgs.from_W_d(
+            W_NCxNQ=self.W_NCxNQ,
+            d_NQx1=self.d_NQx1,
+            H_mask_NCxNQ=self.H_mask_NCxNQ,
+            G_NQxNL=G_NQxNL,
+            G_mask_NQxNL=G_mask_NQxNL,
+            L_ids=student_uuids,
+            Q_ids=self.Q_ids,
+            C_ids=self.C_ids
+        )
+
+        return algs

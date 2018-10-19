@@ -90,7 +90,7 @@ The SPARFA server runs the celery worker and the beat process to start all perio
 The tasks are the loader tasks and the calculations.
 Make sure you have the database and RabbitMQ services running.
 
-    `sparf server`
+    `sparfa server`
 
 ## Migration Folder and Files
 

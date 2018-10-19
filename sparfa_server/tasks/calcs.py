@@ -4,37 +4,10 @@ from random import shuffle
 
 from sqlalchemy import text
 
-from sparfa_algs.sgd.sparfa_algs import SparfaAlgs
-
 from .celery import task
 from ..api import blsched
 from ..sqlalchemy import transaction
 from ..models import Ecosystem, Response, Page, EcosystemMatrix
-
-
-def _sparfa_algs_from_ecosystem_matrix_Ls_Rs(ecosystem_matrix, student_uuids, response_dicts):
-    Q_ids = ecosystem_matrix.Q_ids
-
-    G_NQxNL, G_mask_NQxNL = SparfaAlgs.convert_Rs(
-        responses=response_dicts,
-        L_ids=student_uuids,
-        Q_ids=Q_ids
-    )
-
-    # All Q's and C's in W and H must also be in Q_ids and C_ids
-    # There are no restrictions on L_ids, so they can be downselected ahead of time
-    algs, __ = SparfaAlgs.from_W_d(
-        W_NCxNQ=ecosystem_matrix.W_NCxNQ,
-        d_NQx1=ecosystem_matrix.d_NQx1,
-        H_mask_NCxNQ=ecosystem_matrix.H_mask_NCxNQ,
-        G_NQxNL=G_NQxNL,
-        G_mask_NQxNL=G_mask_NQxNL,
-        L_ids=student_uuids,
-        Q_ids=Q_ids,
-        C_ids=ecosystem_matrix.C_ids
-    )
-
-    return algs
 
 
 @task
@@ -47,8 +20,6 @@ def calculate_ecosystem_matrices():
             calculations_by_ecosystem_uuid[calculation['ecosystem_uuid']].append(calculation)
 
         ecosystem_uuids = calculations_by_ecosystem_uuid.keys()
-        ecosystem_matrices = []
-        ecosystem_matrix_requests = []
 
         with transaction() as session:
             # Skip unknown ecosystems
@@ -75,39 +46,31 @@ def calculate_ecosystem_matrices():
             for page in pages:
                 pages_by_ecosystem_uuid[page.ecosystem_uuid].append(page)
 
-            for ecosystem_uuid in known_ecosystem_uuids:
-                responses = responses_by_ecosystem_uuid[ecosystem_uuid]
-                pages = pages_by_ecosystem_uuid[ecosystem_uuid]
-                hints = [{
-                    'Q_id': exercise_uuid,
-                    'C_id': page.page_uuid
-                } for page in pages for exercise_uuid in page.exercise_uuids]
+            ecosystem_matrix_requests = [
+               {'calculation_uuid': calculation['calculation_uuid']}
+               for ecosystem_uuid in known_ecosystem_uuids
+               for calculation in calculations_by_ecosystem_uuid[ecosystem_uuid]
+            ]
 
-                algs, __ = SparfaAlgs.from_Ls_Qs_Cs_Hs_Rs(
-                    L_ids=set([response.student_uuid for response in responses]),
-                    Q_ids=[hint['Q_id'] for hint in hints],
-                    C_ids=[hint['C_id'] for hint in hints],
-                    hints=hints,
-                    responses=[response.dict_for_algs for response in responses]
-                )
-
-                ecosystem_matrices.append(
-                    EcosystemMatrix(
-                        uuid=ecosystem_uuid,
-                        W_NCxNQ=algs.W_NCxNQ,
-                        d_NQx1=algs.d_NQx1,
-                        H_mask_NCxNQ=algs.H_mask_NCxNQ,
-                        Q_ids=algs.Q_ids,
-                        C_ids=algs.C_ids
-                    )
-                )
-
-                ecosystem_matrix_requests.extend(
-                    [{'calculation_uuid': calculation['calculation_uuid']}
-                     for calculation in calculations_by_ecosystem_uuid[ecosystem_uuid]]
-                )
-
-            session.upsert_models(EcosystemMatrix, ecosystem_matrices)
+            session.upsert_models(
+                EcosystemMatrix,
+                [ecosystem_matrix_from_ecosystem_uuid_pages_responses(
+                    ecosystem_uuid=ecosystem_uuid,
+                    pages=pages_by_ecosystem_uuid[ecosystem_uuid],
+                    responses=responses_by_ecosystem_uuid[ecosystem_uuid]
+                ) for ecosystem_uuid in known_ecosystem_uuids],
+                conflict_update_columns = [
+                    'Q_ids',
+                    'C_ids',
+                    'd_data',
+                    'w_data',
+                    'w_row',
+                    'w_col',
+                    'h_mask_data',
+                    'h_mask_row',
+                    'h_mask_col'
+                ]
+            )
 
         # There is a potential race condition here where another worker might process the same
         # ecosystem matrix update since we end the transaction and release the locks
@@ -167,7 +130,7 @@ def calculate_exercises():
                         calculation_uuid,
                         ecosystem_uuid,
                         calculation['student_uuid'],
-                        ', '.join(["'{}'".format(uuid) for uuid in known_exercise_uuids])
+                        ', '.join("'{}'".format(uuid) for uuid in known_exercise_uuids)
                     ))
 
             response_dicts_by_calculation_uuid = defaultdict(list)
@@ -191,10 +154,9 @@ def calculate_exercises():
                 ecosystem_uuid = ecosystem_matrix.uuid
                 calculations = calculations_by_ecosystem_uuid[ecosystem_uuid]
 
-                algs = _sparfa_algs_from_ecosystem_matrix_Ls_Rs(
-                    ecosystem_matrix=ecosystem_matrix,
-                    student_uuids=set([calc['student_uuid'] for calc in calculations]),
-                    response_dicts=[
+                algs = ecosystem_matrix.to_sparfa_algs_with_student_uuids_responses(
+                    student_uuids=[calc['student_uuid'] for calc in calculations],
+                    responses=[
                         resp
                         for calc in calculations
                         for resp in response_dicts_by_calculation_uuid[calc['calculation_uuid']]
@@ -252,9 +214,9 @@ def calculate_clues():
                               for calculation in calculations
                               for response in calculation['responses']]
             responses = session.query(Response).filter(Response.uuid.in_(response_uuids)).all()
-            response_dicts_by_uuid = {}
+            responses_by_uuid = {}
             for response in responses:
-                response_dicts_by_uuid[response.uuid] = response.dict_for_algs
+                responses_by_uuid[response.uuid] = response
 
             # Skip ecosystems that don't have an ecosystem matrix
             for ecosystem_matrix in ecosystem_matrices:
@@ -263,22 +225,21 @@ def calculate_clues():
                 # Skip calculations that refer to responses we don't know about
                 valid_calculations = [
                     calc for calc in calculations_by_ecosystem_uuid[ecosystem_uuid] if all(
-                        rr['response_uuid'] in response_dicts_by_uuid for rr in calc['responses']
+                        rr['response_uuid'] in responses_by_uuid for rr in calc['responses']
                     )
                 ]
                 if not valid_calculations:
                     continue
 
-                algs = _sparfa_algs_from_ecosystem_matrix_Ls_Rs(
-                    ecosystem_matrix=ecosystem_matrix,
-                    student_uuids=set([
+                algs = ecosystem_matrix.to_sparfa_algs_with_student_uuids_responses(
+                    student_uuids=[
                         student_uuid
                         for calculation in valid_calculations
                         for student_uuid in calculation['student_uuids']
-                    ]),
-                    response_dicts=[response_dicts_by_uuid[response['response_uuid']]
-                                    for calc in valid_calculations
-                                    for response in calc['responses']]
+                    ],
+                    responses=[responses_by_uuid[response['response_uuid']]
+                               for calc in valid_calculations
+                               for response in calc['responses']]
                 )
 
                 Q_ids_set = set(ecosystem_matrix.Q_ids)

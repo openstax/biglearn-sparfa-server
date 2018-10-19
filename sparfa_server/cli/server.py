@@ -19,7 +19,7 @@ def server(worker, beat):
     For development purposes
     """
     if PY_ENV == 'production':
-        exit('Error: the sparf server command cannot be used in production mode')
+        exit('Error: the sparfa server command cannot be used in production mode')
 
     try:
         from honcho.manager import Manager
@@ -28,9 +28,9 @@ def server(worker, beat):
 
     manager = Manager()
     if worker:
-        manager.add_process('worker', 'sparf celery worker --loglevel=info')
+        manager.add_process('worker', 'sparfa celery worker --loglevel=info')
     if beat:
-        manager.add_process('beat', 'sparf celery beat --loglevel=info')
+        manager.add_process('beat', 'sparfa celery beat --loglevel=info')
     manager.loop()
 
     exit(manager.returncode)

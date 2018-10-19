@@ -8,7 +8,7 @@ from .server import server
 
 
 @group()
-@version_option(prog_name='sparf', version=__version__)
+@version_option(prog_name='sparfa', version=__version__)
 def main():
     """CLI for biglearn-sparfa-server"""
 

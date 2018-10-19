@@ -102,7 +102,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'sparf=sparfa_server.cli:main'
+            'sparfa=sparfa_server.cli:main'
         ]
     },
     classifiers=[],

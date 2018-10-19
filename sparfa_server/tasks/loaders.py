@@ -3,7 +3,7 @@ from uuid import uuid4
 from .celery import task
 from ..api import blapi
 from ..sqlalchemy import transaction
-from ..models import Ecosystem, Page, Course, Response
+from ..models import Ecosystem, Page, EcosystemMatrix, Course, Response
 
 
 @task
@@ -48,6 +48,7 @@ def _load_grouped_ecosystem_events(session, ecosystems):
 
     ecosystems = []
     ecosystem_values = []
+    ecosystem_matrices = []
     page_values = []
     for response in responses:
         events = response['events']
@@ -59,29 +60,31 @@ def _load_grouped_ecosystem_events(session, ecosystems):
                 data = event['event_data']
                 ecosystem_uuid = data['ecosystem_uuid']
                 contents = data['book']['contents']
-                parent_uuids = set([content['container_parent_uuid'] for content in contents])
+                parent_uuids = set(content['container_parent_uuid'] for content in contents)
 
-                for content in contents:
-                    container_uuid = content['container_uuid']
-                    if container_uuid in parent_uuids:
-                        # Ignore non-page containers (chapters, units)
-                        # We only care about pages here because we only use
-                        # the book_container_uuids as hints for the C matrix
-                        # There are no exercises directly associated with a chapter in Tutor
-                        # All exercises belong to a specific page, so they will all appear here
-                        continue
+                # Ignore non-page containers (chapters, units)
+                # We only care about pages here because we only use
+                # the book_container_uuids as hints for the C matrix
+                # There are no exercises directly associated with a chapter in Tutor
+                # All exercises belong to a specific page, so they will all appear here
+                page_dicts = [{
+                    'uuid': str(uuid4()),
+                    'ecosystem_uuid': ecosystem_uuid,
+                    'page_uuid': content['container_uuid'],
+                    'exercise_uuids': set(exercise_uuid
+                                          for pool in content['pools']
+                                          for exercise_uuid in pool['exercise_uuids'])
+                } for content in contents if content['container_uuid'] not in parent_uuids]
 
-                    exercise_uuids = set()
-                    for pool in content['pools']:
-                        for exercise_uuid in pool['exercise_uuids']:
-                            exercise_uuids.add(exercise_uuid)
+                page_values.extend(page_dicts)
 
-                    page_values.append({
-                        'uuid': str(uuid4()),
-                        'ecosystem_uuid': ecosystem_uuid,
-                        'page_uuid': container_uuid,
-                        'exercise_uuids': exercise_uuids
-                    })
+                ecosystem_matrices.append(
+                    EcosystemMatrix.from_ecosystem_uuid_pages_responses(
+                        ecosystem_uuid=ecosystem_uuid,
+                        pages=page_dicts,
+                        responses=[]
+                    )
+                )
             else:
                 raise ServerError('received unexpected event type: {}'.format(event_type))
 
@@ -96,9 +99,13 @@ def _load_grouped_ecosystem_events(session, ecosystems):
         else:
             ecosystems.append(ecosystem)
 
-    if page_values:
-        session.upsert_values(Page, page_values)
     if ecosystem_values:
+        if page_values:
+            session.upsert_values(Page, page_values)
+
+        if ecosystem_matrices:
+            session.upsert_models(EcosystemMatrix, ecosystem_matrices)
+
         session.upsert_values(Ecosystem, ecosystem_values,
                               conflict_update_columns=['sequence_number'])
 
@@ -182,9 +189,10 @@ def _load_grouped_course_events(session, courses):
         else:
             courses.append(course)
 
-    if responses_dict:
-        session.upsert_values(Response, list(responses_dict.values()))
     if course_values:
+        if responses_dict:
+            session.upsert_values(Response, list(responses_dict.values()))
+
         session.upsert_values(Course, course_values, conflict_update_columns=['sequence_number'])
 
     return courses
