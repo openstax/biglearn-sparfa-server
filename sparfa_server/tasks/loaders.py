@@ -46,7 +46,7 @@ def _load_grouped_ecosystem_events(session, ecosystems):
 
     responses = blapi.fetch_ecosystem_events(event_requests)
 
-    ecosystems = []
+    requery_ecosystems = []
     ecosystem_values = []
     ecosystem_matrices = []
     page_values = []
@@ -97,19 +97,19 @@ def _load_grouped_ecosystem_events(session, ecosystems):
                     'sequence_number': ecosystem.sequence_number
                 })
         else:
-            ecosystems.append(ecosystem)
+            requery_ecosystems.append(ecosystem)
+
+    if page_values:
+        session.upsert_values(Page, page_values)
+
+    if ecosystem_matrices:
+        session.upsert_models(EcosystemMatrix, ecosystem_matrices)
 
     if ecosystem_values:
-        if page_values:
-            session.upsert_values(Page, page_values)
-
-        if ecosystem_matrices:
-            session.upsert_models(EcosystemMatrix, ecosystem_matrices)
-
         session.upsert_values(Ecosystem, ecosystem_values,
                               conflict_update_columns=['sequence_number'])
 
-    return ecosystems
+    return requery_ecosystems
 
 
 @task
@@ -152,7 +152,7 @@ def _load_grouped_course_events(session, courses):
 
     responses = blapi.fetch_course_events(event_requests)
 
-    courses = []
+    requery_courses = []
     course_values = []
     responses_dict = {}
     for response in responses:
@@ -187,12 +187,12 @@ def _load_grouped_course_events(session, courses):
                     'sequence_number': course.sequence_number
                 })
         else:
-            courses.append(course)
+            requery_courses.append(course)
+
+    if responses_dict:
+        session.upsert_values(Response, list(responses_dict.values()))
 
     if course_values:
-        if responses_dict:
-            session.upsert_values(Response, list(responses_dict.values()))
-
         session.upsert_values(Course, course_values, conflict_update_columns=['sequence_number'])
 
-    return courses
+    return requery_courses
