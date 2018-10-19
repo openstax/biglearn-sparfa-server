@@ -59,7 +59,7 @@ def calculate_ecosystem_matrices():
                     pages=pages_by_ecosystem_uuid[ecosystem_uuid],
                     responses=responses_by_ecosystem_uuid[ecosystem_uuid]
                 ) for ecosystem_uuid in known_ecosystem_uuids],
-                conflict_update_columns = [
+                conflict_update_columns=[
                     'Q_ids',
                     'C_ids',
                     'd_data',
@@ -190,6 +190,7 @@ def calculate_exercises():
             blsched.update_exercise_calculations(exercise_calculation_requests)
 
         calculations = blsched.fetch_exercise_calculations()
+
 
 @task
 def calculate_clues():

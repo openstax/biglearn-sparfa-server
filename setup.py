@@ -80,6 +80,7 @@ setup(
             'pook==0.2.3',
             'psutil==5.4.7',
             'py==1.6.0',
+            'pycodestyle==2.4.0',
             'pytest==3.8.2',
             'pytest-cov==2.5.1',
             'pytest-runner==2.11.1',

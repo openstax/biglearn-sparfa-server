@@ -12,6 +12,7 @@ from .server import server
 def main():
     """CLI for biglearn-sparfa-server"""
 
+
 main.add_command(celery)
 main.add_command(load)
 main.add_command(calc)

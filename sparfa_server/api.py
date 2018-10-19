@@ -12,6 +12,7 @@ from .config import (BIGLEARN_API_TOKEN,
 
 __logs__ = getLogger(__name__)
 
+
 class BiglearnClient(object):
     """The base object for all objects that require a session.
 
@@ -140,6 +141,7 @@ class BiglearnScheduler(BiglearnClient):
         return self.post(
             'update_clue_calculations', {'clue_calculation_updates': clue_calculation_requests}
         )['clue_calculation_update_responses']
+
 
 blapi = BiglearnApi()
 blsched = BiglearnScheduler()

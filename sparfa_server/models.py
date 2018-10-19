@@ -97,8 +97,7 @@ class EcosystemMatrix(Base):
     @property
     def W_NCxNQ(self):
         return coo_matrix(
-            (self.w_data,
-            (self.w_row, self.w_col)),
+            (self.w_data, (self.w_row, self.w_col)),
             shape=(self.NC, self.NQ)
         ).toarray()
 
@@ -112,8 +111,7 @@ class EcosystemMatrix(Base):
     @property
     def H_mask_NCxNQ(self):
         return coo_matrix(
-            (self.h_mask_data,
-            (self.h_mask_row, self.h_mask_col)),
+            (self.h_mask_data, (self.h_mask_row, self.h_mask_col)),
             shape=(self.NC, self.NQ)
         ).toarray()
 

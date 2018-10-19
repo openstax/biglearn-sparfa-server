@@ -72,11 +72,12 @@ def transaction():
     try:
         yield session
         session.commit()
-    except:
+    except BaseException:
         session.rollback()
         raise
     finally:
         session.close()
+
 
 if PY_ENV == 'development':
     # Enable query logging:

@@ -1,22 +1,22 @@
 from logging import getLogger
+from json.decoder import JSONDecodeError
 from functools import wraps
 
 __logs__ = getLogger(__name__)
+
 
 class BiglearnError(Exception):
     """The base exception class."""
 
     def __init__(self, resp):
         super().__init__(resp)
-        # Response code that triggered the error
         self.response = resp
         self.code = resp.status_code
         try:
-            errors = resp.json().get('errors')
-            if errors:
-                self.msg = errors
-        except:
-            self.msg = resp.content or '[No message]'
+            json = resp.json()
+        except JSONDecodeError:
+            json = {}
+        self.msg = json.get('errors', resp.content)
 
     def __repr__(self):
         return '<{0} [{1}]>'.format(self.__class__.__name__, self.msg or self.code)

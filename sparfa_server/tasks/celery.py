@@ -20,37 +20,37 @@ celery.conf.update(
         'load_ecosystem_metadata': {
             'task': 'sparfa_server.tasks.loaders.load_ecosystem_metadata',
             'schedule': timedelta(seconds=1),
-            'options': {'queue' : 'load-ecosystem-metadata'}
+            'options': {'queue': 'load-ecosystem-metadata'}
         },
         'load_ecosystem_events': {
             'task': 'sparfa_server.tasks.loaders.load_ecosystem_events',
             'schedule': timedelta(seconds=1),
-            'options': {'queue' : 'load-ecosystem-events'}
+            'options': {'queue': 'load-ecosystem-events'}
         },
         'load_course_metadata': {
             'task': 'sparfa_server.tasks.loaders.load_course_metadata',
             'schedule': timedelta(seconds=1),
-            'options': {'queue' : 'load-course-metadata'}
+            'options': {'queue': 'load-course-metadata'}
         },
         'load_course_events': {
             'task': 'sparfa_server.tasks.loaders.load_course_events',
             'schedule': timedelta(seconds=1),
-            'options': {'queue' : 'load-course-events'}
+            'options': {'queue': 'load-course-events'}
         },
         'calculate_ecosystem_matrices': {
             'task': 'sparfa_server.tasks.calcs.calculate_ecosystem_matrices',
             'schedule': timedelta(seconds=1),
-            'options': {'queue' : 'calculate-ecosystem-matrices'}
+            'options': {'queue': 'calculate-ecosystem-matrices'}
         },
         'calculate_exercises': {
             'task': 'sparfa_server.tasks.calcs.calculate_exercises',
             'schedule': timedelta(seconds=1),
-            'options': {'queue' : 'calculate-exercises'}
+            'options': {'queue': 'calculate-exercises'}
         },
         'calculate_clues': {
             'task': 'sparfa_server.tasks.calcs.calculate_clues',
             'schedule': timedelta(seconds=1),
-            'options': {'queue' : 'calculate-clues'}
+            'options': {'queue': 'calculate-clues'}
         }
     },
     beat_scheduler='redbeat.schedulers.RedBeatScheduler',
@@ -92,7 +92,7 @@ celery.conf.update(
         'backend': 'celery_once.backends.Redis',
         'settings': {
             'url': REDIS_URL,
-            'default_timeout': 60 * 60 # should be longer than the longest-running task
+            'default_timeout': 60 * 60  # should be longer than the longest-running task
         }
     }
 )
