@@ -145,7 +145,7 @@ class EcosystemMatrix(Base):
         } for page in page_dicts for exercise_uuid in page['exercise_uuids']]
 
         algs, __ = SparfaAlgs.from_Ls_Qs_Cs_Hs_Rs(
-            L_ids=[response['student_uuid'] for response in response_dicts],
+            L_ids=[response['L_id'] for response in response_dicts],
             Q_ids=[hint['Q_id'] for hint in hints],
             C_ids=[page['page_uuid'] for page in page_dicts],
             hints=hints,

@@ -10,7 +10,7 @@ def calc():
     """Run calculations."""
 
 
-calc.command(name='ecosystem_matrices')(calculate_ecosystem_matrices)
+calc.command(name='matrices')(calculate_ecosystem_matrices)
 calc.command(name='exercises')(calculate_exercises)
 calc.command(name='clues')(calculate_clues)
 

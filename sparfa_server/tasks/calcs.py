@@ -37,11 +37,7 @@ def calculate_ecosystem_matrices():
             for response in responses:
                 responses_by_ecosystem_uuid[response.ecosystem_uuid].append(response)
 
-            pages = session.query(
-                Page.ecosystem_uuid,
-                Page.page_uuid,
-                Page.exercise_uuids
-            ).filter(Page.ecosystem_uuid.in_(known_ecosystem_uuids)).all()
+            pages = session.query(Page).filter(Page.ecosystem_uuid.in_(known_ecosystem_uuids)).all()
             pages_by_ecosystem_uuid = defaultdict(list)
             for page in pages:
                 pages_by_ecosystem_uuid[page.ecosystem_uuid].append(page)
@@ -54,7 +50,7 @@ def calculate_ecosystem_matrices():
 
             session.upsert_models(
                 EcosystemMatrix,
-                [ecosystem_matrix_from_ecosystem_uuid_pages_responses(
+                [EcosystemMatrix.from_ecosystem_uuid_pages_responses(
                     ecosystem_uuid=ecosystem_uuid,
                     pages=pages_by_ecosystem_uuid[ecosystem_uuid],
                     responses=responses_by_ecosystem_uuid[ecosystem_uuid]
