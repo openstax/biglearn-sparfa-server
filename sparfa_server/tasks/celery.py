@@ -54,7 +54,9 @@ celery.conf.update(
         }
     },
     beat_scheduler='redbeat.schedulers.RedBeatScheduler',
+    beat_max_loop_interval=1,
     redbeat_redis_url=REDIS_URL,
+    redbeat_lock_timeout=5,
     accept_content=['json'],
     task_serializer='json',
     imports=('sparfa_server.tasks.loaders', 'sparfa_server.tasks.calcs'),
@@ -92,7 +94,7 @@ celery.conf.update(
         'backend': 'celery_once.backends.Redis',
         'settings': {
             'url': REDIS_URL,
-            'default_timeout': 60 * 60  # should be longer than the longest-running task
+            'default_timeout': 300  # should be longer than the longest-running task
         }
     }
 )
@@ -110,6 +112,6 @@ def reset_connections(**kwargs):
 @log_exceptions
 @wraps(celery.task)
 def task(*args, **kwargs):
-    defaults = {'base': QueueOnce, 'once': {'graceful': True}}
+    defaults = {'base': QueueOnce, 'once': {'graceful': True, 'unlock_before_run': True}}
     defaults.update(kwargs)
     return celery.task(*args, **defaults)
