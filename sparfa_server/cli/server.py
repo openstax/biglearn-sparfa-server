@@ -14,9 +14,9 @@ from ..config import PY_ENV
         help="Whether or not to run the celery beat process")
 def server(worker, beat):
     """
-    Run the Celery beat process and one worker.
+    Run the Celery worker and beat processes.
 
-    For development purposes
+    The worker defaults to using the same number of processes as the number of cores on the machine.
     """
     if PY_ENV == 'production':
         exit('Error: the sparfa server command cannot be used in production mode')

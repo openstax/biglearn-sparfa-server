@@ -86,8 +86,8 @@ Docker and Docker Compose. This should work on any OS that docker can be install
 
 ## SPARFA Server
 
-The SPARFA server runs the celery worker and the beat process to start all periodic tasks.
-The tasks are the loader tasks and the calculations.
+The SPARFA server runs the celery worker and beat processes to start
+all periodic tasks, including loaders and calculations.
 Make sure you have the database and RabbitMQ services running.
 
     `sparfa server`
