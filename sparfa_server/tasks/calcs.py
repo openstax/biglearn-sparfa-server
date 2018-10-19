@@ -126,12 +126,14 @@ def calculate_exercises():
                     unknown_exercise_uuids_by_calculation_uuid[calculation_uuid] = \
                         unknown_exercise_uuids
 
-                    values.append("('{0}', '{1}', '{2}', ARRAY[{3}])".format(
-                        calculation_uuid,
-                        ecosystem_uuid,
-                        calculation['student_uuid'],
-                        ', '.join("'{}'".format(uuid) for uuid in known_exercise_uuids)
-                    ))
+                    values.append(
+                        "(UUID('{0}'), UUID('{1}'), UUID('{2}'), ARRAY[{3}]::UUID[])".format(
+                            calculation_uuid,
+                            ecosystem_uuid,
+                            calculation['student_uuid'],
+                            ', '.join("UUID('{}')".format(uuid) for uuid in known_exercise_uuids)
+                        )
+                    )
 
             response_dicts_by_calculation_uuid = defaultdict(list)
             if values:
@@ -139,10 +141,9 @@ def calculate_exercises():
                     SELECT "values"."calculation_uuid", "responses".*
                     FROM "responses" INNER JOIN (VALUES {}) AS "values"
                         ("calculation_uuid", "ecosystem_uuid", "student_uuid", "exercise_uuids")
-                        ON "responses"."student_uuid" = "values"."student_uuid"::uuid
-                            AND "responses"."ecosystem_uuid" = "values"."ecosystem_uuid"::uuid
-                            AND "values"."exercise_uuids"::uuid[] @>
-                                ARRAY["responses"."exercise_uuid"]
+                        ON "responses"."student_uuid" = "values"."student_uuid"
+                            AND "responses"."ecosystem_uuid" = "values"."ecosystem_uuid"
+                            AND "values"."exercise_uuids" @> ARRAY["responses"."exercise_uuid"]
                 """.format(', '.join(values))).strip())).all()
                 for result in results:
                     response_dicts_by_calculation_uuid[result.calculation_uuid].append(
