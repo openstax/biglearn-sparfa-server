@@ -1,23 +1,19 @@
-from uuid import uuid4
+from unittest.mock import patch
 
-from .cli.loaders import load_ecosystem
+from pytest import raises
+
+from sparfa_server.cli.server import server
 
 
-class TestAddCommand(object):
-    def test_import_ecoystem_prints_error_message(self, cli):
-        result = self._import_ecosystem(cli, self._gen_incorrect_ecosystem_uuid())
-        print(result.output)
-        assert 'invalid ecosystem' in result.output
+def test_server():
+    with patch('sparfa_server.cli.server.Manager', autospec=True) as Manager:
+        with patch('sparfa_server.cli.server.exit', autospec=True) as exit:
+            with raises(SystemExit):
+                server(())
 
-    @staticmethod
-    def _gen_incorrect_ecosystem_uuid():
-        return 'l;akdja;lksd343434'
-
-    @staticmethod
-    def _gen_correct_ecosystem_uuid():
-        return uuid4()
-
-    def _import_ecosystem(self, cli, ecosystem_uuid):
-        result = cli.invoke(load_ecosystem, [u'--ecosystem_uuid', ecosystem_uuid])
-        assert result.exit_code == 0
-        return result
+    manager = Manager()
+    assert manager.add_process.call_count == 2
+    manager.add_process.assert_any_call('worker', 'sparfa celery worker --loglevel=info')
+    manager.add_process.assert_called_with('beat', 'sparfa celery beat --loglevel=info')
+    manager.loop.assert_called_once()
+    exit.assert_called_once_with(manager.returncode)

@@ -1,9 +1,7 @@
 from click import group
 
-from ..tasks.loaders import (load_ecosystem_metadata,
-                             load_ecosystem_events,
-                             load_course_metadata,
-                             load_course_events)
+from ..tasks import (load_ecosystem_metadata, load_ecosystem_events,
+                     load_course_metadata, load_course_events)
 
 
 @group()

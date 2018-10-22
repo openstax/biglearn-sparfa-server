@@ -1,0 +1,32 @@
+interactions:
+- request:
+    body: '{"course_event_requests": [{"course_uuid": "25d4bc9a-aec8-4337-8cad-5fcb9a0a9f90",
+      "sequence_number_offset": 0, "event_types": ["create_course"], "request_uuid":
+      "c5f5c856-a11c-44e5-9493-6e1dec6daeea"}], "max_num_events": 1000}'
+    headers:
+      Accept: [application/json]
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      Content-Length: ['227']
+      Content-Type: [application/json]
+      User-Agent: [Biglearn-API Python API client 0.0.1]
+    method: POST
+    uri: https://biglearn-api-dev.openstax.org/fetch_course_events
+  response:
+    body: {string: '{"course_event_responses":[{"request_uuid":"c5f5c856-a11c-44e5-9493-6e1dec6daeea","course_uuid":"25d4bc9a-aec8-4337-8cad-5fcb9a0a9f90","events":[],"is_gap":false,"is_end":true}]}'}
+    headers:
+      Cache-Control: ['max-age=0, private, must-revalidate']
+      Connection: [keep-alive]
+      Content-Type: [application/json; charset=utf-8]
+      Date: ['Thu, 25 Oct 2018 18:01:48 GMT']
+      ETag: [W/"a6b8d88034cc2be6a1f6b14c5fd963ef"]
+      Server: [nginx]
+      Strict-Transport-Security: [max-age=31536000; includeSubdomains]
+      Transfer-Encoding: [chunked]
+      X-Content-Type-Options: [nosniff]
+      X-Frame-Options: [SAMEORIGIN]
+      X-Request-Id: [cea228f4-19c9-4f12-a0df-ba1cccb0f46e]
+      X-Runtime: ['0.513844']
+      X-XSS-Protection: [1; mode=block]
+    status: {code: 200, message: OK}
+version: 1

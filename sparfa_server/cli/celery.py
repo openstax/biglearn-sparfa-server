@@ -1,6 +1,6 @@
 from click import command, pass_context
 
-from ..tasks.celery import celery as app
+from ..tasks import app
 
 
 @command(add_help_option=False,  # --help is passed through to Celery
@@ -13,4 +13,4 @@ def celery(ctx):
     This command delegates to the celery-worker command,
     giving access to the full Celery CLI.
     """
-    app.start(argv=[ctx.command_path] + list(ctx.args))
+    app.start(argv=['sparfa celery'] + list(ctx.args))

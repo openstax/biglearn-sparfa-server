@@ -1,21 +1,26 @@
-from os import environ
+from sys import modules
+from importlib import reload
+
+from sparfa_server import config
 
 
-def test_make_database_url_defaults():
-    db_url = make_database_url()
+def test_works_without_dotenv():
+    dotenv = modules['dotenv']
+    modules['dotenv'] = None
+    try:
+        reload(config)
+        assert config.PY_ENV == 'test'
+    finally:
+        modules['dotenv'] = dotenv
+        reload(config)
 
-    assert db_url == 'postgresql://bl_sparfa_server:bl_sparfa_server@localhost:5445/bl_sparfa_server'
 
+def test_environment_variable_overrides():
+    assert config.PY_ENV == 'test'
+    assert config.PG_DB.startswith('test_')
+    assert config.REDIS_DB == '13'
+    assert config.AMQP_QUEUE_PREFIX == 'test.'
+    assert config.BIGLEARN_SCHED_ALGORITHM_NAME == 'biglearn-sparfa-test'
 
-def test_make_database_url_with_env_vars():
-    from .config import PG_URL
-
-    environ['PG_HOST'] = 'ninjaturtlefood.org'
-    environ['PG_PORT'] = '5433'
-    environ['PG_PASSWORD'] = 'cowabungadude'
-    environ['PG_DB'] = 'dominoes'
-    environ['PG_USER'] = 'leonardo'
-
-    db_url = make_database_url()
-
-    assert db_url == 'postgresql://leonardo:cowabungadude@ninjaturtlefood.org:5433/dominoes'
+    assert '/test_' in config.PG_URL
+    assert config.REDIS_URL.endswith('/13')

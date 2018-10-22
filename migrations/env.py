@@ -1,16 +1,10 @@
-from sys import path
-from os import getcwd
-from os.path import dirname, abspath
 from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import create_engine
 
-from sparfa_server.models import Base
+from sparfa_server.orm.models import Base
 from sparfa_server.config import PG_URL
-
-path.append(dirname(dirname(abspath(__file__))))
-path.append(getcwd())
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -44,8 +38,7 @@ def run_migrations_offline():
     script output.
 
     """
-    context.configure(
-        url=PG_URL, target_metadata=target_metadata, literal_binds=True)
+    context.configure(url=PG_URL, target_metadata=target_metadata, literal_binds=True)
 
     with context.begin_transaction():
         context.run_migrations()
@@ -58,13 +51,8 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
-    connectable = create_engine(PG_URL)
-
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata
-        )
+    with create_engine(PG_URL).connect() as connection:
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

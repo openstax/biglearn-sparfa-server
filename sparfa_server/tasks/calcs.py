@@ -4,16 +4,17 @@ from random import shuffle
 
 from sqlalchemy import text
 
+from ..biglearn import BLSCHED
+from ..orm import transaction, Ecosystem, Page, Response, EcosystemMatrix
 from .celery import task
-from ..api import blsched
-from ..sqlalchemy import transaction
-from ..models import Ecosystem, Response, Page, EcosystemMatrix
+
+__all__ = ('calculate_ecosystem_matrices', 'calculate_exercises', 'calculate_clues')
 
 
 @task
 def calculate_ecosystem_matrices():
     """Calculate all ecosystem matrices"""
-    calculations = blsched.fetch_ecosystem_matrix_updates()
+    calculations = BLSCHED.fetch_ecosystem_matrix_updates()
     while calculations:
         calculations_by_ecosystem_uuid = defaultdict(list)
         for calculation in calculations:
@@ -72,15 +73,15 @@ def calculate_ecosystem_matrices():
         # ecosystem matrix update since we end the transaction and release the locks
         # before sending the update back to biglearn-scheduler
         # This is our only option to avoid data loss in case the database connection is lost
-        blsched.ecosystem_matrices_updated(ecosystem_matrix_requests)
+        BLSCHED.ecosystem_matrices_updated(ecosystem_matrix_requests)
 
-        calculations = blsched.fetch_ecosystem_matrix_updates()
+        calculations = BLSCHED.fetch_ecosystem_matrix_updates()
 
 
 @task
 def calculate_exercises():
     """Calculate all personalized exercises"""
-    calculations = blsched.fetch_exercise_calculations()
+    calculations = BLSCHED.fetch_exercise_calculations()
     while calculations:
         calculations_by_ecosystem_uuid = defaultdict(list)
         for calculation in calculations:
@@ -184,15 +185,15 @@ def calculate_exercises():
             # There are no updates to the DB in this transaction,
             # so we can perform this request with the transaction still open
             # This way we keep rows locked until the update has been sent to biglearn-scheduler
-            blsched.update_exercise_calculations(exercise_calculation_requests)
+            BLSCHED.update_exercise_calculations(exercise_calculation_requests)
 
-        calculations = blsched.fetch_exercise_calculations()
+        calculations = BLSCHED.fetch_exercise_calculations()
 
 
 @task
 def calculate_clues():
     """Calculate all CLUes"""
-    calculations = blsched.fetch_clue_calculations()
+    calculations = BLSCHED.fetch_clue_calculations()
     while calculations:
         calculations_by_ecosystem_uuid = defaultdict(list)
         for calculation in calculations:
@@ -267,6 +268,6 @@ def calculate_clues():
             # There are no updates to the DB in this transaction,
             # so we can perform this request with the transaction still open
             # This way we keep rows locked until the update has been sent to biglearn-scheduler
-            blsched.update_clue_calculations(clue_calculation_requests)
+            BLSCHED.update_clue_calculations(clue_calculation_requests)
 
-        calculations = blsched.fetch_clue_calculations()
+        calculations = BLSCHED.fetch_clue_calculations()

@@ -1,8 +1,6 @@
 from click import group
 
-from ..tasks.calcs import (calculate_ecosystem_matrices,
-                           calculate_exercises,
-                           calculate_clues)
+from ..tasks import calculate_ecosystem_matrices, calculate_exercises, calculate_clues
 
 
 @group()

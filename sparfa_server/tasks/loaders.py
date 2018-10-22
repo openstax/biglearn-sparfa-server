@@ -1,15 +1,17 @@
 from uuid import uuid4
 
+from ..biglearn import BLAPI
+from ..orm import transaction, Course, Ecosystem, Page, Response, EcosystemMatrix
 from .celery import task
-from ..api import blapi
-from ..sqlalchemy import transaction
-from ..models import Ecosystem, Page, EcosystemMatrix, Course, Response
+
+__all__ = ('load_ecosystem_metadata', 'load_ecosystem_events',
+           'load_course_metadata', 'load_course_events')
 
 
 @task
 def load_ecosystem_metadata():
     """Load all ecosystem metadata"""
-    responses = blapi.fetch_ecosystem_metadatas()
+    responses = BLAPI.fetch_ecosystem_metadatas()
 
     ecosystem_values = [{
         'uuid': response['uuid'],
@@ -44,7 +46,7 @@ def _load_grouped_ecosystem_events(session, ecosystems):
         'request_uuid': request_uuid
     } for request_uuid, ecosystem in ecosystems_by_req_uuid.items()]
 
-    responses = blapi.fetch_ecosystem_events(event_requests)
+    responses = BLAPI.fetch_ecosystem_events(event_requests)
 
     requery_ecosystems = []
     ecosystem_values = []
@@ -68,9 +70,8 @@ def _load_grouped_ecosystem_events(session, ecosystems):
                 # There are no exercises directly associated with a chapter in Tutor
                 # All exercises belong to a specific page, so they will all appear here
                 page_dicts = [{
-                    'uuid': str(uuid4()),
+                    'uuid': content['container_uuid'],
                     'ecosystem_uuid': ecosystem_uuid,
-                    'page_uuid': content['container_uuid'],
                     'exercise_uuids': set(exercise_uuid
                                           for pool in content['pools']
                                           for exercise_uuid in pool['exercise_uuids'])
@@ -85,8 +86,6 @@ def _load_grouped_ecosystem_events(session, ecosystems):
                         responses=[]
                     )
                 )
-            else:
-                raise ServerError('received unexpected event type: {}'.format(event_type))
 
             ecosystem.sequence_number = event['sequence_number'] + 1
 
@@ -115,7 +114,7 @@ def _load_grouped_ecosystem_events(session, ecosystems):
 @task
 def load_course_metadata():
     """Load all course metadata"""
-    responses = blapi.fetch_course_metadatas()
+    responses = BLAPI.fetch_course_metadatas()
 
     course_values = [{
         'uuid': response['uuid'],
@@ -150,7 +149,7 @@ def _load_grouped_course_events(session, courses):
         'request_uuid': request_uuid
     } for request_uuid, course in courses_by_req_uuid.items()]
 
-    responses = blapi.fetch_course_events(event_requests)
+    responses = BLAPI.fetch_course_events(event_requests)
 
     requery_courses = []
     course_values = []
@@ -175,8 +174,6 @@ def _load_grouped_course_events(session, courses):
                     'is_real_response': data.get('is_real_response', True),
                     'responded_at': data['responded_at']
                 }
-            else:
-                raise ServerError('received unexpected event type: {}'.format(event_type))
 
             course.sequence_number = event['sequence_number'] + 1
 

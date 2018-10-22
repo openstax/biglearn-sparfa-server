@@ -10,7 +10,6 @@ except ImportError:
 
 # General config
 PY_ENV = environ.get('PY_ENV', 'development').lower()
-GITHUB_TOKEN = environ.get('GITHUB_TOKEN', '')
 PG_HOST = environ.get('PG_HOST', 'localhost')
 PG_PORT = environ.get('PG_PORT', '5445')
 PG_USER = environ.get('PG_USER', 'bl_sparfa_server')
@@ -24,7 +23,7 @@ AMQP_HOST = environ.get('AMQP_HOST', 'localhost')
 AMQP_PORT = environ.get('AMQP_PORT', '5665')
 AMQP_USER = environ.get('AMQP_USER', 'guest')
 AMQP_PASSWORD = environ.get('AMQP_PASSWORD', 'guest')
-CELERY_APP_NAME = environ.get('CELERY_APP_NAME', 'biglearn-sparfa-server')
+AMQP_QUEUE_PREFIX = environ.get('AMQP_QUEUE_PREFIX', '')
 BIGLEARN_API_URL = environ.get('BIGLEARN_API_URL', 'https://biglearn-api-dev.openstax.org')
 BIGLEARN_API_TOKEN = environ.get('BIGLEARN_API_TOKEN', '')
 BIGLEARN_SCHED_URL = environ.get('BIGLEARN_SCHED_URL',
@@ -34,9 +33,10 @@ BIGLEARN_SCHED_ALGORITHM_NAME = environ.get('BIGLEARN_SCHED_ALGORITHM_NAME', 'bi
 
 # Environment-specific overrides
 if PY_ENV == 'test':
-    PG_DB = '{}_test'.format(PG_DB)
+    PG_DB = 'test_{}'.format(PG_DB)
     REDIS_DB = '13'
-    CELERY_APP_NAME = '{}-test'.format(CELERY_APP_NAME)
+    AMQP_QUEUE_PREFIX = 'test.'
+    BIGLEARN_SCHED_ALGORITHM_NAME = 'biglearn-sparfa-test'
 
 # Derived constants
 PG_URL = 'postgresql://{0}:{1}@{2}:{3}/{4}'.format(PG_USER, PG_PASSWORD, PG_HOST, PG_PORT, PG_DB)

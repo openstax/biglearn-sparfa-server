@@ -1,9 +1,6 @@
-.PHONY: clean clean-build clean-pyc clean-test initdb test venv help
+.PHONY: clean-build clean-pyc clean-test clean abort-if-production drop-db drop-user drop-all \
+	      create-user create-db create-all setup-db setup-all reset-db reset-all test help
 .DEFAULT_GOAL := help
-
-DB_FILE := bl_sparfa_server
-
-clean: clean-build clean-pyc clean-test
 
 clean-build:
 	rm -fr .eggs/
@@ -24,42 +21,58 @@ clean-test:
 	rm -f  cov.xml
 	rm -fr htmlcov/
 
-.venv:
-	python3 -m venv .venv && \
-		source .venv/bin/activate && \
-		cd ../biglearn-sparfa-algs && \
-		pip install -e . && \
-		cd - && \
-		pip install -e .
+clean: clean-build clean-pyc clean-test
 
-initdb: .venv
-	. .env && \
-	psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
-	-c "DROP USER IF EXISTS $${PG_USER}" && \
-	psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
-	-c "CREATE USER $${PG_USER} WITH SUPERUSER PASSWORD '$${PG_PASSWORD}'" && \
-	psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U $${PG_USER} \
-	-c "DROP DATABASE IF EXISTS $${PG_DB}" && \
-	psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
-	-c "CREATE DATABASE $${PG_DB} ENCODING 'UTF8'" && \
-	xz -d -k dev/$(DB_FILE).sql.xz && \
-	psql -h $${PG_HOST} -p $${PG_PORT} -d $${PG_DB} -U $${PG_USER} -v ON_ERROR_STOP=1 -1 \
-	-f dev/$(DB_FILE).sql && \
+abort-if-production:
+	if [ -z "$${PY_ENV}" ]; then . .env; fi && [ "$${PY_ENV}" != "production" ]
+
+drop-db: abort-if-production
+	. .env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U $${PG_USER} \
+	               -c "DROP DATABASE IF EXISTS $${PG_DB}"
+
+drop-user: abort-if-production
+	. .env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
+	               -c "DROP USER IF EXISTS $${PG_USER}"
+
+drop-all: drop-db drop-user
+
+create-user:
+	. .env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
+	               -c "CREATE USER $${PG_USER} WITH SUPERUSER PASSWORD '$${PG_PASSWORD}'"
+
+create-db:
+	. .env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
+	               -c "CREATE DATABASE $${PG_DB} ENCODING 'UTF8'"
+
+create-all: create-user create-db
+
+setup-db: create-db
 	alembic upgrade head
-	rm dev/$(DB_FILE).sql
 
-test: .venv
-	. .env && python3 setup.py test
+setup-all: create-user setup-db
 
-venv: .venv
+reset-db: drop-db setup-db
+
+reset-all: drop-all setup-all
+
+test:
+	pytest
 
 help:
 	@echo "The following targets are available:"
-	@echo "clean       Remove build, file, and test artifacts"
 	@echo "clean-build Remove build artifacts"
-	@echo "clean-pyc   Remove file artifacts"
+	@echo "clean-pyc   Remove python artifacts"
 	@echo "clean-test  Remove test artifacts"
-	@echo "initdb      Initialize the database and run migrations"
-	@echo "test        Run tests quickly with python3"
-	@echo "venv        Initialize the python3 virtualenv"
+	@echo "clean       Remove build, python, and test artifacts"
+	@echo "drop-db     Drop the database"
+	@echo "drop-user   Drop the database user"
+	@echo "drop-all    Drop the database and database user"
+	@echo "create-user Create the database user"
+	@echo "create-db   Create the database"
+	@echo "create-all  Create the database user and database"
+	@echo "setup-db    Create the database and run all migrations"
+	@echo "setup-all   Create the database user and database and run all migrations"
+	@echo "reset-db    Drop and recreate the database and run all migrations"
+	@echo "reset-all   Drop and recreate the database user and database and run all migrations"
+	@echo "test        Run tests using pytest"
 	@echo "help        Print this list of targets"

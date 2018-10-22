@@ -1,31 +1,20 @@
 from sys import exit
 
-from click import command, option, ClickException
-
-from ..config import PY_ENV
+from click import command, option
+from honcho.manager import Manager
 
 
 @command()
-@option('--worker/--no-worker',
-        default=True,
-        help="Whether or not to run the celery worker process")
-@option('--beat/--no-beat',
-        default=True,
-        help="Whether or not to run the celery beat process")
+@option(
+    '--worker/--no-worker', default=True, help="Whether or not to run the celery worker process"
+)
+@option('--beat/--no-beat', default=True, help="Whether or not to run the celery beat process")
 def server(worker, beat):
     """
     Run the Celery worker and beat processes.
 
     The worker defaults to using the same number of processes as the number of cores on the machine.
     """
-    if PY_ENV == 'production':
-        exit('Error: the sparfa server command cannot be used in production mode')
-
-    try:
-        from honcho.manager import Manager
-    except ImportError as exc:
-        raise ClickException('{}: Please run `pip install -e .[dev]`'.format(exc.msg))
-
     manager = Manager()
     if worker:
         manager.add_process('worker', 'sparfa celery worker --loglevel=info')
