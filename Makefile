@@ -1,4 +1,4 @@
-.PHONY: clean-build clean-pyc clean-test clean abort-if-production drop-db drop-user drop-all \
+.PHONY: clean-build clean-pyc clean-test clean env abort-if-production drop-db drop-user drop-all \
 	      create-user create-db create-all setup-db setup-all reset-db reset-all test help
 .DEFAULT_GOAL := help
 
@@ -23,26 +23,31 @@ clean-test:
 
 clean: clean-build clean-pyc clean-test
 
-abort-if-production:
-	if [ -z "$${PY_ENV}" ]; then . .env; fi && [ "$${PY_ENV}" != "production" ]
+.env:
+	cp .env.example .env
 
-drop-db: abort-if-production
-	. .env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U $${PG_USER} \
-	               -c "DROP DATABASE IF EXISTS $${PG_DB}"
+env: .env
 
-drop-user: abort-if-production
-	. .env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
-	               -c "DROP USER IF EXISTS $${PG_USER}"
+abort-if-production: .env
+	if [ -z "$${PY_ENV}" ]; then . ./.env; fi && [ "$${PY_ENV}" != "production" ]
+
+drop-db: .env abort-if-production
+	. ./.env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U $${PG_USER} \
+	                 -c "DROP DATABASE IF EXISTS $${PG_DB}"
+
+drop-user: .env abort-if-production
+	. ./.env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
+	                 -c "DROP USER IF EXISTS $${PG_USER}"
 
 drop-all: drop-db drop-user
 
-create-user:
-	. .env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
-	               -c "CREATE USER $${PG_USER} WITH SUPERUSER PASSWORD '$${PG_PASSWORD}'"
+create-user: .env
+	. ./.env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
+	                 -c "CREATE USER $${PG_USER} WITH SUPERUSER PASSWORD '$${PG_PASSWORD}'"
 
-create-db:
-	. .env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
-	               -c "CREATE DATABASE $${PG_DB} ENCODING 'UTF8'"
+create-db: .env
+	. ./.env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
+	                 -c "CREATE DATABASE $${PG_DB} ENCODING 'UTF8'"
 
 create-all: create-user create-db
 

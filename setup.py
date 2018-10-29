@@ -58,6 +58,9 @@ TESTS_REQUIRE = DEV_REQUIRE + [
 ]
 TESTS_REQUIRE.sort()
 
+CI_REQUIRE = TESTS_REQUIRE + ['codecov==2.0.15']
+CI_REQUIRE.sort()
+
 GITHUB_TOKEN = environ.get('GITHUB_TOKEN')
 if GITHUB_TOKEN:
     BIGLEARN_SPARFA_ALGS_DEPENDENCY_LINK = (
@@ -86,7 +89,8 @@ setup(
     tests_require=TESTS_REQUIRE,
     extras_require={
         'dev': DEV_REQUIRE,
-        'test': TESTS_REQUIRE
+        'test': TESTS_REQUIRE,
+        'ci': CI_REQUIRE
     },
     setup_requires=[
         'pytest-runner'

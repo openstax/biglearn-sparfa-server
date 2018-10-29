@@ -90,7 +90,8 @@ This should work on any OS that docker can be installed on:
 
     `pip install -e .[dev]`
 
-4.  Copy .env.example into .env and add the API tokens for biglearn-api and biglearn-scheduler.
+4.  Run `make .env` to copy .env.example into .env, then fill in
+    the API tokens for biglearn-api and biglearn-scheduler.
     Also make sure the URLs are correct for the environment you desire to use.
 
 5.  Initialize the database user and database and run all migrations:
