@@ -9,7 +9,7 @@ services:
   - docker
 install:
   - docker-compose up -d
-  - pip install --process-dependency-links .[ci]
+  - pip install --process-dependency-links -e .[ci]
   - make create-user
 script:
   - pytest
