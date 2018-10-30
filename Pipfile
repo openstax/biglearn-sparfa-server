@@ -4,20 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-alembic = "*"
-celery = "*"
-celery-once = "*"
-celery-redbeat = "*"
-click = "*"
-honcho = "*"
-kombu = "*"
-numpy = "*"
-psycopg2 = "*"
-python-dotenv = "*"
-redis = "*"
-requests = "*"
-scipy = "*"
-SQLAlchemy = "*"
 sparfa-algs = {editable = true, ref = "master", git = "https://github.com/openstax/biglearn-sparfa-algs.git/"}
 sparfa-server = {editable = true, path = "."}
 
