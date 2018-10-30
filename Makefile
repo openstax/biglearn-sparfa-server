@@ -52,7 +52,7 @@ create-db: .env
 create-all: create-user create-db
 
 setup-db: create-db
-	alembic upgrade head
+	pipenv run alembic upgrade head
 
 setup-all: create-user setup-db
 
