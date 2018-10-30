@@ -4,14 +4,10 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-sparfa-algs = {editable = true, ref = "master", git = "https://github.com/openstax/biglearn-sparfa-algs.git/"}
-sparfa-server = {editable = true, path = "."}
+"sparfa-algs" = {editable = true, ref = "master", git = "https://github.com/openstax/biglearn-sparfa-algs.git/"}
+"e1839a8" = {editable = true, path = "."}
 
 [dev-packages]
-pytest = "*"
-pytest-cov = "*"
-vcrpy = "*"
-vcrpy-unittest = "*"
 
 [requires]
 python_version = "3.6"

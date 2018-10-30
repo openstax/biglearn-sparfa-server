@@ -4,13 +4,6 @@ from textwrap import dedent
 from sparfa_server import __author__, __license__, __version__
 
 
-TESTS_REQUIRE = [
-    'pytest',
-    'pytest-cov',
-    'vcrpy',
-    'vcrpy-unittest'
-]
-
 setup(
     name='biglearn-sparfa-server',
     version=__version__,
@@ -34,21 +27,17 @@ setup(
         'kombu',
         'numpy',
         'psycopg2',
+        'pytest',
+        'pytest-cov',
         'python-dotenv',
         'redis',
         'requests',
         'scipy',
         'SQLAlchemy',
-        'sparfa-algs'
+        'sparfa-algs',
+        'vcrpy',
+        'vcrpy-unittest'
     ],
-    tests_require=TESTS_REQUIRE,
-    extras_require={'dev': TESTS_REQUIRE},
-    setup_requires=[
-        'pytest-runner'
-    ],
-    entry_points={
-        'console_scripts': [
-            'sparfa=sparfa_server.cli:main'
-        ]
-    }
+    setup_requires=['pytest-runner'],
+    entry_points={'console_scripts': ['sparfa=sparfa_server.cli:main']}
 )

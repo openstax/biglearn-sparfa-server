@@ -69,12 +69,13 @@ This should work on any OS that docker can be installed on:
 
 ### Installation
 
-1.  Run `pipenv install --dev --ignore-pipfile` to
-    create a virtualenv and install the dev dependencies.
-    pipenv should prompt you to install python 3.6 if you don't have it yet.
-    If it doesn't, you can run `pyenv install 3.6.6` to install it manually.
-    `--ignore-pipfile` ensures you will get an environment with known working package versions.
-    Omitting it can be used to update the package versions listed in `Pipfile.lock`.
+1.  Run `pipenv install --ignore-pipfile` to create a virtualenv and install all dependencies.
+    Pipenv should prompt you to install python 3.6 if you don't have it yet.
+    Alternatively, you can run `pyenv install 3.6.6` to install it manually.
+    The `--ignore-pipfile` option ensures you will get an environment
+    with known working package versions by using `Pipfile.lock`.
+    Omitting it will cause the package versions listed in `Pipfile.lock` to be updated.
+    The locked versions will be used when the application is deployed.
 
 2.  Run `make .env` to copy .env.example into .env, then fill in
     the API tokens for biglearn-api and biglearn-scheduler.
