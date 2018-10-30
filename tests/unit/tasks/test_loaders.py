@@ -31,7 +31,7 @@ def test_load_ecosystem_metadata(transaction):
     with transaction() as session:
         ecosystems = session.query(Ecosystem).all()
         assert set(ecosystem.uuid for ecosystem in ecosystems) == \
-               set(dict['uuid'] for dict in ecosystem_dicts)
+            set(dict['uuid'] for dict in ecosystem_dicts)
 
 
 def test_load_ecosystem_events(transaction):
@@ -57,6 +57,7 @@ def test_load_ecosystem_events(transaction):
         assert not args[1]
     assert [set(args[0][1]) for args in load_grouped_ecosystem_events.call_args_list] == \
            [set((ecosystem_1, ecosystem_2)), set((ecosystem_1, ecosystem_3)), set((ecosystem_1,))]
+
 
 def test_load_grouped_ecosystem_events(transaction):
     ecosystem_1 = Ecosystem(uuid=str(uuid4()), sequence_number=0)
@@ -151,7 +152,7 @@ def test_load_grouped_ecosystem_events(transaction):
         assert request['event_types'] == ['create_ecosystem']
         assert UUID_REGEX.match(request['request_uuid'])
     assert set(request['ecosystem_uuid'] for request in requests) == \
-           set(ecosystem.uuid for ecosystem in ecosystems)
+        set(ecosystem.uuid for ecosystem in ecosystems)
 
     with transaction() as session:
         pages = session.query(Page).all()
@@ -202,7 +203,7 @@ def test_load_course_metadata(transaction):
     with transaction() as session:
         courses = session.query(Course).all()
         assert set(course.uuid for course in courses) == \
-               set(dict['uuid'] for dict in course_dicts)
+            set(dict['uuid'] for dict in course_dicts)
 
 
 def test_load_course_events(transaction):
@@ -394,7 +395,7 @@ def test_load_grouped_course_events(transaction):
         assert request['event_types'] == ['record_response']
         assert UUID_REGEX.match(request['request_uuid'])
     assert set(request['course_uuid'] for request in requests) == \
-           set(course.uuid for course in courses)
+        set(course.uuid for course in courses)
 
     with transaction() as session:
         responses = session.query(Response).all()
