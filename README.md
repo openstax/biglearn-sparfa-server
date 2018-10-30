@@ -29,26 +29,15 @@ Python tasks used to support Biglearn and conduct calculations.
     > NOTE: Unfortunately you need to install the postgresql package,
             because Homebrew does not currently provide a standalone libpq package.
 
-2.  Make sure you have a way to install a specific version of python.
+2.  Install [pipenv](https://github.com/pypa/pipenv)
+
+3.  Make sure you have a way to install a specific version of python.
     Biglearn-sparfa-server requires python >= 3.5 and < 3.7.
-    We recommend [pyenv](https://github.com/pyenv/pyenv).
+    pipenv can use [pyenv](https://github.com/pyenv/pyenv) automatically, so we recommend it.
     Make sure to follow all the installation instructions,
     including adding the required lines to your profile and restarting the shell.
 
-3.  Install python 3.6.6:
-
-    `pyenv install 3.6.6`
-
-4.  Clone the biglearn-sparfa-server and biglearn-sparfa-algs repos.
-
-5.  `cd` into biglearn-sparfa-server.
-
-6.  Make sure pip is using the correct version of python:
-
-    `pip --version`
-
-    If pip does not say it is using python 3.6,
-    something is probably wrong with your pyenv installation.
+4.  Clone this repo and `cd` into it.
 
 ### External Services
 
@@ -80,25 +69,23 @@ This should work on any OS that docker can be installed on:
 
 ### Installation
 
-1.  `cd` into biglearn-sparfa-server.
+1.  Run `pipenv install --dev` to create a virtualenv and install the dev dependencies.
+    pipenv should prompt you to install python 3.6 if you don't have it yet.
+    If it doesn't, you can run `pyenv install 3.6.6` to install it manually.
 
-2.  Install biglearn-sparfa-algs:
-
-    `pip install -e path/to/biglearn-sparfa-algs`
-
-3.  Install biglearn-sparfa-server:
-
-    `pip install -e .[dev]`
-
-4.  Run `make .env` to copy .env.example into .env, then fill in
+2.  Run `make .env` to copy .env.example into .env, then fill in
     the API tokens for biglearn-api and biglearn-scheduler.
     Also make sure the URLs are correct for the environment you desire to use.
 
-5.  Initialize the database user and database and run all migrations:
+3.  Initialize the database user and the database and run all migrations:
 
     `make setup-all`
 
-## SPARFA CLI
+## CLI
+
+If using pipenv, prefix all CLI commands with `pipenv run`
+
+### SPARFA Commands
 
 - `sparfa load` and `sparfa calc` can run individual loaders and calculations.
   Run these commands to obtain a list of available loaders and calculations.
@@ -109,11 +96,11 @@ This should work on any OS that docker can be installed on:
 
 - `sparfa celery` can be used to send commands directly to the Celery CLI.
 
-## Migrations
+### Migration Commands
 
 Alembic is used to manage migrations in biglearn-sparfa-server.
 
-### Running migrations
+#### Running migrations
 
 - `alembic upgrade head` will run all migrations.
 
@@ -123,7 +110,7 @@ Alembic is used to manage migrations in biglearn-sparfa-server.
 
 - `alembic history` will show the migration version history.
 
-### Creating migrations
+#### Creating migrations
 
 Migrations are stored in the `migrations/versions` directory.
 Each migration file begins with a hash and includes the

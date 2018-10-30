@@ -9,9 +9,12 @@ services:
   - docker
 install:
   - docker-compose up -d
-  - pip install --process-dependency-links -e .[ci]
+  - pip install -e git+https://$GITHUB_TOKEN:x-oauth-basic@github.com/openstax/biglearn-sparfa-algs.git/@master#egg=sparfa-algs
+  - pip install -e .[dev]
+  - pip install codecov pycodestyle
   - make create-user
 script:
   - pytest
+  - pycodestyle
 after_success:
   - codecov
