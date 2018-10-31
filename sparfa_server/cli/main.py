@@ -3,7 +3,6 @@ from click import group, version_option
 from .. import __version__
 from .loaders import load
 from .calcs import calc
-from .server import server
 from .celery import celery
 
 
@@ -15,5 +14,4 @@ def main():
 
 main.add_command(load)
 main.add_command(calc)
-main.add_command(server)
 main.add_command(celery)

@@ -103,13 +103,17 @@ If you need to update package versions, you can use `make requirements` to creat
 ### SPARFA Commands
 
   - `sparfa load` and `sparfa calc` can run individual loaders and calculations.
-    Run these commands to obtain a list of available loaders and calculations.
+    Run each of these commands to obtain a list of available loaders and calculations.
 
-  - `sparfa server` starts the celery worker and beat process.
-    This will run all periodic tasks, including loaders and calculations.
-    Make sure you have the external services running before you run this command.
+  - `sparfa celery` can be used to send commands to the celery CLI, using the app's environment.
+    For example: `sparfa celery worker` and `sparfa celery beat`
+    Make sure you have external services running before you run this command.
 
-  - `sparfa celery` can be used to send commands directly to the Celery CLI.
+### Honcho Commands
+
+`honcho start` starts the celery worker and beat processes.
+This will run all periodic tasks, including loaders and calculations.
+Make sure you have the external services running before you run this command.
 
 ### Migration Commands
 
