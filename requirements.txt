@@ -1,0 +1,33 @@
+alembic==1.0.1
+amqp==2.3.2
+billiard==3.5.0.4
+celery==4.2.1
+celery-once==2.0.0
+celery-redbeat==0.11.1
+certifi==2018.10.15
+chardet==3.0.4
+Click==7.0
+dateparser==0.7.0
+frozendict==1.2
+honcho==1.0.1
+idna==2.7
+kombu==4.2.1
+Mako==1.0.7
+MarkupSafe==1.0
+numpy==1.15.3
+psycopg2==2.7.5
+python-dateutil==2.7.5
+python-dotenv==0.9.1
+python-editor==1.0.3
+pytz==2018.7
+redis==2.10.6
+regex==2018.8.29
+requests==2.20.0
+scipy==1.1.0
+six==1.11.0
+-e git+https://github.com/openstax/biglearn-sparfa-algs@034b170aa5bdb6bb53e4a56ad78cb265488b8dba#egg=sparfa_algs
+-e .
+SQLAlchemy==1.2.12
+tzlocal==1.5.1
+urllib3==1.24
+vine==1.1.4

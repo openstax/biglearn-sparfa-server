@@ -75,6 +75,7 @@ target/
 
 # Virtual environments
 .venv
+.python-version
 
 # Celery files
 /celerybeat.pid

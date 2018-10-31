@@ -18,7 +18,7 @@ Python tasks used to support Biglearn and conduct calculations.
 
 ## Getting Started
 
-### Dependencies
+### Packages
 
 Install the required dependencies:
 
@@ -57,27 +57,27 @@ This should work on any OS that docker can be installed on:
 
 3.  If not running Docker Compose in daemon mode, open a new terminal window.
 
-### Pipenv
+### Pyenv and pyenv-virtualenv
 
-1.  Install [pipenv](https://github.com/pypa/pipenv)
+You will need a way to install a specific version of python,
+since biglearn-sparfa-server requires python >= 3.5 and < 3.7.
+We recommend `pyenv` and `pyenv-virtualenv`, and they are required to use our Makefile.
+Make sure to follow all the installation instructions, including
+adding the required lines to your profile and restarting the shell.
 
-2.  Make sure you have a way to install a specific version of python.
-    Biglearn-sparfa-server requires python >= 3.5 and < 3.7.
-    Pipenv can use [pyenv](https://github.com/pyenv/pyenv) automatically, so we recommend it.
-    Make sure to follow all the installation instructions,
-    including adding the required lines to your profile and restarting the shell.
+1.  Install [pyenv](https://github.com/pyenv/pyenv)
 
-3.  Run `pipenv sync` to create a virtualenv and install all
-    dependencies using the exact versions in `Pipfile.lock`.
-    Pipenv should prompt you to install python 3.6 if you don't have it yet,
-    or you can run `pyenv install 3.6.6` to install it manually.
+2.  Install [pyenv-virtualenv](https://github.com/pyenv/pyenv-virtualenv)
 
-4.  To run commands using Pipenv's virtualenv, prepend `pipenv run` to them.
-    If you want a shell in Pipenv's virtualenv instead, you can use `pipenv shell`.
+3.  Run `make install` to install python, create a virtualenv and install all
+    dependencies using the exact versions in `requirements.txt`.
 
-If you need to update package versions, you can use `pipenv lock`
-to create a new `Pipfile.lock` based on what you have installed
-in Pipenv's virtualenv, or `pipenv update` to update all packages.
+As long as it has been properly installed, pyenv-virtualenv
+will automatically activate the new virtualenv for you.
+
+If you need to update package versions, you can use `make requirements` to create a new
+`requirements.txt` based on the package versions currently installed in the virtualenv, or
+`make update-requirements` to update all packages specified in setup.py to their latest versions.
 
 #### Environment Variables
 
@@ -88,16 +88,17 @@ in Pipenv's virtualenv, or `pipenv update` to update all packages.
 
 #### Database
 
-1.  If you are using Pipenv, `make setup-all` to initialize
-    the database user and the database and run all migrations.
-    If you are not using Pipenv, run `make create-all` instead to create the database user and
-    database but skip the migrations, then run `alembic upgrade head` to migrate the database.
+1.  Run `make setup-all` to initialize the database user and the database and run all migrations.
 
-2.  If you need more database management commands, consult `make help`.
+2.  If you need more database management commands, see `make help`.
+
+#### Dev dependencies and tests
+
+1.  To install the dev dependencies, run `make dev-install`.
+
+2.  To run tests, run `make test`.
 
 ## CLI
-
-If using Pipenv, prepend `pipenv run` to all CLI commands.
 
 ### SPARFA Commands
 
