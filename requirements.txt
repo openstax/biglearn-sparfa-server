@@ -1,4 +1,4 @@
-alembic==1.0.1
+alembic==1.0.2
 amqp==2.3.2
 billiard==3.5.0.4
 celery==4.2.1
@@ -27,7 +27,7 @@ scipy==1.1.0
 six==1.11.0
 -e git+https://github.com/openstax/biglearn-sparfa-algs@034b170aa5bdb6bb53e4a56ad78cb265488b8dba#egg=sparfa_algs
 -e .
-SQLAlchemy==1.2.12
+SQLAlchemy==1.2.13
 tzlocal==1.5.1
 urllib3==1.24
 vine==1.1.4
