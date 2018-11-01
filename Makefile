@@ -51,7 +51,7 @@ venv: virtualenv
 install: .python-version
 	pip install -r requirements.txt
 
-dev-install: .python-version
+dev-install: .python-version install
 	pip install -e .[dev]
 
 reset-virtualenv: uninstall-virtualenv virtualenv

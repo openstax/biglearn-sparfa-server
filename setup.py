@@ -38,8 +38,8 @@ setup(
         'redis',
         'requests',
         'scipy',
-        'SQLAlchemy',
         'sparfa-algs'
+        'SQLAlchemy'
     ],
     tests_require=TESTS_REQUIRE,
     extras_require={'dev': TESTS_REQUIRE},
