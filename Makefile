@@ -1,6 +1,6 @@
 .PHONY: clean-build clean-pyc clean-test clean env uninstall-python python uninstall-virtualenv \
-	      uninstall-venv virtualenv venv install dev-install reset-virtualenv reset-venv \
-				requirements freeze update-requirements abort-if-production drop-db drop-user create-user \
+	      uninstall-venv virtualenv venv install dev-install reset-virtualenv reset-venv reinstall \
+				dev-reinstall requirements freeze update abort-if-production drop-db drop-user create-user \
 				create-db setup-db reset-db test help
 .DEFAULT_GOAL := help
 
@@ -58,6 +58,10 @@ reset-virtualenv: uninstall-virtualenv virtualenv
 
 reset-venv: reset-virtualenv
 
+reinstall: reset-virtualenv install
+
+dev-reinstall: reset-virtualenv dev-install
+
 requirements: .python-version
 	if [ -z "$$(pip freeze)" ]; then make install; fi
 	echo "$$(pip freeze)" | \
@@ -65,10 +69,9 @@ requirements: .python-version
 
 freeze: requirements
 
-update-requirements: reset-virtualenv
-	pip install -e git+https://github.com/openstax/biglearn-sparfa-algs#egg=sparfa_algs
+update: reset-virtualenv
+	pip install --no-deps -e git+https://github.com/openstax/biglearn-sparfa-algs#egg=sparfa_algs
 	pip install -e .
-	make requirements
 
 abort-if-production: .env
 	if [ -z "$${PY_ENV}" ]; then . ./.env; fi && [ "$${PY_ENV}" != "production" ]
@@ -113,8 +116,10 @@ help:
 	@echo "dev-install            Install dev requirements listed in setup.py"
 	@echo ".python-version        Create the virtualenv only if .python-version does not yet exist"
 	@echo "reset-v[irtual]env     Recreate the ${VIRTUALENV_NAME} virtualenv using pyenv-virtualenv"
+	@echo "reinstall              Run make reset-virtualenv, then make install"
+	@echo "dev-reinstall          Run make reset-virtualenv, then make dev-install"
 	@echo "requirements/freeze    Create requirements.txt based on package versions currently installed in the ${VIRTUALENV_NAME} virtualenv"
-	@echo "update-requirements    Create requirements.txt based on packages specified in setup.py"
+	@echo "update                 Reset the virtualenv, then install all packages in setup.py"
 	@echo "abort-if-production    Returns non-zero if in production mode (used by drop commands)"
 	@echo "drop-db                Drop the database"
 	@echo "drop-user              Drop the database user"

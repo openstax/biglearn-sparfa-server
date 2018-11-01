@@ -4,13 +4,14 @@ language: python
 python: 3.6
 cache:
   directories:
-    - $HOME/.cache/pip
+    - ${HOME}/.cache/pip
 services:
   - docker
 install:
   - docker-compose up -d
-  - pip install -e git+https://$GITHUB_TOKEN:x-oauth-basic@github.com/openstax/biglearn-sparfa-algs.git/@master#egg=sparfa-algs
-  - pip install -r requirements.txt --exists-action s
+  - echo "https://${GITHUB_TOKEN}:x-oauth-basic@github.com" > ~/.git-credentials
+  - git config --global credential.helper store
+  - pip install -r requirements.txt
   - pip install -e .[dev]
   - pip install codecov
   - make create-user

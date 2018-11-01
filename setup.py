@@ -38,7 +38,7 @@ setup(
         'redis',
         'requests',
         'scipy',
-        'sparfa-algs'
+        'sparfa-algs',
         'SQLAlchemy'
     ],
     tests_require=TESTS_REQUIRE,
