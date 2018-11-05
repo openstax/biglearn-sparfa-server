@@ -18,6 +18,18 @@ Python tasks used to support Biglearn and conduct calculations.
 
 ## Getting Started
 
+### Cloning biglearn-sparfa-algs via SSH
+
+The requirements.txt file expects to be able to download the sparfa-algs
+egg by cloning the biglearn-sparfa-algs repo from GitHub via SSH.
+You'll either need to configure git to be able to access GitHub using an SSH key
+or add the following to your `~/.gitconfig` to access GitHub via HTTPS instead:
+
+```
+[url "https://github.com/"]
+        insteadOf = git@github.com:
+```
+
 ### Packages
 
 Install the required dependencies:

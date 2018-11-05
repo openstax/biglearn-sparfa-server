@@ -25,7 +25,7 @@ regex==2018.8.29
 requests==2.20.0
 scipy==1.1.0
 six==1.11.0
--e git+https://github.com/openstax/biglearn-sparfa-algs@034b170aa5bdb6bb53e4a56ad78cb265488b8dba#egg=sparfa_algs
+-e git+git@github.com:openstax/biglearn-sparfa-algs@034b170aa5bdb6bb53e4a56ad78cb265488b8dba#egg=sparfa_algs
 -e .
 SQLAlchemy==1.2.13
 tzlocal==1.5.1
