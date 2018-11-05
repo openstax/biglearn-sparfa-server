@@ -91,7 +91,8 @@ latest versions allowed, then run `make requirements` to create a new `requireme
 
 #### Database
 
-1.  Run `make setup-all` to initialize the database user and the database and run all migrations.
+1.  Run `make create-user setup-db` to create the
+    database user and the database and run all migrations.
 
 2.  If you need more database management commands, see `make help`.
 
