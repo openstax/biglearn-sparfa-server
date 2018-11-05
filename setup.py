@@ -12,7 +12,7 @@ TESTS_REQUIRE = [
 ]
 
 setup(
-    name='sparfa_server',
+    name='sparfa-server',
     version=__version__,
     author=__author__,
     url='https://github.com/openstax/biglearn-sparfa-server',
