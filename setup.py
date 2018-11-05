@@ -23,7 +23,8 @@ setup(
     """).strip(),
     license=__license__,
     packages=find_packages(),
-    python_requires='>= 3.6, < 3.7',
+    # python_requires makes the deployment fail because of https://github.com/pypa/pip/issues/5369
+    #python_requires='>= 3.6, < 3.7',
     install_requires=[
         'alembic',
         'celery',
