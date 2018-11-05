@@ -23,7 +23,7 @@ setup(
     """).strip(),
     license=__license__,
     packages=find_packages(),
-    python_requires='>= 3.5, < 3.7',
+    python_requires='>= 3.6, < 3.7',
     install_requires=[
         'alembic',
         'celery',

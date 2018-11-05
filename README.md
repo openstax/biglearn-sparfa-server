@@ -60,7 +60,7 @@ This should work on any OS that docker can be installed on:
 ### Pyenv and pyenv-virtualenv
 
 You will need a way to install a specific version of python,
-since biglearn-sparfa-server requires python >= 3.5 and < 3.7.
+since biglearn-sparfa-server requires python >= 3.6 and < 3.7.
 We recommend `pyenv` and `pyenv-virtualenv`, and they are required to use our Makefile.
 Make sure to follow all the installation instructions, including
 adding the required lines to your profile and restarting the shell.
