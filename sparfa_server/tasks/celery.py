@@ -97,6 +97,6 @@ def reset_connections(**kwargs):
 # All sparfa-server tasks should use this instead of using @celery.task directly
 @wraps(app.task)
 def task(func, **kwargs):
-    defaults = {'base': QueueOnce, 'once': {'graceful': True, 'unlock_before_run': True}}
+    defaults = {'base': QueueOnce, 'once': {'graceful': True}}
     defaults.update(kwargs)
     return app.task(func, **defaults)
