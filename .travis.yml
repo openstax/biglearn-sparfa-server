@@ -10,6 +10,8 @@ services:
 install:
   - docker-compose up -d
   - echo "https://${GITHUB_TOKEN}:x-oauth-basic@github.com" > ~/.git-credentials
+  - echo '[url "https://github.com/"]' >> ~/.gitconfig
+  - echo "        insteadOf = git@github.com:" >> ~/.gitconfig
   - git config --global credential.helper store
   - pip install -r requirements.txt
   - pip install -e .[dev]
