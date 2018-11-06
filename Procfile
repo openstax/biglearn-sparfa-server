@@ -1,2 +1,2 @@
-worker: sparfa celery worker --loglevel=info
-beat: sparfa celery beat --loglevel=info
+worker: sparfa celery worker --loglevel INFO
+beat: sparfa celery beat
