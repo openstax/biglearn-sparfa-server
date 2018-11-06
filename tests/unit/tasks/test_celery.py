@@ -38,6 +38,5 @@ def test_task():
         task(load_ecosystem_metadata, test=True)
 
     app_task.assert_called_once_with(
-        load_ecosystem_metadata,
-        base=QueueOnce, once={'graceful': True, 'unlock_before_run': True}, test=True
+        load_ecosystem_metadata, base=QueueOnce, once={'graceful': True}, test=True
     )

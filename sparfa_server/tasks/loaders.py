@@ -28,7 +28,9 @@ def load_ecosystem_events(event_types=['create_ecosystem'], batch_size=1000):
     ecosystems = []
     with transaction() as session:
         # Group ecosystems in chunks of batch_size and send those requests at once
-        for ecosystem in session.query(Ecosystem).yield_per(batch_size):
+        for ecosystem in session.query(Ecosystem).with_for_update(
+            key_share=True, skip_locked=True
+        ).yield_per(batch_size):
             ecosystems.append(ecosystem)
             while len(ecosystems) >= batch_size:
                 ecosystems = _load_grouped_ecosystem_events(session, ecosystems)
@@ -131,7 +133,9 @@ def load_course_events(event_types=['record_response'], batch_size=1000):
     courses = []
     with transaction() as session:
         # Group courses in chunks of batch_size and send those requests at once
-        for course in session.query(Course).yield_per(batch_size):
+        for course in session.query(Course).with_for_update(
+            key_share=True, skip_locked=True
+        ).yield_per(batch_size):
             courses.append(course)
             while len(courses) >= batch_size:
                 courses = _load_grouped_course_events(session, courses)
