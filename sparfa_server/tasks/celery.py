@@ -1,6 +1,8 @@
 from datetime import timedelta
 from functools import wraps
 
+from sentry_sdk import init
+from sentry_sdk.integrations.celery import CeleryIntegration
 from celery import Celery
 from celery.signals import worker_process_init
 from kombu import Queue
@@ -9,6 +11,8 @@ from celery_once import QueueOnce
 from ..config import AMQP_QUEUE_PREFIX, AMQP_URL, REDIS_URL
 from ..orm.sessions import ENGINE
 from .redis import REDIS
+
+init(integrations=[CeleryIntegration()])
 
 LOAD_ECOSYSTEM_METADATA_QUEUE = '{}load.ecosystem.metadata'.format(AMQP_QUEUE_PREFIX)
 LOAD_ECOSYSTEM_EVENTS_QUEUE = '{}load.ecosystem.events'.format(AMQP_QUEUE_PREFIX)

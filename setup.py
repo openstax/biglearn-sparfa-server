@@ -39,6 +39,7 @@ setup(
         'redis',
         'requests',
         'scipy',
+        'sentry_sdk',
         'sparfa-algs',
         'SQLAlchemy'
     ],
