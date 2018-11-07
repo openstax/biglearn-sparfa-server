@@ -29,14 +29,14 @@ BIGLEARN_API_TOKEN = environ.get('BIGLEARN_API_TOKEN', '')
 BIGLEARN_SCHED_URL = environ.get('BIGLEARN_SCHED_URL',
                                  'https://biglearn-scheduler-dev.openstax.org')
 BIGLEARN_SCHED_TOKEN = environ.get('BIGLEARN_SCHED_TOKEN', '')
-BIGLEARN_SCHED_ALGORITHM_NAME = environ.get('BIGLEARN_SCHED_ALGORITHM_NAME', 'biglearn-sparfa')
+BIGLEARN_SCHED_ALGORITHM_NAME = environ.get('BIGLEARN_SCHED_ALGORITHM_NAME', 'biglearn_sparfa')
 
 # Environment-specific overrides
 if PY_ENV == 'test':
     PG_DB = 'test_{}'.format(PG_DB)
     REDIS_DB = '13'
     AMQP_QUEUE_PREFIX = 'test.'
-    BIGLEARN_SCHED_ALGORITHM_NAME = 'biglearn-sparfa-test'
+    BIGLEARN_SCHED_ALGORITHM_NAME = 'biglearn_sparfa_test'
 
 # Derived constants
 PG_URL = 'postgresql://{0}:{1}@{2}:{3}/{4}'.format(PG_USER, PG_PASSWORD, PG_HOST, PG_PORT, PG_DB)

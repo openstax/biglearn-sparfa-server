@@ -20,7 +20,7 @@ def test_environment_variable_overrides():
     assert config.PG_DB.startswith('test_')
     assert config.REDIS_DB == '13'
     assert config.AMQP_QUEUE_PREFIX == 'test.'
-    assert config.BIGLEARN_SCHED_ALGORITHM_NAME == 'biglearn-sparfa-test'
+    assert config.BIGLEARN_SCHED_ALGORITHM_NAME == 'biglearn_sparfa_test'
 
     assert '/test_' in config.PG_URL
     assert config.REDIS_URL.endswith('/13')
