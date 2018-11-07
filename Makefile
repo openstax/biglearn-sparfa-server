@@ -1,62 +1,133 @@
-.PHONY: clean clean-test clean-pyc clean-build docs help
+.PHONY: env python uninstall-python virtualenv venv uninstall-virtualenv uninstall-venv \
+	      reset-virtualenv reset-venv install dev-install reinstall dev-reinstall requirements \
+				freeze update-requirements abort-if-production create-user drop-user create-db setup-db \
+				drop-db reset-db test clean-build clean-pyc clean-test clean help
 .DEFAULT_GOAL := help
 
-DB_FILE := bl_sparfa_server
+PYTHON_VERSION := 3.6.6
+VIRTUALENV_NAME := biglearn-sparfa-server
 
-clean: clean-build clean-pyc clean-test
+.env:
+	cp .env.example .env
 
-clean-build: ## remove build artifacts
-	rm -fr build/
-	rm -fr dist/
-	rm -fr .eggs/
+env: .env
+
+python:
+	pyenv install --skip-existing ${PYTHON_VERSION}
+
+uninstall-python:
+	pyenv uninstall --force ${PYTHON_VERSION}
+
+virtualenv: python
+	pyenv virtualenv --force ${PYTHON_VERSION} ${VIRTUALENV_NAME}
+	pyenv local ${VIRTUALENV_NAME}
+
+venv: virtualenv
+
+.python-version:
+	make virtualenv
+
+uninstall-virtualenv:
+	pyenv uninstall --force ${VIRTUALENV_NAME}
+	rm -f .python-version
+
+uninstall-venv: uninstall-virtualenv
+
+reset-virtualenv: uninstall-virtualenv virtualenv
+
+reset-venv: reset-virtualenv
+
+install: .python-version
+	pip install -r requirements.txt
+
+dev-install: .python-version install
+	pip install -e .[dev]
+
+reinstall: reset-virtualenv install
+
+dev-reinstall: reset-virtualenv dev-install
+
+requirements: .python-version
+	if [ -z "$$(pip freeze)" ]; then make install; fi
+	echo "$$(pip freeze)" | \
+	sed -e 's/-e git+https:\/\/github.com\/openstax\/biglearn-sparfa-server\.git@[0-9a-f]*#egg=sparfa_server/-e ./' > requirements.txt
+
+freeze: requirements
+
+update-requirements: reset-virtualenv
+	pip install --no-deps -e git+https://github.com/openstax/biglearn-sparfa-algs#egg=sparfa_algs
+	pip install -e .
+	make requirements
+
+abort-if-production: .env
+	if [ -z "$${PY_ENV}" ]; then . ./.env; fi && [ "$${PY_ENV}" != "production" ]
+
+create-user: .env
+	. ./.env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
+	                 -c "CREATE USER $${PG_USER} WITH SUPERUSER PASSWORD '$${PG_PASSWORD}'"
+
+drop-user: .env abort-if-production
+	. ./.env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
+	                 -c "DROP USER IF EXISTS $${PG_USER}"
+
+create-db: .env
+	. ./.env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
+	                 -c "CREATE DATABASE $${PG_DB} ENCODING 'UTF8'"
+
+setup-db: .python-version create-db
+	alembic upgrade head
+
+drop-db: .env abort-if-production
+	. ./.env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U $${PG_USER} \
+	                 -c "DROP DATABASE IF EXISTS $${PG_DB}"
+
+reset-db: drop-db setup-db
+
+test: .env dev-install
+	pytest
+	pycodestyle
+
+clean-build:
+	rm -rf .eggs/
 	find . -name '*.egg-info' -exec rm -fr {} +
-	find . -name '*.egg' -exec rm -f {} +
 
-clean-pyc: ## remove Python file artifacts
-	find . -name '*.pyc' -exec rm -f {} +
-	find . -name '*.pyo' -exec rm -f {} +
-	find . -name '*~' -exec rm -f {} +
+clean-pycache:
 	find . -name '__pycache__' -exec rm -fr {} +
 
-clean-test: ## remove test and coverage artifacts
-	rm -fr .tox/
+clean-test:
+	rm -rf .pytest_cache/
 	rm -f .coverage
-	rm -fr htmlcov/
+	rm -f  cov.xml
+	rm -rf .tox/
 
-test: ## run tests quickly with the default Python
-	python setup.py test
-
-docs: ## generate Sphinx HTML documentation
-
-initdb:
-	. .env && \
-	psql -h $${DB_HOST} -p $${DB_PORT} -d postgres -U postgres \
-	-c "DROP USER IF EXISTS $${DB_USER}" && \
-	psql -h $${DB_HOST} -p $${DB_PORT} -d postgres -U postgres \
-	-c "CREATE USER $${DB_USER} WITH SUPERUSER PASSWORD '$${DB_PASSWORD}'" && \
-	psql -h $${DB_HOST} -p $${DB_PORT} -d postgres -U $${DB_USER} \
-	-c "DROP DATABASE IF EXISTS $${DB_NAME}" && \
-	psql -h $${DB_HOST} -p $${DB_PORT} -d postgres -U postgres \
-	-c "CREATE DATABASE $${DB_NAME} ENCODING 'UTF8'" && \
-	xz -d -k dev/$(DB_FILE).sql.xz && \
-	psql -h $${DB_HOST} -p $${DB_PORT} -d $${DB_NAME} -U $${DB_USER} -v ON_ERROR_STOP=1 -1 \
-	-f dev/$(DB_FILE).sql && \
-	alembic upgrade head
-	rm dev/$(DB_FILE).sql
-
-venv:
-	python3 -m venv .venv && \
-		source .venv/bin/activate && \
-		cd ../biglearn-sparfa-algs && \
-		pip install -e . && \
-		cd - && \
-		pip install -e .
+clean: clean-build clean-pycache clean-test
 
 help:
-	@echo "The following targets are available"
-	@echo "clean			Remove build, test, and file artifacts"
-	@echo "clean-build 		Remove build artifacts"
-	@echo "clean-pyc		Remove file artifacts"
-	@echo "clean-test		Remove test artifacts"
-	@echo "test				Run tests quickly with default python"
-	@echo "initdb			Initialize the database and run migrations"
+	@echo "The following targets are available:"
+	@echo
+	@echo "[.]env                 Copy .env.example into .env"
+	@echo "python                 Install Python ${PYTHON_VERSION} using pyenv"
+	@echo "uninstall-python       Uninstall Python ${PYTHON_VERSION} using pyenv"
+	@echo "v[irtual]env           Create ${VIRTUALENV_NAME} using pyenv-virtualenv"
+	@echo "uninstall-v[irtual]env Uninstall ${VIRTUALENV_NAME} using pyenv-virtualenv"
+	@echo "install                Install pip packages using versions in requirements.txt"
+	@echo "dev-install            Install dev pip packages listed in setup.py"
+	@echo ".python-version        Create the virtualenv if .python-version does not exist"
+	@echo "reset-v[irtual]env     Run make uninstall-virtualenv, then make virtualenv"
+	@echo "reinstall              Run make reset-virtualenv, then make install"
+	@echo "dev-reinstall          Run make reset-virtualenv, then make dev-install"
+	@echo "requirements/freeze    Recreate requirements.txt based on installed packages"
+	@echo "update-requirements    Update all pip packages and recreate requirements.txt"
+	@echo "abort-if-production    Returns non-zero if in production mode"
+	@echo "create-user            Create the database user"
+	@echo "drop-user              Drop the database user"
+	@echo "create-db              Create the database"
+	@echo "setup-db               Create the database and run all migrations"
+	@echo "drop-db                Drop the database"
+	@echo "reset-db               Drop and recreate the database and run all migrations"
+	@echo "test                   Run tests using pytest"
+	@echo "clean-build            Remove build artifacts"
+	@echo "clean-pycache          Remove pycache artifacts"
+	@echo "clean-test             Remove test artifacts"
+	@echo "clean                  Remove build, pycache, and test artifacts"
+	@echo "help                   Print this list of targets"

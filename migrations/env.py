@@ -1,18 +1,11 @@
-from __future__ import with_statement
-
-import os
-import sys
-from os.path import dirname, abspath
+from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import create_engine
-from logging.config import fileConfig
 
-sys.path.append(dirname(dirname(abspath(__file__))))
-sys.path.append(os.getcwd())
+from sparfa_server.orm.models import Base
+from sparfa_server.config import PG_URL
 
-from sparfa_server.models import metadata
-from sparfa_server.utils import make_database_url
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -25,7 +18,7 @@ fileConfig(config.config_file_name)
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = metadata
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -45,9 +38,7 @@ def run_migrations_offline():
     script output.
 
     """
-    url = make_database_url()
-    context.configure(
-        url=url, target_metadata=target_metadata, literal_binds=True)
+    context.configure(url=PG_URL, target_metadata=target_metadata, literal_binds=True)
 
     with context.begin_transaction():
         context.run_migrations()
@@ -60,16 +51,12 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
-    connectable = create_engine(make_database_url())
-
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata
-        )
+    with create_engine(PG_URL).connect() as connection:
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()
+
 
 if context.is_offline_mode():
     run_migrations_offline()

@@ -1,5 +1,3 @@
-
-
 [![codecov](https://codecov.io/gh/openstax/biglearn-sparfa-server/branch/master/graph/badge.svg)](https://codecov.io/gh/openstax/biglearn-sparfa-server)
 [![travis](https://travis-ci.org/openstax/biglearn-sparfa-server.svg?branch=master)](https://travis-ci.org/openstax/biglearn-sparfa-server)
 
@@ -18,37 +16,41 @@
 
 Python tasks used to support Biglearn and conduct calculations.
 
-## Get Started
+## Getting Started
 
-### Installing the system dependencies on OS X
+### Cloning biglearn-sparfa-algs via SSH
 
-This section describes how to install the dependencies on Mac OS X.
-
-The instructions assume you have previously installed [Homebrew](http://brew.sh/)
-
-Install the following packages:
+The requirements.txt file expects to be able to download the sparfa-algs
+egg by cloning the biglearn-sparfa-algs repo from GitHub via SSH.
+You'll either need to configure git to be able to access GitHub using an SSH key
+or add the following to your `~/.gitconfig` to access GitHub via HTTPS instead:
 
 ```
-brew install \
-    postgresql
-    python3
+[url "https://github.com/"]
+        insteadOf = git@github.com:
 ```
 
-> NOTE: Unfortunately you need to install the postgresql package, because Homebrew does not currently provide a standalone libpq package.
+### Packages
 
-### Cloning the repos
+Install the required dependencies:
 
-- Clone biglearn-sparfa-server and biglearn-sparfa-algs to dirs under the same parent dir.
+  - Debian/Ubuntu: `sudo apt-get install libpq-dev`
+  - OS X: Get [Homebrew](https://brew.sh/) if you don't already have it
+          and then run `brew install postgresql`
 
-### Installing the services
+  > NOTE: Unfortunately you need to install the postgresql package,
+          because Homebrew does not currently provide a standalone libpq package.
+
+### External Services
 
 The following external services are required:
 
-- PostgreSQL 9.6+
-- RabbitMQ 3.6+
+  - PostgreSQL 9.6
+  - Redis 4.0
+  - RabbitMQ 3.6
 
-How you install these services is up to you, but the easiest way is by using
-Docker and Docker Compose. This should work on any OS that docker can be installed on.
+We recommend you install them using Docker and Docker Compose.
+This should work on any OS that docker can be installed on:
 
 1.  Install Docker and Docker Compose by following the instructions on the
     [Docker website](https://docs.docker.com/compose/install/)
@@ -57,7 +59,7 @@ Docker and Docker Compose. This should work on any OS that docker can be install
 
     `docker-compose up`
 
-    You will now have two containers running PostgreSQL and RabbitMQ.
+    You will now have three containers running PostgreSQL, Redis and RabbitMQ.
     `docker ps` will show the running containers.
     You can connect to the PostgreSQL database by running
     `psql postgresql://postgres@localhost:5445/postgres`.
@@ -65,100 +67,105 @@ Docker and Docker Compose. This should work on any OS that docker can be install
     When you want to shut the containers down you can interrupt the `docker-compose` command.
     If you would rather run them in the background, you can run `docker-compose up -d`.
 
-3. If not running the container in daemon mode, open a new terminal window.
+3.  If not running Docker Compose in daemon mode, open a new terminal window.
 
-### Installing biglearn-sparfa-server
+### Pyenv and pyenv-virtualenv
 
-1. Install python 3 if you don't have it already.
+You will need a way to install a specific version of python,
+since biglearn-sparfa-server requires python >= 3.6 and < 3.7.
+We recommend `pyenv` and `pyenv-virtualenv`, and they are required to use our Makefile.
+Make sure to follow all the installation instructions, including
+adding the required lines to your profile and restarting the shell.
 
-2. Create a virtualenv and install dependencies:
+1.  Install [pyenv](https://github.com/pyenv/pyenv)
 
-    `make venv`
+2.  Install [pyenv-virtualenv](https://github.com/pyenv/pyenv-virtualenv)
 
-    > NOTE: This command assumes biglearn-sparfa-server and biglearn-sparfa-algs
-            are cloned in dirs under the same parent dir.
+3.  Run `make install` to install python, create a virtualenv and install all
+    dependencies using the exact versions in `requirements.txt`.
 
-3. Activate the virtualenv
+As long as it has been properly installed, pyenv-virtualenv
+will automatically activate the new virtualenv for you.
 
-    `. .venv/bin/activate`
+If you need to update package versions, first run `make reinstall` to reset
+your virtualenv to having only non-dev packages, then update the packages as needed.
+When satisfied, run `make requirements` to create a new `requirements.txt`
+based on the package versions currently installed in the virtualenv.
+Alternatively, run `make update` to update all packages listed in `setup.py` to the
+latest versions allowed, then run `make requirements` to create a new `requirements.txt`.
 
-4. Set environmental variables. See `.env.example` for required variables to be set.
+#### Environment Variables
 
-5. Initialize the database:
+1.  Run `make .env` to copy .env.example into .env
 
-    `make initdb`
+2.  Fill in the API tokens for biglearn-api and biglearn-scheduler.
+    Also make sure the URLs are correct for the Biglearn servers you desire to use.
 
-## SPARFA Server
+#### Database
 
-The SPARFA server runs the celery worker and the beat process to start all periodic tasks.
-The tasks are the loader tasks and the calculations.
-Make sure you have the database and RabbitMQ services running.
+1.  Run `make create-user setup-db` to create the
+    database user and the database and run all migrations.
 
-    `sparf server`
+2.  If you need more database management commands, see `make help`.
 
-## Migration Folder and Files
+#### Dev dependencies and tests
 
-The migrations are stored in the directory `migrations/versions`.
-Each migration file begins with a hash and includes part of the
+1.  To install the dev dependencies, run `make dev-install`.
+
+2.  To run tests, run `make test`.
+
+## CLI
+
+### SPARFA Commands
+
+  - `sparfa load` and `sparfa calc` can run individual loaders and calculations.
+    Run each of these commands to obtain a list of available loaders and calculations.
+
+  - `sparfa celery` can be used to send commands to the celery CLI, using the app's environment.
+    For example: `sparfa celery worker` and `sparfa celery beat`
+    Make sure you have external services running before you run this command.
+
+### Honcho Commands
+
+`honcho start` starts the celery worker and beat processes.
+This will run all periodic tasks, including loaders and calculations.
+Make sure you have the external services running before you run this command.
+
+### Migration Commands
+
+Alembic is used to manage migrations in biglearn-sparfa-server.
+
+#### Running migrations
+
+  - `alembic upgrade head` will run all migrations.
+
+  - `alembic downgrade -1` will rollback the last migration.
+
+  - `alembic upgrade +1` will apply the next migration.
+
+  - `alembic history` will show the migration version history.
+
+#### Creating migrations
+
+Migrations are stored in the `migrations/versions` directory.
+Each migration file begins with a hash and includes the
 revision message that was posted at the command line.
 
-`b9287092c49f_initial_schema.py`
-
-## Running Alembic Commands
-
-### Autogenerating migrations
-
-The `models.py` file contains all the models that represent
+The `sparfa_server/models.py` file contains all the models that represent
 the tables in the biglearn-sparfa-server database.
 The models can be changed and migration files can be autogenerated.
 However, not everything can be autodetected.
-Visit the [alembic](http://alembic.zzzcomputing.com/en/latest/autogenerate.html#what-does-autogenerate-detect-and-what-does-it-not-detect) documentation to see what can be autogenerated.
+Visit the
+[alembic](http://alembic.zzzcomputing.com/en/latest/autogenerate.html#what-does-autogenerate-detect-and-what-does-it-not-detect)
+documentation to see what can be autogenerated.
 
-If a change has been made to the `models.py` file run the following to create a migration file.
+If a change has been made to the `models.py` file, run the following to create a migration file:
 
 `alembic revision --autogenerate -m "added X column to X table"`
 
-Review the generated file in order to make any necessary changes.
-
-### Manual migrations
-
-If a migration file needs to be created manually run:
+If a migration file needs to be created manually, instead run:
 
 `alembic revision -m "added X table to the database"`
 
-Edit the migration file that was created with the proper migration code.
-
-### Run all migrations
-
-`alembic upgrade head`
-
-### Moving back and forth between migrations
-
-It is often very helpful to run a migration one version at a time for testing.
-
-In order to downgrade a migration you can use the `downgrade` option.
-
-`alembic downgrade -1`
-
-This will downgrade the database 1 version from the current version.
-
-In a similar fashion you can upgrade a migration a specific number of versions by using the `upgrade` option.
-
-`alembic upgrade +1`
-
-This will upgrade the database 1 version from the current version.
-
-### Viewing the history
-
-In order to view the revisions in order the `history` command can be used.
-
-`alembic history`
-
-This will output:
-
-```
-b9287092c49f -> cbac16278e4f (head), added biglearn knowledge models
-<base> -> b9287092c49f, initial schema
-```
-
-This shows the base started at `b9287092c49f` which is a version named "initial schema" which is followed by `cbac16278e4f` which is a version labeled "added biglearn knowledge models".
+In either case, review the generated file in order to
+add the proper migration code or make any necessary changes.

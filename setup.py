@@ -1,100 +1,50 @@
-import os
-import re
-import sys
-
 from setuptools import setup, find_packages
+from textwrap import dedent
 
-if sys.version_info < (3, 5):
-    raise RuntimeError('Biglearn-sparfa-server requires Python 3.5+')
+from sparfa_server import __author__, __license__, __version__
 
-__version__ = ''
-with open('sparfa_server/__about__.py', 'r') as fd:
-    reg = re.compile(r'__version__ = [\'"]([^\'"]*)[\'"]')
-    for line in fd:
-        m = reg.match(line)
-        if m:
-            __version__ = m.group(1)
-            break
-
-if not __version__:
-    raise RuntimeError('Cannot find version information')
-
-
-def make_sparfa_algs_dependency_link():
-    environment = os.environ.get('PY_ENV')
-
-    if environment == 'travis' or environment == "production":
-        github_token = os.environ['GITHUB_TOKEN']
-        dlink = ('git+https://{0}:x-oauth-basic@github.com/openstax/'
-                 'biglearn-sparfa-algs.git/'
-                 '@master#egg=sparfa-algs-0.0.1'.format(github_token))
-        return dlink
-    else:
-        dlink = ('git+https://github.com/openstax/biglearn-sparfa-algs.git/'
-                 '@master#egg=sparfa-algs-0.0.1')
-        return dlink
-
+TESTS_REQUIRE = [
+    'pycodestyle',
+    'pytest',
+    'pytest-cov',
+    'vcrpy',
+    'vcrpy-unittest'
+]
 
 setup(
-    name='biglearn-sparfa-server',
+    name='sparfa-server',
     version=__version__,
-    description='',
-    long_description='',
-    license='AGPLv3',
-    author='OpenStax',
-    author_email='',
+    author=__author__,
+    url='https://github.com/openstax/biglearn-sparfa-server',
+    description='Integrates SPARFA algorithms with the Biglearn servers',
+    long_description=dedent("""
+        Biglearn SPARFA Server integrates the SPARFA algorithms (TeSR and CLUe)
+        with the Biglearn servers, allowing them to be used with OpenStax Tutor.
+    """).strip(),
+    license=__license__,
     packages=find_packages(),
+    # python_requires makes the deployment fail because of https://github.com/pypa/pip/issues/5369
+    # python_requires='>= 3.6, < 3.7',
     install_requires=[
-        "alembic==0.9.2",
-        "celery==4.2.1",
-        "click==6.7",
-        "configobj==5.0.6",
-        "dateparser==0.6.0",
-        "frozendict==1.2",
-        "humanize==0.5.1",
-        "Mako==1.0.6",
-        "MarkupSafe==1.0",
-        "numpy==1.15.2",
-        "pgcli==1.6.0",
-        "pgspecial==1.8.0",
-        "prompt-toolkit==1.0.14",
-        "psycopg2==2.7.1",
-        "Pygments==2.2.0",
-        "python-dateutil==2.6.0",
-        "python-editor==1.0.3",
-        "pytz==2017.2",
-        "regex==2017.6.7",
-        "requests==2.14.0",
-        "ruamel.yaml==0.15.71",
-        "scipy==1.1.0",
-        "setproctitle==1.1.10",
-        "six==1.10.0",
-        "sparfa-algs==0.0.1",
-        "SQLAlchemy==1.1.9",
-        "sqlparse==0.2.3",
-        "tzlocal==1.4",
-        "wcwidth==0.1.7",
+        'alembic',
+        'celery',
+        'celery-once',
+        'celery-redbeat',
+        'click',
+        'honcho',
+        'kombu',
+        'numpy',
+        'psycopg2',
+        'python-dotenv',
+        'redis',
+        'requests',
+        'scipy',
+        'sentry_sdk',
+        'sparfa-algs',
+        'SQLAlchemy'
     ],
-    dependency_links=[make_sparfa_algs_dependency_link()],
-    extras_require={
-        'dev': [
-            'pytest==3.1.3',
-            'pytest-postgresql==1.3.0',
-            'pytest-runner==2.11.1',
-            'pytest-cov==2.5.1',
-            'pook==0.2.3'
-        ]
-    },
-    tests_require=[
-        'pytest',
-    ],
-    setup_requires=[
-        'pytest-runner'
-    ],
-    entry_points={
-        'console_scripts': [
-            'sparf=sparfa_server.cli.__init__:main'
-        ]
-    },
-    classifiers=[],
+    tests_require=TESTS_REQUIRE,
+    extras_require={'dev': TESTS_REQUIRE},
+    setup_requires=['pytest-runner'],
+    entry_points={'console_scripts': ['sparfa=sparfa_server.cli:main']}
 )

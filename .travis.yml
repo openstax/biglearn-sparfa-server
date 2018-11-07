@@ -1,33 +1,24 @@
-language: python
-python:
-  - "3.7"
-
 dist: xenial
 sudo: required
-
-addons:
-  postgresql: "9.6"
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - g++-4.8
-
-services:
-  - postgresql
-
+language: python
+python: 3.6
 cache:
   directories:
-    - $HOME/.cache/pip
-
-# command to install dependencies
-
+    - ${HOME}/.cache/pip
+services:
+  - docker
 install:
-  - pip install --process-dependency-links .[dev]
+  - docker-compose up -d
+  - echo "https://${GITHUB_TOKEN}:x-oauth-basic@github.com" > ~/.git-credentials
+  - echo '[url "https://github.com/"]' >> ~/.gitconfig
+  - echo "        insteadOf = git@github.com:" >> ~/.gitconfig
+  - git config --global credential.helper store
+  - pip install -r requirements.txt
+  - pip install -e .[dev]
   - pip install codecov
-
+  - make create-user
 script:
-  - python setup.py test
-
+  - pytest
+  - pycodestyle
 after_success:
   - codecov

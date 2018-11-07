@@ -1,0 +1,32 @@
+interactions:
+- request:
+    body: '{"exercise_calculation_updates": [{"calculation_uuid": "b1e32df9-1915-42d9-9929-785db957d58d",
+      "exercise_uuids": ["29f83616-e158-461e-bdb4-3808fe353561", "4b511ecf-91d5-4967-b412-c4cd00a5140d"],
+      "algorithm_name": "biglearn-sparfa-test"}]}'
+    headers:
+      Accept: [application/json]
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      Content-Length: ['238']
+      Content-Type: [application/json]
+      User-Agent: [Biglearn-Scheduler Python API client 0.0.1]
+    method: POST
+    uri: https://biglearn-scheduler-dev.openstax.org/update_exercise_calculations
+  response:
+    body: {string: '{"exercise_calculation_update_responses":[{"calculation_uuid":"b1e32df9-1915-42d9-9929-785db957d58d","calculation_status":"calculation_unknown"}]}'}
+    headers:
+      Cache-Control: ['max-age=0, private, must-revalidate']
+      Connection: [keep-alive]
+      Content-Type: [application/json; charset=utf-8]
+      Date: ['Thu, 25 Oct 2018 18:45:24 GMT']
+      ETag: [W/"fd8f16095752430eb34216c5100d353f"]
+      Server: [nginx]
+      Strict-Transport-Security: [max-age=31536000; includeSubdomains]
+      Transfer-Encoding: [chunked]
+      X-Content-Type-Options: [nosniff]
+      X-Frame-Options: [SAMEORIGIN]
+      X-Request-Id: [437e6ff3-4eb5-4910-85b4-1dd88f20e815]
+      X-Runtime: ['25.443162']
+      X-XSS-Protection: [1; mode=block]
+    status: {code: 200, message: OK}
+version: 1

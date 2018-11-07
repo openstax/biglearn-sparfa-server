@@ -1,0 +1,31 @@
+interactions:
+- request:
+    body: '{"ecosystem_matrices_updated": [{"calculation_uuid": "b1e32df9-1915-42d9-9929-785db957d58d",
+      "algorithm_name": "biglearn-sparfa-test"}]}'
+    headers:
+      Accept: [application/json]
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      Content-Length: ['136']
+      Content-Type: [application/json]
+      User-Agent: [Biglearn-Scheduler Python API client 0.0.1]
+    method: POST
+    uri: https://biglearn-scheduler-dev.openstax.org/ecosystem_matrices_updated
+  response:
+    body: {string: '{"ecosystem_matrix_updated_responses":[{"calculation_uuid":"b1e32df9-1915-42d9-9929-785db957d58d","calculation_status":"calculation_unknown"}]}'}
+    headers:
+      Cache-Control: ['max-age=0, private, must-revalidate']
+      Connection: [keep-alive]
+      Content-Type: [application/json; charset=utf-8]
+      Date: ['Thu, 25 Oct 2018 18:38:28 GMT']
+      ETag: [W/"44c8e5a9e3dd4a9be009b394c2925e48"]
+      Server: [nginx]
+      Strict-Transport-Security: [max-age=31536000; includeSubdomains]
+      Transfer-Encoding: [chunked]
+      X-Content-Type-Options: [nosniff]
+      X-Frame-Options: [SAMEORIGIN]
+      X-Request-Id: [1cb7c791-b644-40e4-8dd0-66720ba1dc29]
+      X-Runtime: ['0.195896']
+      X-XSS-Protection: [1; mode=block]
+    status: {code: 200, message: OK}
+version: 1

@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+.pytest_cache
 
 # C extensions
 *.so
@@ -18,6 +19,7 @@ eggs/
 lib/
 lib64/
 parts/
+requirements/
 sdist/
 var/
 *.egg-info/
@@ -59,9 +61,6 @@ docs/_build/
 # PyBuilder
 target/
 
-# pyenv python configuration file
-.python-version
-
 # Jetbrains files
 *.idea
 
@@ -77,6 +76,7 @@ target/
 
 # Virtual environments
 .venv
+.python-version
 
 # Celery files
 /celerybeat.pid

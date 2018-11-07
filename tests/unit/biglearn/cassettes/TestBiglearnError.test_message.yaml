@@ -1,0 +1,23 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: [application/json]
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      Content-Type: [application/json]
+      User-Agent: [python-requests/2.14.0]
+    method: GET
+    uri: https://biglearn-api-dev.openstax.org/fetch_ecosystem_metadatas
+  response:
+    body: {string: '{"status":404,"error":"Not Found"}'}
+    headers:
+      Connection: [keep-alive]
+      Content-Length: ['34']
+      Content-Type: [application/json; charset=utf-8]
+      Date: ['Thu, 25 Oct 2018 19:10:10 GMT']
+      Server: [nginx]
+      X-Request-Id: [91e4a6a8-878a-4097-bd68-105f77365214]
+      X-Runtime: ['0.001778']
+    status: {code: 404, message: Not Found}
+version: 1
