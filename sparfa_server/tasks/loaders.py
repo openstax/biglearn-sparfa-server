@@ -1,5 +1,7 @@
 from uuid import uuid4
 
+from sqlalchemy import func
+
 from ..biglearn import BLAPI
 from ..orm import transaction, Course, Ecosystem, Page, Response, EcosystemMatrix
 from .celery import task
@@ -11,14 +13,21 @@ __all__ = ('load_ecosystem_metadata', 'load_ecosystem_events',
 @task
 def load_ecosystem_metadata():
     """Load all ecosystem metadata"""
-    responses = BLAPI.fetch_ecosystem_metadatas()
-
-    ecosystem_values = [{
-        'uuid': response['uuid'],
-        'sequence_number': 0
-    } for response in responses]
-
     with transaction() as session:
+        metadata_sequence_number_offset = session.query(
+            func.coalesce(func.max(Ecosystem.metadata_sequence_number), -1) + 1
+        ).scalar()
+
+        responses = BLAPI.fetch_ecosystem_metadatas(
+            metadata_sequence_number_offset=metadata_sequence_number_offset
+        )
+
+        ecosystem_values = [{
+            'uuid': response['uuid'],
+            'metadata_sequence_number': response['metadata_sequence_number'],
+            'sequence_number': 0
+        } for response in responses]
+
         session.upsert_values(Ecosystem, ecosystem_values)
 
 
@@ -95,7 +104,8 @@ def _load_grouped_ecosystem_events(session, ecosystems):
             if events:
                 ecosystem_values.append({
                     'uuid': ecosystem.uuid,
-                    'sequence_number': ecosystem.sequence_number
+                    'sequence_number': ecosystem.sequence_number,
+                    'metadata_sequence_number': ecosystem.metadata_sequence_number
                 })
         else:
             requery_ecosystems.append(ecosystem)
@@ -116,14 +126,21 @@ def _load_grouped_ecosystem_events(session, ecosystems):
 @task
 def load_course_metadata():
     """Load all course metadata"""
-    responses = BLAPI.fetch_course_metadatas()
-
-    course_values = [{
-        'uuid': response['uuid'],
-        'sequence_number': 0
-    } for response in responses]
-
     with transaction() as session:
+        metadata_sequence_number_offset = session.query(
+            func.coalesce(func.max(Course.metadata_sequence_number), -1) + 1
+        ).scalar()
+
+        responses = BLAPI.fetch_course_metadatas(
+            metadata_sequence_number_offset=metadata_sequence_number_offset
+        )
+
+        course_values = [{
+            'uuid': response['uuid'],
+            'metadata_sequence_number': response['metadata_sequence_number'],
+            'sequence_number': 0
+        } for response in responses]
+
         session.upsert_values(Course, course_values)
 
 
@@ -185,7 +202,8 @@ def _load_grouped_course_events(session, courses):
             if events:
                 course_values.append({
                     'uuid': course.uuid,
-                    'sequence_number': course.sequence_number
+                    'sequence_number': course.sequence_number,
+                    'metadata_sequence_number': course.metadata_sequence_number
                 })
         else:
             requery_courses.append(course)

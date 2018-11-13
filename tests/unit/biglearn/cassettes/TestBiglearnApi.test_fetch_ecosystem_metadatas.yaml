@@ -1,30 +1,30 @@
 interactions:
 - request:
-    body: null
+    body: '{"metadata_sequence_number_offset": 42, "max_num_metadatas": 10}'
     headers:
       Accept: [application/json]
       Accept-Encoding: ['gzip, deflate']
       Connection: [keep-alive]
-      Content-Length: ['0']
+      Content-Length: ['64']
       Content-Type: [application/json]
       User-Agent: [Biglearn-API Python API client 0.0.1]
     method: POST
     uri: https://biglearn-api-dev.openstax.org/fetch_ecosystem_metadatas
   response:
-    body: {string: '{"ecosystem_responses":[{"uuid":"f667f783-7944-4153-81ee-f245c209f406"},{"uuid":"f513f5ac-c235-4c15-8d42-56b6f9bc82be"},{"uuid":"c32bfcda-13c1-440e-8834-76d82f2955b4"},{"uuid":"58701f4e-18c5-475e-b2fe-1b7e0aa77e7c"},{"uuid":"bdd5aef2-5e8f-45bb-b00a-a0e9deb1c29d"},{"uuid":"d28eaadb-7d19-48f4-8521-e4d80c6505b9"},{"uuid":"caa7c581-d201-417c-badd-beac17f23085"},{"uuid":"ff963ef3-bb0a-447a-832e-6a848ec0c944"},{"uuid":"1c9a3237-1049-47fc-aa7a-e9c676f8a0ce"},{"uuid":"1d2f30ef-5188-4edf-afb1-b90843badace"},{"uuid":"b81c6fdf-2378-4571-a1e4-d901cb6ff919"},{"uuid":"3d75be62-b744-4947-88ae-a29bedb1b322"},{"uuid":"22687b11-c7ca-4c97-b427-d8c9ddd169cb"},{"uuid":"9074d0d4-e936-4b8e-bc0d-c91c6153689a"},{"uuid":"718387da-b350-44c5-b545-0a955148133e"},{"uuid":"21074d58-a7ff-4088-93cd-a88b8173bd28"},{"uuid":"87b8e46f-30f3-45e1-a419-2cdf58f15734"},{"uuid":"d0c75383-9628-4d47-8335-a0130ed1fe5d"},{"uuid":"a0e00e79-e6e3-4392-a997-f24089b97493"},{"uuid":"bb06cba5-1380-452c-a028-a4ce41013b77"},{"uuid":"e1e757cb-b43e-4715-af35-da906a7fc018"},{"uuid":"8edca32a-7231-431f-a5a3-e3724809aac9"},{"uuid":"ebf7dc70-4348-4bd5-a5c2-0e8c5b5f703f"},{"uuid":"f4e9d56b-1762-4420-95cb-fc88c4db2802"},{"uuid":"636aa739-2c42-4fa0-8e7b-07677e037901"},{"uuid":"88feafb4-f44d-4b6b-bf91-ece46290505d"},{"uuid":"ca9c3c0a-20f5-4ac9-a77a-626b10696000"},{"uuid":"4d650e5e-a34b-40c7-84e8-620281455b1b"},{"uuid":"ffb79874-bc27-4cb1-a607-340ff5e6dd83"},{"uuid":"c4414823-562a-432a-807f-d3eb063a931a"},{"uuid":"f280601e-0b71-40f9-8709-390ff8cc271d"},{"uuid":"e9054275-69ca-4b2a-9a1c-e05c1bea3b01"},{"uuid":"0e3c9554-5727-4ff1-8fb5-cedb99595212"},{"uuid":"843f2ab3-a2b2-4e4d-bcf5-06a42f110444"},{"uuid":"99c6bce6-3472-47aa-9673-23dafddb01ad"},{"uuid":"5933f489-63d2-42ba-885f-41152765e65b"},{"uuid":"60a6d668-a5e4-4362-a3a7-c9ead2f75a2e"},{"uuid":"963dbbbb-e216-4ef8-9733-b045ee54d357"},{"uuid":"10a26268-af31-462f-80de-3ce93e185ee1"},{"uuid":"4f91ebbe-ed25-467b-8451-83ea9152a8f8"},{"uuid":"75f2753c-d910-42fd-b406-2f9f15de2587"},{"uuid":"823892bf-61ce-4198-a926-7411f028211a"},{"uuid":"f640a6b2-00c8-47fa-8195-7e06bbd0752c"},{"uuid":"d44ec387-2db4-4c11-aacb-0e6dd05be115"},{"uuid":"62a01e5d-f27f-4598-8ee6-8c5c5775e725"},{"uuid":"664d651b-6a4f-4ab6-a56b-939e68a091b0"},{"uuid":"287ad4f0-39ab-4c53-936b-783c42f3a314"},{"uuid":"0f0884de-4e04-49b8-a591-70f0a7f503da"},{"uuid":"9d02d691-3029-41ca-963c-3d835f9bc0a5"},{"uuid":"bc0f03d3-5e65-4e0e-b459-b8f322d25776"},{"uuid":"32a1bc1a-c0d1-4558-82bf-e2990b967399"},{"uuid":"0bdcbed5-26ad-4e20-b551-c5878033b4b1"},{"uuid":"7aa0f976-5248-45a5-bae3-751f1eb04846"},{"uuid":"01ee5d33-ec50-4bf0-8f02-6e6745d7ac33"},{"uuid":"7616c00a-4275-4ff5-a6f2-828451748a57"},{"uuid":"5b30f0aa-e461-4cb0-adbf-5b23ed73f400"},{"uuid":"0f4693ac-2e17-480d-8193-613d01cdd641"},{"uuid":"41e1f6e2-73b8-4d9e-a8ad-77e80a1c7aec"},{"uuid":"d4b69d37-04c2-4cc4-bf77-561740354e5e"},{"uuid":"d80eef52-d89e-4295-ab0a-219f42a00a9d"},{"uuid":"15f84928-8f56-4494-9b6d-5085aa36ba94"},{"uuid":"458941a4-b164-4011-bc4f-65c3d2d24752"},{"uuid":"5c83af0f-da84-415a-96b7-bdf4d5fadb04"},{"uuid":"9a2650a7-42be-48c8-8cfe-b8c661695e88"},{"uuid":"a072ce1b-4bfa-4c77-a6a5-d94776a8975c"},{"uuid":"3a1cf78e-35ca-4fb5-ae54-441087030f1f"},{"uuid":"13d36586-ec89-4f35-b558-ca19b8a7f75a"},{"uuid":"267be043-4163-479a-98b9-826b5c7fcc4e"},{"uuid":"2ea772f8-86f0-40a4-858c-7b3cea26bf9b"},{"uuid":"38bfeb82-a07f-46e0-9153-d4908008608f"},{"uuid":"116747e4-fed7-4c7d-b8fe-6af07f419270"},{"uuid":"4b3c1802-7c14-44c0-abc1-be8a9b51c6cd"},{"uuid":"7e5a1780-6753-4a41-b9ed-755cc6932df7"},{"uuid":"09fb4a96-882a-47f2-9671-2fe376cdcce9"},{"uuid":"da434329-a60d-47d7-a264-ff15d5e5ac39"},{"uuid":"2f16d353-0753-45bd-8964-729aea6bd912"},{"uuid":"5776c69a-bb68-48db-9137-340b5f9b1da7"},{"uuid":"b2baf2bf-120b-4e98-b8d4-99c2727b85e9"},{"uuid":"640fb312-3c89-455e-b141-549806e8bf5a"},{"uuid":"4dacd352-8bc9-4440-a2c4-61d27e032176"},{"uuid":"92ff6917-1b55-4a4d-b173-35282122ee8d"},{"uuid":"6726add8-44c3-4183-975b-fbadb3dd6c3b"},{"uuid":"6e251106-7525-4ba3-b509-0bc14c03ba15"},{"uuid":"61190f0a-247c-490b-8cb9-9925be296c46"},{"uuid":"4561b36e-d59a-4490-8875-2e06ecc7bcf4"},{"uuid":"df4c6edf-5e28-4a72-b82f-cd6f51247fed"},{"uuid":"b9fcd313-c2e4-45ca-a533-c7f090de3170"},{"uuid":"cc3f8446-b8cd-416d-a521-1c925fd3ebb3"},{"uuid":"cef8d2bf-d297-4c24-892a-d13aed40735e"},{"uuid":"797587d6-4366-484e-9383-98475b5a26f9"},{"uuid":"bad7c7aa-9c34-428c-a30b-a9a65c4adef8"},{"uuid":"819e6e7a-24c1-4365-91c8-5fe91f6e97c4"},{"uuid":"4e983989-dad1-4002-b2a4-36a0d35afa52"},{"uuid":"0098234a-2271-4b3b-a8fb-4d9fa06af2c1"},{"uuid":"9b59ab04-ae5c-4663-8e66-a4a243580f04"},{"uuid":"ee8b34f3-17da-4e68-8b4b-7c25632bd048"},{"uuid":"8c9c2f55-5319-4614-a70a-c6236ab0a359"},{"uuid":"dcf19203-068f-4722-a710-b4bdbc4a0823"},{"uuid":"22601a15-8c66-4ee1-ad0e-1e7b5b13c131"},{"uuid":"4d50f377-1198-41d5-82a1-24744bb4f6e9"},{"uuid":"e9df34c2-294d-48dd-895f-fa32f86dc188"},{"uuid":"24a0a652-65b7-4d0e-9891-b9acc7470deb"},{"uuid":"16f15f45-da2e-4ae9-a28c-1e09b85034a9"},{"uuid":"54477abf-d4e3-4288-ba57-d0a0f2d26d2c"}]}'}
+    body: {string: '{"ecosystem_responses":[{"uuid":"f640a6b2-00c8-47fa-8195-7e06bbd0752c","metadata_sequence_number":42},{"uuid":"d44ec387-2db4-4c11-aacb-0e6dd05be115","metadata_sequence_number":43},{"uuid":"62a01e5d-f27f-4598-8ee6-8c5c5775e725","metadata_sequence_number":44},{"uuid":"664d651b-6a4f-4ab6-a56b-939e68a091b0","metadata_sequence_number":45},{"uuid":"287ad4f0-39ab-4c53-936b-783c42f3a314","metadata_sequence_number":46},{"uuid":"0f0884de-4e04-49b8-a591-70f0a7f503da","metadata_sequence_number":47},{"uuid":"9d02d691-3029-41ca-963c-3d835f9bc0a5","metadata_sequence_number":48},{"uuid":"bc0f03d3-5e65-4e0e-b459-b8f322d25776","metadata_sequence_number":49},{"uuid":"32a1bc1a-c0d1-4558-82bf-e2990b967399","metadata_sequence_number":50},{"uuid":"0bdcbed5-26ad-4e20-b551-c5878033b4b1","metadata_sequence_number":51}]}'}
     headers:
       Cache-Control: ['max-age=0, private, must-revalidate']
       Connection: [keep-alive]
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Thu, 25 Oct 2018 18:01:43 GMT']
-      ETag: [W/"f47944f3e03015564bb716100203f9b7"]
+      Date: ['Tue, 13 Nov 2018 17:28:33 GMT']
+      ETag: [W/"9f0d11d6854438cd86f7899a20e2b75c"]
       Server: [nginx]
       Strict-Transport-Security: [max-age=31536000; includeSubdomains]
       Transfer-Encoding: [chunked]
       X-Content-Type-Options: [nosniff]
       X-Frame-Options: [SAMEORIGIN]
-      X-Request-Id: [221d9b09-37b3-498f-914f-b56be1cc1fea]
-      X-Runtime: ['0.140794']
+      X-Request-Id: [f94e74d4-1203-43e3-bcf9-4788996cd8d7]
+      X-Runtime: ['0.061841']
       X-XSS-Protection: [1; mode=block]
     status: {code: 200, message: OK}
 version: 1
