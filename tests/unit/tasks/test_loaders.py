@@ -26,7 +26,9 @@ def test_load_ecosystem_metadata(transaction):
 
         load_ecosystem_metadata()
 
-    fetch_ecosystem_metadatas.assert_called_once_with(metadata_sequence_number_offset=0)
+    fetch_ecosystem_metadatas.assert_called_once_with(
+        metadata_sequence_number_offset=0, max_num_metadatas=1000
+    )
 
     with transaction() as session:
         ecosystems = session.query(Ecosystem).all()
@@ -201,7 +203,9 @@ def test_load_course_metadata(transaction):
 
         load_course_metadata()
 
-    fetch_course_metadatas.assert_called_once_with(metadata_sequence_number_offset=0)
+    fetch_course_metadatas.assert_called_once_with(
+        metadata_sequence_number_offset=0, max_num_metadatas=1000
+    )
 
     with transaction() as session:
         courses = session.query(Course).all()

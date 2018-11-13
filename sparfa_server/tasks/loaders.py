@@ -11,24 +11,31 @@ __all__ = ('load_ecosystem_metadata', 'load_ecosystem_events',
 
 
 @task
-def load_ecosystem_metadata():
+def load_ecosystem_metadata(metadata_sequence_number_offset=None, batch_size=1000):
     """Load all ecosystem metadata"""
-    with transaction() as session:
-        metadata_sequence_number_offset = session.query(
-            func.coalesce(func.max(Ecosystem.metadata_sequence_number), -1) + 1
-        ).scalar()
+    while True:
+        with transaction() as session:
+            if metadata_sequence_number_offset is None:
+                metadata_sequence_number_offset = session.query(
+                    func.coalesce(func.max(Ecosystem.metadata_sequence_number), -1) + 1
+                ).scalar()
 
-        responses = BLAPI.fetch_ecosystem_metadatas(
-            metadata_sequence_number_offset=metadata_sequence_number_offset
-        )
+            responses = BLAPI.fetch_ecosystem_metadatas(
+                metadata_sequence_number_offset=metadata_sequence_number_offset,
+                max_num_metadatas=batch_size
+            )
 
-        ecosystem_values = [{
-            'uuid': response['uuid'],
-            'metadata_sequence_number': response['metadata_sequence_number'],
-            'sequence_number': 0
-        } for response in responses]
+            if responses:
+                ecosystem_values = [{
+                    'uuid': response['uuid'],
+                    'metadata_sequence_number': response['metadata_sequence_number'],
+                    'sequence_number': 0
+                } for response in responses]
 
-        session.upsert_values(Ecosystem, ecosystem_values)
+                session.upsert_values(Ecosystem, ecosystem_values)
+
+            if len(responses) < batch_size:
+                break
 
 
 @task
@@ -124,24 +131,31 @@ def _load_grouped_ecosystem_events(session, ecosystems):
 
 
 @task
-def load_course_metadata():
+def load_course_metadata(metadata_sequence_number_offset=None, batch_size=1000):
     """Load all course metadata"""
-    with transaction() as session:
-        metadata_sequence_number_offset = session.query(
-            func.coalesce(func.max(Course.metadata_sequence_number), -1) + 1
-        ).scalar()
+    while True:
+        with transaction() as session:
+            if metadata_sequence_number_offset is None:
+                metadata_sequence_number_offset = session.query(
+                    func.coalesce(func.max(Course.metadata_sequence_number), -1) + 1
+                ).scalar()
 
-        responses = BLAPI.fetch_course_metadatas(
-            metadata_sequence_number_offset=metadata_sequence_number_offset
-        )
+            responses = BLAPI.fetch_course_metadatas(
+                metadata_sequence_number_offset=metadata_sequence_number_offset,
+                max_num_metadatas=batch_size
+            )
 
-        course_values = [{
-            'uuid': response['uuid'],
-            'metadata_sequence_number': response['metadata_sequence_number'],
-            'sequence_number': 0
-        } for response in responses]
+            if responses:
+                course_values = [{
+                    'uuid': response['uuid'],
+                    'metadata_sequence_number': response['metadata_sequence_number'],
+                    'sequence_number': 0
+                } for response in responses]
 
-        session.upsert_values(Course, course_values)
+                session.upsert_values(Course, course_values)
+
+            if len(responses) < batch_size:
+                break
 
 
 @task
