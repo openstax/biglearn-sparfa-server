@@ -82,10 +82,13 @@ class TestBiglearnApi(BiglearnVCRTestCase):
             'Biglearn-API Python API client {}'.format(__version__)
 
     def test_fetch_ecosystem_metadatas(self):
-        responses = BLAPI.fetch_ecosystem_metadatas()
+        responses = BLAPI.fetch_ecosystem_metadatas(
+            metadata_sequence_number_offset=42, max_num_metadatas=10
+        )
         for response in responses:
-            assert set(response.keys()) == set(('uuid',))
+            assert set(response.keys()) == set(('uuid', 'metadata_sequence_number'))
             assert UUID_REGEX.match(response['uuid'])
+            assert isinstance(response['metadata_sequence_number'], int)
 
     def test_fetch_ecosystem_events(self):
         responses = BLAPI.fetch_ecosystem_events([{
@@ -103,10 +106,15 @@ class TestBiglearnApi(BiglearnVCRTestCase):
         ]
 
     def test_fetch_course_metadatas(self):
-        responses = BLAPI.fetch_course_metadatas()
+        responses = BLAPI.fetch_course_metadatas(
+            metadata_sequence_number_offset=42, max_num_metadatas=10
+        )
         for response in responses:
-            assert set(response.keys()) == set(('uuid', 'initial_ecosystem_uuid'))
+            assert set(response.keys()) == set(
+                ('uuid', 'metadata_sequence_number', 'initial_ecosystem_uuid')
+            )
             assert UUID_REGEX.match(response['uuid'])
+            assert isinstance(response['metadata_sequence_number'], int)
             assert UUID_REGEX.match(response['initial_ecosystem_uuid'])
 
     def test_fetch_course_events(self):

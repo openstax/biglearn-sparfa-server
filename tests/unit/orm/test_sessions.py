@@ -17,8 +17,8 @@ class TestBiglearnSession(object):
 
         ecosystem_uuids = set((str(uuid4()), str(uuid4())))
         ecosystem_values = [{
-            'uuid': ecosystem_uuid, 'sequence_number': 0
-        } for ecosystem_uuid in ecosystem_uuids]
+            'uuid': ecosystem_uuid, 'metadata_sequence_number': i, 'sequence_number': 0
+        } for i, ecosystem_uuid in enumerate(ecosystem_uuids)]
 
         with transaction() as session:
             with raises(TypeError):
@@ -41,6 +41,7 @@ class TestBiglearnSession(object):
         for ecosystem in ecosystems:
             assert ecosystem.uuid in ecosystem_uuids
             assert ecosystem.sequence_number == 0
+        assert set(ecosystem.metadata_sequence_number for ecosystem in ecosystems) == set((0, 1))
 
         ecosystem_values[0]['sequence_number'] = 1
         ecosystem_values[1]['sequence_number'] = 2
@@ -55,6 +56,7 @@ class TestBiglearnSession(object):
         for ecosystem in ecosystems:
             assert ecosystem.uuid in ecosystem_uuids
             assert ecosystem.sequence_number == 0
+        assert set(ecosystem.metadata_sequence_number for ecosystem in ecosystems) == set((0, 1))
 
         with transaction() as session:
             # ON CONFLICT (columns) DO UPDATE
@@ -70,10 +72,11 @@ class TestBiglearnSession(object):
                 assert ecosystem.sequence_number == 1
             else:
                 assert ecosystem.sequence_number == 2
+        assert set(ecosystem.metadata_sequence_number for ecosystem in ecosystems) == set((0, 1))
 
     def test_upsert_models(self):
-        ecosystem_1 = Ecosystem(uuid=str(uuid4()), sequence_number=0)
-        ecosystem_2 = Ecosystem(uuid=str(uuid4()), sequence_number=0)
+        ecosystem_1 = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=0, sequence_number=0)
+        ecosystem_2 = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=1, sequence_number=0)
         ecosystem_uuids = set((ecosystem_1.uuid, ecosystem_2.uuid))
 
         with transaction() as session:
@@ -88,6 +91,7 @@ class TestBiglearnSession(object):
         for ecosystem in ecosystems:
             assert ecosystem.uuid in ecosystem_uuids
             assert ecosystem.sequence_number == 0
+        assert set(ecosystem.metadata_sequence_number for ecosystem in ecosystems) == set((0, 1))
 
         ecosystem_1.sequence_number = 1
         ecosystem_2.sequence_number = 2
@@ -102,6 +106,7 @@ class TestBiglearnSession(object):
         for ecosystem in ecosystems:
             assert ecosystem.uuid in ecosystem_uuids
             assert ecosystem.sequence_number == 0
+        assert set(ecosystem.metadata_sequence_number for ecosystem in ecosystems) == set((0, 1))
 
         with transaction() as session:
             # ON CONFLICT (columns) DO UPDATE
@@ -115,10 +120,11 @@ class TestBiglearnSession(object):
         for ecosystem in ecosystems:
             assert ecosystem.uuid in ecosystem_uuids
             assert ecosystem.sequence_number == (1 if ecosystem.uuid == ecosystem_1.uuid else 2)
+        assert set(ecosystem.metadata_sequence_number for ecosystem in ecosystems) == set((0, 1))
 
 
 def test_transaction():
-    ecosystem = Ecosystem(uuid=str(uuid4()), sequence_number=0)
+    ecosystem = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=0, sequence_number=0)
 
     with raises(RuntimeError):
         with transaction() as session:

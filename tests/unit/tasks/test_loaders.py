@@ -17,7 +17,7 @@ def test_load_ecosystem_metadata(transaction):
     with transaction() as session:
         assert not session.query(Ecosystem).all()
 
-    ecosystem_dicts = [{'uuid': str(uuid4())} for i in range(2)]
+    ecosystem_dicts = [{'uuid': str(uuid4()), 'metadata_sequence_number': i} for i in range(2)]
 
     with patch(
         'sparfa_server.tasks.loaders.BLAPI.fetch_ecosystem_metadatas', autospec=True
@@ -26,18 +26,21 @@ def test_load_ecosystem_metadata(transaction):
 
         load_ecosystem_metadata()
 
-    fetch_ecosystem_metadatas.assert_called_once()
+    fetch_ecosystem_metadatas.assert_called_once_with(
+        metadata_sequence_number_offset=0, max_num_metadatas=1000
+    )
 
     with transaction() as session:
         ecosystems = session.query(Ecosystem).all()
         assert set(ecosystem.uuid for ecosystem in ecosystems) == \
             set(dict['uuid'] for dict in ecosystem_dicts)
+        assert set(ecosystem.metadata_sequence_number for ecosystem in ecosystems) == set(range(2))
 
 
 def test_load_ecosystem_events(transaction):
-    ecosystem_1 = Ecosystem(uuid=str(uuid4()), sequence_number=0)
-    ecosystem_2 = Ecosystem(uuid=str(uuid4()), sequence_number=0)
-    ecosystem_3 = Ecosystem(uuid=str(uuid4()), sequence_number=0)
+    ecosystem_1 = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=0, sequence_number=0)
+    ecosystem_2 = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=1, sequence_number=0)
+    ecosystem_3 = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=2, sequence_number=0)
 
     with transaction() as session:
         session.add(ecosystem_1)
@@ -60,8 +63,8 @@ def test_load_ecosystem_events(transaction):
 
 
 def test_load_grouped_ecosystem_events(transaction):
-    ecosystem_1 = Ecosystem(uuid=str(uuid4()), sequence_number=0)
-    ecosystem_2 = Ecosystem(uuid=str(uuid4()), sequence_number=0)
+    ecosystem_1 = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=0, sequence_number=0)
+    ecosystem_2 = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=1, sequence_number=0)
 
     with transaction() as session:
         session.add(ecosystem_1)
@@ -187,9 +190,11 @@ def test_load_course_metadata(transaction):
     with transaction() as session:
         assert not session.query(Course).all()
 
-    course_dicts = [
-        {'uuid': str(uuid4()), 'initial_ecosystem_uuid': str(uuid4())} for i in range(2)
-    ]
+    course_dicts = [{
+        'uuid': str(uuid4()),
+        'initial_ecosystem_uuid': str(uuid4()),
+        'metadata_sequence_number': i
+    } for i in range(2)]
 
     with patch(
         'sparfa_server.tasks.loaders.BLAPI.fetch_course_metadatas', autospec=True
@@ -198,18 +203,21 @@ def test_load_course_metadata(transaction):
 
         load_course_metadata()
 
-    fetch_course_metadatas.assert_called_once()
+    fetch_course_metadatas.assert_called_once_with(
+        metadata_sequence_number_offset=0, max_num_metadatas=1000
+    )
 
     with transaction() as session:
         courses = session.query(Course).all()
         assert set(course.uuid for course in courses) == \
             set(dict['uuid'] for dict in course_dicts)
+        assert set(course.metadata_sequence_number for course in courses) == set(range(2))
 
 
 def test_load_course_events(transaction):
-    course_1 = Course(uuid=str(uuid4()), sequence_number=0)
-    course_2 = Course(uuid=str(uuid4()), sequence_number=1)
-    course_3 = Course(uuid=str(uuid4()), sequence_number=2)
+    course_1 = Course(uuid=str(uuid4()), metadata_sequence_number=0, sequence_number=0)
+    course_2 = Course(uuid=str(uuid4()), metadata_sequence_number=1, sequence_number=1)
+    course_3 = Course(uuid=str(uuid4()), metadata_sequence_number=2, sequence_number=2)
 
     with transaction() as session:
         session.add(course_1)
@@ -232,8 +240,8 @@ def test_load_course_events(transaction):
 
 
 def test_load_grouped_course_events(transaction):
-    course_1 = Course(uuid=str(uuid4()), sequence_number=1)
-    course_2 = Course(uuid=str(uuid4()), sequence_number=2)
+    course_1 = Course(uuid=str(uuid4()), metadata_sequence_number=0, sequence_number=1)
+    course_2 = Course(uuid=str(uuid4()), metadata_sequence_number=1, sequence_number=2)
 
     with transaction() as session:
         session.add(course_1)

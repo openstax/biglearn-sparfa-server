@@ -10,7 +10,7 @@ from sparfa_server.tasks.calcs import (calculate_ecosystem_matrices,
 
 
 def test_calculate_ecosystem_matrices(transaction):
-    ecosystem_1 = Ecosystem(uuid=str(uuid4()), sequence_number=1)
+    ecosystem_1 = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=0, sequence_number=1)
 
     calculation_uuid = str(uuid4())
     ecosystem_matrix_updates = [{
@@ -32,7 +32,7 @@ def test_calculate_ecosystem_matrices(transaction):
     with transaction() as session:
         assert not session.query(EcosystemMatrix).all()
 
-    ecosystem_2 = Ecosystem(uuid=str(uuid4()), sequence_number=0)
+    ecosystem_2 = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=1, sequence_number=0)
 
     page_1 = Page(uuid=str(uuid4()), ecosystem_uuid=ecosystem_1.uuid,
                   exercise_uuids=[str(uuid4()), str(uuid4())])
@@ -103,7 +103,7 @@ def test_calculate_ecosystem_matrices(transaction):
 
 
 def test_calculate_exercises(transaction):
-    ecosystem = Ecosystem(uuid=str(uuid4()), sequence_number=1)
+    ecosystem = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=0, sequence_number=1)
 
     page_1 = Page(uuid=str(uuid4()), ecosystem_uuid=ecosystem.uuid,
                   exercise_uuids=[str(uuid4()), str(uuid4())])
@@ -202,7 +202,7 @@ def test_calculate_exercises(transaction):
 
 def test_calculate_clues(transaction):
     course_uuid = str(uuid4())
-    ecosystem = Ecosystem(uuid=str(uuid4()), sequence_number=1)
+    ecosystem = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=0, sequence_number=1)
 
     page_1 = Page(uuid=str(uuid4()), ecosystem_uuid=ecosystem.uuid,
                   exercise_uuids=[str(uuid4()), str(uuid4())])

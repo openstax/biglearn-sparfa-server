@@ -59,8 +59,11 @@ class BiglearnApi(BiglearnClient):
             'User-Agent': 'Biglearn-API Python API client {}'.format(__version__),
         })
 
-    def fetch_ecosystem_metadatas(self):
-        return self.post('fetch_ecosystem_metadatas')['ecosystem_responses']
+    def fetch_ecosystem_metadatas(self, metadata_sequence_number_offset, max_num_metadatas=1000):
+        return self.post('fetch_ecosystem_metadatas', json={
+            'metadata_sequence_number_offset': metadata_sequence_number_offset,
+            'max_num_metadatas': max_num_metadatas
+        })['ecosystem_responses']
 
     def fetch_ecosystem_events(self, ecosystem_event_requests, max_num_events=1000):
         return self.post('fetch_ecosystem_events', json={
@@ -68,8 +71,11 @@ class BiglearnApi(BiglearnClient):
             'max_num_events': max_num_events
         })['ecosystem_event_responses']
 
-    def fetch_course_metadatas(self):
-        return self.post('fetch_course_metadatas')['course_responses']
+    def fetch_course_metadatas(self, metadata_sequence_number_offset, max_num_metadatas=1000):
+        return self.post('fetch_course_metadatas', json={
+            'metadata_sequence_number_offset': metadata_sequence_number_offset,
+            'max_num_metadatas': max_num_metadatas
+        })['course_responses']
 
     def fetch_course_events(self, course_event_requests, max_num_events=1000):
         return self.post('fetch_course_events', json={

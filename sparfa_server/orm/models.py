@@ -28,11 +28,13 @@ Base = declarative_base(cls=BaseBase)
 
 class Course(Base):
     __tablename__ = 'courses'
+    metadata_sequence_number = Column(INTEGER, nullable=False, index=True, unique=True)
     sequence_number = Column(INTEGER, nullable=False)
 
 
 class Ecosystem(Base):
     __tablename__ = 'ecosystems'
+    metadata_sequence_number = Column(INTEGER, nullable=False, index=True, unique=True)
     sequence_number = Column(INTEGER, nullable=False)
 
 
