@@ -25,6 +25,8 @@ CALCULATE_CLUES_QUEUE = '{}calculate.clues'.format(AMQP_QUEUE_PREFIX)
 app = Celery('sparfa_server')
 app.conf.update(
     broker_url=AMQP_URL,
+    task_ignore_result=True,
+    task_store_errors_even_if_ignored=True,
     result_backend=REDIS_URL,
     result_compression='gzip',
     beat_schedule={
