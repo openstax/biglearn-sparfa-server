@@ -50,14 +50,13 @@ dev-reinstall: reset-virtualenv dev-install
 requirements: .python-version
 	if [ -z "$$(pip freeze)" ]; then make install; fi
 	echo "$$(pip freeze)" | \
-	sed -e 's/-e git+https:\/\/github.com\/openstax\/biglearn-sparfa-server\.git@[0-9a-f]*#egg=sparfa_server/-e ./' > requirements.txt
+	sed -Ee 's/-e git\+(https:\/\/|git@)github\.com(\/|:)openstax\/biglearn-sparfa-server\.git@[0-9a-f]+#egg=sparfa_server/-e ./' > requirements.txt
 
 freeze: requirements
 
-update-requirements: reset-virtualenv
-	pip install --no-deps -e git+https://github.com/openstax/biglearn-sparfa-algs#egg=sparfa_algs
+update: reset-virtualenv
+	pip install --no-deps -e git+git@github.com:openstax/biglearn-sparfa-algs#egg=sparfa_algs
 	pip install -e .
-	make requirements
 
 abort-if-production: .env
 	if [ -z "$${PY_ENV}" ]; then . ./.env; fi && [ "$${PY_ENV}" != "production" ]
@@ -116,8 +115,8 @@ help:
 	@echo "reset-v[irtual]env     Run make uninstall-virtualenv, then make virtualenv"
 	@echo "reinstall              Run make reset-virtualenv, then make install"
 	@echo "dev-reinstall          Run make reset-virtualenv, then make dev-install"
+	@echo "update                 Update all pip packages to the latest available versions"
 	@echo "requirements/freeze    Recreate requirements.txt based on installed packages"
-	@echo "update-requirements    Update all pip packages and recreate requirements.txt"
 	@echo "abort-if-production    Returns non-zero if in production mode"
 	@echo "create-user            Create the database user"
 	@echo "drop-user              Drop the database user"
