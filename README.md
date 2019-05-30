@@ -91,7 +91,7 @@ If you need to update package versions, first run `make reinstall` to reset
 your virtualenv to having only non-dev packages, then update the packages as needed.
 When satisfied, run `make requirements` to create a new `requirements.txt`
 based on the package versions currently installed in the virtualenv.
-Alternatively, run `make update` to update all packages listed in `setup.py` to the
+Alternatively, run `make update-requirements` to update all packages listed in `setup.py` to the
 latest versions allowed, then run `make requirements` to create a new `requirements.txt`.
 
 #### Environment Variables
