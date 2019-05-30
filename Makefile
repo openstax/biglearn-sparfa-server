@@ -1,7 +1,7 @@
 .PHONY: env python uninstall-python virtualenv venv uninstall-virtualenv uninstall-venv \
-	      reset-virtualenv reset-venv install dev-install reinstall dev-reinstall requirements \
-				freeze update-requirements abort-if-production create-user drop-user create-db setup-db \
-				drop-db reset-db test clean-build clean-pyc clean-test clean help
+	      reset-virtualenv reset-venv install install-dev reinstall reinstall-dev update \
+				requirements freeze abort-if-production create-user drop-user create-db setup-db drop-db \
+				reset-db test clean-build clean-pyc clean-test clean help
 .DEFAULT_GOAL := help
 
 PYTHON_VERSION := 3.6.6
@@ -40,12 +40,12 @@ reset-venv: reset-virtualenv
 install: .python-version
 	pip install -r requirements.txt
 
-dev-install: .python-version install
+install-dev: .python-version install
 	pip install -e .[dev]
 
 reinstall: reset-virtualenv install
 
-dev-reinstall: reset-virtualenv dev-install
+reinstall-dev: reset-virtualenv install-dev
 
 update: reset-virtualenv
 	pip install --no-deps -e git+git@github.com:openstax/biglearn-sparfa-algs#egg=sparfa_algs
@@ -82,7 +82,7 @@ drop-db: .env abort-if-production
 
 reset-db: drop-db setup-db
 
-test: .env dev-install
+test: .env install-dev
 	pytest
 	pycodestyle
 
@@ -110,11 +110,11 @@ help:
 	@echo "v[irtual]env           Create ${VIRTUALENV_NAME} using pyenv-virtualenv"
 	@echo "uninstall-v[irtual]env Uninstall ${VIRTUALENV_NAME} using pyenv-virtualenv"
 	@echo "install                Install pip packages using versions in requirements.txt"
-	@echo "dev-install            Install dev pip packages listed in setup.py"
+	@echo "install-dev            Install dev pip packages listed in setup.py"
 	@echo ".python-version        Create the virtualenv if .python-version does not exist"
 	@echo "reset-v[irtual]env     Run make uninstall-virtualenv, then make virtualenv"
 	@echo "reinstall              Run make reset-virtualenv, then make install"
-	@echo "dev-reinstall          Run make reset-virtualenv, then make dev-install"
+	@echo "reinstall-dev          Run make reset-virtualenv, then make install-dev"
 	@echo "update                 Update all pip packages to the latest available versions"
 	@echo "requirements/freeze    Recreate requirements.txt based on installed packages"
 	@echo "abort-if-production    Returns non-zero if in production mode"

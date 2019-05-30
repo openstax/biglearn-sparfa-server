@@ -111,7 +111,7 @@ Or simply run `make update requirements` to do both steps at once.
 
 ### Dev dependencies and tests
 
-1.  To install the dev dependencies, run `make dev-install`.
+1.  To install the dev dependencies, run `make install-dev`.
 
 2.  To run tests, run `make test`.
 
