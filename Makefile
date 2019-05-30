@@ -47,16 +47,16 @@ reinstall: reset-virtualenv install
 
 dev-reinstall: reset-virtualenv dev-install
 
+update: reset-virtualenv
+	pip install --no-deps -e git+git@github.com:openstax/biglearn-sparfa-algs#egg=sparfa_algs
+	pip install -e .
+
 requirements: .python-version
 	if [ -z "$$(pip freeze)" ]; then make install; fi
 	echo "$$(pip freeze)" | \
 	sed -Ee 's/-e git\+(https:\/\/|git@)github\.com(\/|:)openstax\/biglearn-sparfa-server\.git@[0-9a-f]+#egg=sparfa_server/-e ./' > requirements.txt
 
 freeze: requirements
-
-update: reset-virtualenv
-	pip install --no-deps -e git+git@github.com:openstax/biglearn-sparfa-algs#egg=sparfa_algs
-	pip install -e .
 
 abort-if-production: .env
 	if [ -z "$${PY_ENV}" ]; then . ./.env; fi && [ "$${PY_ENV}" != "production" ]
