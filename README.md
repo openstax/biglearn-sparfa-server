@@ -95,21 +95,21 @@ Alternatively, run `make update` to update all packages listed in `setup.py` to 
 latest versions allowed, then run `make requirements` to create a new `requirements.txt`.
 Or simply run `make update requirements` to do both steps at once.
 
-#### Environment Variables
+### Environment Variables
 
 1.  Run `make .env` to copy .env.example into .env
 
 2.  Fill in the API tokens for biglearn-api and biglearn-scheduler.
     Also make sure the URLs are correct for the Biglearn servers you desire to use.
 
-#### Database
+### Database
 
 1.  Run `make create-user setup-db` to create the
     database user and the database and run all migrations.
 
 2.  If you need more database management commands, see `make help`.
 
-#### Dev dependencies and tests
+### Dev dependencies and tests
 
 1.  To install the dev dependencies, run `make dev-install`.
 
