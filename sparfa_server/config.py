@@ -2,9 +2,9 @@ from os import environ
 
 # ImportError can happen when installing the package because dotenv is not yet installed
 try:
-    from dotenv import load_dotenv
+    from dotenv import load_dotenv, find_dotenv
 
-    load_dotenv()
+    load_dotenv(find_dotenv('.python.env'))
 except ImportError:
     pass
 

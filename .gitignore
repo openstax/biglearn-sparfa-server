@@ -73,7 +73,7 @@ target/
 .DS_Store
 
 # Environmental Variables
-.env
+.python.env
 
 # Virtual environments
 .venv

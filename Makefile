@@ -1,4 +1,4 @@
-.PHONY: env python uninstall-python virtualenv venv uninstall-virtualenv uninstall-venv \
+.PHONY: dotenv python uninstall-python virtualenv venv uninstall-virtualenv uninstall-venv \
 	      reset-virtualenv reset-venv install install-dev reinstall reinstall-dev update \
 				requirements freeze abort-if-production create-user drop-user create-db setup-db drop-db \
 				reset-db test clean-build clean-pyc clean-test clean help
@@ -7,10 +7,10 @@
 PYTHON_VERSION := 3.6.6
 VIRTUALENV_NAME := biglearn-sparfa-server
 
-.env:
-	cp .env.example .env
+.python.env:
+	cp .python.env.example .python.env
 
-env: .env
+dotenv: .python.env
 
 python:
 	pyenv install --skip-existing ${PYTHON_VERSION}
@@ -58,31 +58,31 @@ requirements: .python-version
 
 freeze: requirements
 
-abort-if-production: .env
-	if [ -z "$${PY_ENV}" ]; then . ./.env; fi && [ "$${PY_ENV}" != "production" ]
+abort-if-production: .python.env
+	if [ -z "$${PY_ENV}" ]; then . ./.python.env; fi && [ "$${PY_ENV}" != "production" ]
 
-create-user: .env
-	. ./.env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
+create-user: .python.env
+	. ./.python.env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
 	                 -c "CREATE USER $${PG_USER} WITH SUPERUSER PASSWORD '$${PG_PASSWORD}'"
 
-drop-user: .env abort-if-production
-	. ./.env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
+drop-user: .python.env abort-if-production
+	. ./.python.env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
 	                 -c "DROP USER IF EXISTS $${PG_USER}"
 
-create-db: .env
-	. ./.env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
+create-db: .python.env
+	. ./.python.env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U postgres \
 	                 -c "CREATE DATABASE $${PG_DB} ENCODING 'UTF8'"
 
 setup-db: .python-version create-db
 	alembic upgrade head
 
-drop-db: .env abort-if-production
-	. ./.env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U $${PG_USER} \
+drop-db: .python.env abort-if-production
+	. ./.python.env && psql -h $${PG_HOST} -p $${PG_PORT} -d postgres -U $${PG_USER} \
 	                 -c "DROP DATABASE IF EXISTS $${PG_DB}"
 
 reset-db: drop-db setup-db
 
-test: .env install-dev
+test: .python.env install-dev
 	pytest
 	pycodestyle
 
@@ -104,7 +104,7 @@ clean: clean-build clean-pycache clean-test
 help:
 	@echo "The following targets are available:"
 	@echo
-	@echo "[.]env                 Copy .env.example into .env"
+	@echo ".python.env/dotenv     Copy .python.env.example into .python.env"
 	@echo "python                 Install Python ${PYTHON_VERSION} using pyenv"
 	@echo "uninstall-python       Uninstall Python ${PYTHON_VERSION} using pyenv"
 	@echo "v[irtual]env           Create ${VIRTUALENV_NAME} using pyenv-virtualenv"

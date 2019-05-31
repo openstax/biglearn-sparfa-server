@@ -97,9 +97,9 @@ Or simply run `make update requirements` to do both steps at once.
 
 ### Environment Variables
 
-1.  Run `make .env` to copy .env.example into .env
+1.  Run `make dotenv` to copy .python.env.example into .python.env
 
-2.  Fill in the API tokens for biglearn-api and biglearn-scheduler.
+2.  Fill in the API tokens for biglearn-api and biglearn-scheduler in .python.env.
     Also make sure the URLs are correct for the Biglearn servers you desire to use.
 
 ### Database
