@@ -10,6 +10,8 @@ from .celery import task
 
 __all__ = ('calculate_ecosystem_matrices', 'calculate_exercises', 'calculate_clues')
 
+ECOSYSTEM_BATCH_SIZE = 1
+
 
 @task
 def calculate_ecosystem_matrices():
@@ -26,7 +28,7 @@ def calculate_ecosystem_matrices():
             # Skip unknown ecosystems
             known_ecosystem_uuids = [result.uuid for result in session.query(Ecosystem.uuid).filter(
                 Ecosystem.uuid.in_(ecosystem_uuids), Ecosystem.sequence_number > 0
-            ).all()]
+            ).with_for_update(key_share=True, skip_locked=True).limit(ECOSYSTEM_BATCH_SIZE).all()]
 
             if not known_ecosystem_uuids:
                 break
