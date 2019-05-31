@@ -4,7 +4,7 @@
 				reset-db test clean-build clean-pyc clean-test clean help
 .DEFAULT_GOAL := help
 
-PYTHON_VERSION := 3.6.6
+PYTHON_VERSION := 3.7.3
 VIRTUALENV_NAME := biglearn-sparfa-server
 
 .env:
