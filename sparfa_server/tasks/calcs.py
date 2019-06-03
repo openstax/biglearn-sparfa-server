@@ -25,7 +25,7 @@ def calculate_ecosystem_matrices():
         ecosystem_uuids = calculations_by_ecosystem_uuid.keys()
 
         with transaction() as session:
-            # Skip unknown ecosystems
+            # Skip unknown ecosystems and ecosystems we can't lock immediately
             known_ecosystem_uuids = [result.uuid for result in session.query(Ecosystem.uuid).filter(
                 Ecosystem.uuid.in_(ecosystem_uuids), Ecosystem.sequence_number > 0
             ).with_for_update(key_share=True, skip_locked=True).limit(ECOSYSTEM_BATCH_SIZE).all()]
@@ -74,7 +74,8 @@ def calculate_ecosystem_matrices():
         # There is a potential race condition here where another worker might process the same
         # ecosystem matrix update since we end the transaction and release the locks
         # before sending the update back to biglearn-scheduler
-        # This is our only option to avoid data loss in case the database connection is lost
+        # To prevent this in the future, we can store the uuid of the last request
+        # in the ecosystem_matrices table and skip all the work up to this point if it matches
         BLSCHED.ecosystem_matrices_updated(ecosystem_matrix_requests)
 
         calculations = BLSCHED.fetch_ecosystem_matrix_updates()
@@ -125,24 +126,24 @@ def calculate_exercises():
                     unknown_exercise_uuids_by_calculation_uuid[calculation_uuid] = \
                         unknown_exercise_uuids
 
-                    values.append(
-                        "(UUID('{0}'), UUID('{1}'), UUID('{2}'), ARRAY[{3}]::UUID[])".format(
+                    values.extend([
+                        "(UUID('{0}'), UUID('{1}'), UUID('{2}'), UUID('{3}'))".format(
                             calculation_uuid,
                             ecosystem_uuid,
                             calculation['student_uuid'],
-                            ', '.join("UUID('{}')".format(uuid) for uuid in known_exercise_uuids)
-                        )
-                    )
+                            exercise_uuid
+                        ) for exercise_uuid in known_exercise_uuids
+                    ])
 
             response_dicts_by_calculation_uuid = defaultdict(list)
             if values:
                 results = session.query('calculation_uuid', Response).from_statement(text(dedent("""
                     SELECT "values"."calculation_uuid", "responses".*
                     FROM "responses" INNER JOIN (VALUES {}) AS "values"
-                        ("calculation_uuid", "ecosystem_uuid", "student_uuid", "exercise_uuids")
+                        ("calculation_uuid", "ecosystem_uuid", "student_uuid", "exercise_uuid")
                         ON "responses"."student_uuid" = "values"."student_uuid"
                             AND "responses"."ecosystem_uuid" = "values"."ecosystem_uuid"
-                            AND "values"."exercise_uuids" @> ARRAY["responses"."exercise_uuid"]
+                            AND "responses"."exercise_uuid" = "values"."exercise_uuid"
                 """.format(', '.join(values))).strip())).all()
                 for result in results:
                     response_dicts_by_calculation_uuid[result.calculation_uuid].append(
@@ -214,7 +215,10 @@ def calculate_clues():
             response_uuids = [response['response_uuid']
                               for calculation in calculations
                               for response in calculation['responses']]
-            responses = session.query(Response).filter(Response.uuid.in_(response_uuids)).all()
+            # Skip unknown responses and responses that we can't lock immediately
+            responses = session.query(Response).filter(
+                Response.uuid.in_(response_uuids)
+            ).with_for_update(key_share=True, skip_locked=True).all()
             responses_by_uuid = {}
             for response in responses:
                 responses_by_uuid[response.uuid] = response
@@ -223,7 +227,7 @@ def calculate_clues():
             for ecosystem_matrix in ecosystem_matrices:
                 ecosystem_uuid = ecosystem_matrix.uuid
 
-                # Skip calculations that refer to responses we don't know about
+                # Skip calculations unless all responses are known and locked
                 valid_calculations = [
                     calc for calc in calculations_by_ecosystem_uuid[ecosystem_uuid] if all(
                         rr['response_uuid'] in responses_by_uuid for rr in calc['responses']
