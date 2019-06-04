@@ -8,8 +8,6 @@ from ..biglearn import BLSCHED
 from ..orm import transaction, Ecosystem, Page, Response, EcosystemMatrix
 from .celery import task
 
-__all__ = ('calculate_ecosystem_matrices', 'calculate_exercises', 'calculate_clues')
-
 ECOSYSTEM_BATCH_SIZE = 1
 
 

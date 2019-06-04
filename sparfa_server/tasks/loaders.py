@@ -6,9 +6,6 @@ from ..biglearn import BLAPI
 from ..orm import transaction, Course, Ecosystem, Page, Response, EcosystemMatrix
 from .celery import task
 
-__all__ = ('load_ecosystem_metadata', 'load_ecosystem_events',
-           'load_course_metadata', 'load_course_events')
-
 
 @task
 def load_ecosystem_metadata(metadata_sequence_number_offset=None, batch_size=1000):
