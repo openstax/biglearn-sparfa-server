@@ -92,7 +92,8 @@ def _load_grouped_ecosystem_events(session, ecosystems):
                     'ecosystem_uuid': ecosystem_uuid,
                     'exercise_uuids': set(exercise_uuid
                                           for pool in content['pools']
-                                          for exercise_uuid in pool['exercise_uuids'])
+                                          for exercise_uuid in pool['exercise_uuids']
+                                          if exercise_uuid is not None)
                 } for content in contents if content['container_uuid'] not in parent_uuids]
 
                 page_values.extend(page_dicts)
