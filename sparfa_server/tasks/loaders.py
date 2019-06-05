@@ -38,21 +38,48 @@ def load_ecosystem_metadata(metadata_sequence_number_offset=None, batch_size=100
 @task
 def load_ecosystem_events(event_types=['create_ecosystem'], batch_size=1000):
     """Load all ecosystem events"""
-    ecosystems = []
-    with transaction() as session:
-        # Group ecosystems in chunks of batch_size and send those requests at once
-        for ecosystem in session.query(Ecosystem).with_for_update(
-            key_share=True, skip_locked=True
-        ).yield_per(batch_size):
-            ecosystems.append(ecosystem)
-            while len(ecosystems) >= batch_size:
-                ecosystems = _load_grouped_ecosystem_events(session, ecosystems)
-        # Keep loading events until we completely exhaust all ecosystems
-        while ecosystems:
-            ecosystems = _load_grouped_ecosystem_events(session, ecosystems)
+    last_ecosystem_uuid = None
+    ecosystem_uuids_to_requery = []
+    while True:
+        with transaction() as session:
+            # Group ecosystems in chunks of batch_size and send those requests at once
+            # This code uses the fact that ecosystems only ever receive 1 create_ecosystem event
+            # to reduce the number of requests sent to biglearn-api
+            query = session.query(Ecosystem)
+            if last_ecosystem_uuid:
+                query = query.filter(Ecosystem.uuid > last_ecosystem_uuid)
+            ecosystems = query.filter(Ecosystem.sequence_number == 0).order_by(
+                Ecosystem.uuid
+            ).limit(batch_size).with_for_update(key_share=True, skip_locked=True).all()
+
+            ecosystem_uuids_to_requery.extend(_load_grouped_ecosystem_events(session, ecosystems))
+
+            if len(ecosystems) < batch_size:
+                break
+
+            last_ecosystem_uuid = ecosystems[-1].uuid
+
+    # Retry ecosystems that we couldn't query before
+    # This is done to avoid starvation, in case some ecosystem is emitting lots of events
+    while ecosystem_uuids_to_requery:
+        with transaction() as session:
+            # Group ecosystems in chunks of batch_size and send those requests at once
+            # This code uses the fact that ecosystems only ever receive 1 create_ecosystem event
+            # to reduce the number of requests sent to biglearn-api
+            ecosystems = session.query(Ecosystem).filter(
+                Ecosystem.uuid.in_(ecosystem_uuids_to_requery[:batch_size]),
+                Ecosystem.sequence_number == 0
+            ).with_for_update(key_share=True, skip_locked=True).all()
+
+            ecosystem_uuids_to_requery = ecosystem_uuids_to_requery[batch_size:]
+
+            ecosystem_uuids_to_requery.extend(_load_grouped_ecosystem_events(session, ecosystems))
 
 
 def _load_grouped_ecosystem_events(session, ecosystems):
+    if not ecosystems:
+        return []
+
     ecosystems_by_req_uuid = {str(uuid4()): ecosystem for ecosystem in ecosystems}
     event_requests = [{
         'ecosystem_uuid': ecosystem.uuid,
@@ -63,10 +90,10 @@ def _load_grouped_ecosystem_events(session, ecosystems):
 
     responses = BLAPI.fetch_ecosystem_events(event_requests)
 
-    requery_ecosystems = []
     ecosystem_values = []
-    ecosystem_matrices = []
     page_values = []
+    ecosystem_matrices = []
+    ecosystem_uuids_to_requery = []
     for response in responses:
         events = response['events']
         ecosystem = ecosystems_by_req_uuid[response['request_uuid']]
@@ -102,17 +129,17 @@ def _load_grouped_ecosystem_events(session, ecosystems):
                     )
                 )
 
-            ecosystem.sequence_number = event['sequence_number'] + 1
+            ecosystem.sequence_number = max(ecosystem.sequence_number, event['sequence_number'] + 1)
 
-        if response['is_end'] or response['is_gap']:
-            if events:
-                ecosystem_values.append({
-                    'uuid': ecosystem.uuid,
-                    'sequence_number': ecosystem.sequence_number,
-                    'metadata_sequence_number': ecosystem.metadata_sequence_number
-                })
-        else:
-            requery_ecosystems.append(ecosystem)
+        if events:
+            ecosystem_values.append({
+                'uuid': ecosystem.uuid,
+                'sequence_number': ecosystem.sequence_number,
+                'metadata_sequence_number': ecosystem.metadata_sequence_number
+            })
+
+        if not response['is_end'] and not response['is_gap']:
+            ecosystem_uuids_to_requery.append(ecosystem.uuid)
 
     if page_values:
         session.upsert_values(Page, page_values)
@@ -124,7 +151,7 @@ def _load_grouped_ecosystem_events(session, ecosystems):
         session.upsert_values(Ecosystem, ecosystem_values,
                               conflict_update_columns=['sequence_number'])
 
-    return requery_ecosystems
+    return ecosystem_uuids_to_requery
 
 
 @task
@@ -158,21 +185,47 @@ def load_course_metadata(metadata_sequence_number_offset=None, batch_size=1000):
 @task
 def load_course_events(event_types=['record_response'], batch_size=1000):
     """Load all course events"""
-    courses = []
-    with transaction() as session:
-        # Group courses in chunks of batch_size and send those requests at once
-        for course in session.query(Course).with_for_update(
-            key_share=True, skip_locked=True
-        ).yield_per(batch_size):
-            courses.append(course)
-            while len(courses) >= batch_size:
-                courses = _load_grouped_course_events(session, courses)
-        # Keep loading events until we completely exhaust all courses
-        while courses:
-            courses = _load_grouped_course_events(session, courses)
+    last_course_uuid = None
+    course_uuids_to_requery = []
+    while True:
+        with transaction() as session:
+            # Group courses in chunks of batch_size and send those requests at once
+            # We can't use the same shortcut used in the ecosystem_events here,
+            # since there are more than 1 course_event per course
+            query = session.query(Course)
+            if last_course_uuid:
+                query = query.filter(Course.uuid > last_course_uuid)
+            courses = query.order_by(Course.uuid).limit(batch_size).with_for_update(
+                key_share=True, skip_locked=True
+            ).all()
+
+            course_uuids_to_requery.extend(_load_grouped_course_events(session, courses))
+
+            if len(courses) < batch_size:
+                break
+
+            last_course_uuid = courses[-1].uuid
+
+    # Retry courses that we couldn't query before
+    # This is done to avoid starvation, in case some course is emitting lots of events
+    while course_uuids_to_requery:
+        with transaction() as session:
+            # Group courses in chunks of batch_size and send those requests at once
+            # We can't use the same shortcut used in the ecosystem_events here,
+            # since there are more than 1 course_event per course
+            courses = session.query(Course).filter(
+                Course.uuid.in_(course_uuids_to_requery[:batch_size])
+            ).with_for_update(key_share=True, skip_locked=True).all()
+
+            course_uuids_to_requery = course_uuids_to_requery[batch_size:]
+
+            course_uuids_to_requery.extend(_load_grouped_course_events(session, courses))
 
 
 def _load_grouped_course_events(session, courses):
+    if not courses:
+        return []
+
     courses_by_req_uuid = {str(uuid4()): course for course in courses}
     event_requests = [{
         'course_uuid': course.uuid,
@@ -183,9 +236,9 @@ def _load_grouped_course_events(session, courses):
 
     responses = BLAPI.fetch_course_events(event_requests)
 
-    requery_courses = []
-    course_values = []
     responses_dict = {}
+    course_values = []
+    course_uuids_to_requery = []
     for response in responses:
         events = response['events']
         course = courses_by_req_uuid[response['request_uuid']]
@@ -207,17 +260,17 @@ def _load_grouped_course_events(session, courses):
                     'responded_at': data['responded_at']
                 }
 
-            course.sequence_number = event['sequence_number'] + 1
+            course.sequence_number = max(course.sequence_number, event['sequence_number'] + 1)
 
-        if response['is_end'] or response['is_gap']:
-            if events:
-                course_values.append({
-                    'uuid': course.uuid,
-                    'sequence_number': course.sequence_number,
-                    'metadata_sequence_number': course.metadata_sequence_number
-                })
-        else:
-            requery_courses.append(course)
+        if events:
+            course_values.append({
+                'uuid': course.uuid,
+                'sequence_number': course.sequence_number,
+                'metadata_sequence_number': course.metadata_sequence_number
+            })
+
+        if not response['is_end'] and not response['is_gap']:
+            course_uuids_to_requery.append(course.uuid)
 
     if responses_dict:
         session.upsert_values(Response, list(responses_dict.values()))
@@ -225,4 +278,4 @@ def _load_grouped_course_events(session, courses):
     if course_values:
         session.upsert_values(Course, course_values, conflict_update_columns=['sequence_number'])
 
-    return requery_courses
+    return course_uuids_to_requery
