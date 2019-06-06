@@ -18,64 +18,78 @@ def calculate_ecosystem_matrices():
     """Calculate all ecosystem matrices"""
     calculations = BLSCHED.fetch_ecosystem_matrix_updates()
     while calculations:
-        calculations_by_ecosystem_uuid = defaultdict(list)
+        # biglearn-scheduler is guaranteed to only send 1 matrix calculation per ecosystem at a time
+        calculation_by_ecosystem_uuid = {}
         for calculation in calculations:
-            calculations_by_ecosystem_uuid[calculation['ecosystem_uuid']].append(calculation)
+            calculation_by_ecosystem_uuid[calculation['ecosystem_uuid']] = calculation
 
-        ecosystem_uuids = calculations_by_ecosystem_uuid.keys()
+        calc_ecosystem_uuids = calculation_by_ecosystem_uuid.keys()
 
         with transaction() as session:
             # Skip unknown ecosystems and ecosystems we can't lock immediately
-            known_ecosystem_uuids = [result.uuid for result in session.query(Ecosystem.uuid).filter(
-                Ecosystem.uuid.in_(ecosystem_uuids), Ecosystem.sequence_number > 0
-            ).with_for_update(key_share=True, skip_locked=True).limit(ECOSYSTEM_BATCH_SIZE).all()]
+            known_ecosystems = session.query(Ecosystem).filter(
+                Ecosystem.uuid.in_(calc_ecosystem_uuids), Ecosystem.sequence_number > 0
+            ).with_for_update(key_share=True, skip_locked=True).limit(ECOSYSTEM_BATCH_SIZE).all()
 
-            if not known_ecosystem_uuids:
+            if not known_ecosystems:
                 break
 
-            responses = session.query(Response).filter(
-                Response.ecosystem_uuid.in_(known_ecosystem_uuids)
-            ).all()
-            responses_by_ecosystem_uuid = defaultdict(list)
-            for response in responses:
-                responses_by_ecosystem_uuid[response.ecosystem_uuid].append(response)
+            ecosystems = []
+            ecosystem_matrix_requests = []
+            for eco in known_ecosystems:
+                calc = calculation_by_ecosystem_uuid[eco.uuid]
+                if eco.last_ecosystem_matrix_update_calculation_uuid != calc['calculation_uuid']:
+                    eco.last_ecosystem_matrix_update_calculation_uuid = calc['calculation_uuid']
+                    ecosystems.append(eco)
+                ecosystem_matrix_requests.append({'calculation_uuid': calc['calculation_uuid']})
 
-            pages = session.query(Page).filter(Page.ecosystem_uuid.in_(known_ecosystem_uuids)).all()
-            pages_by_ecosystem_uuid = defaultdict(list)
-            for page in pages:
-                pages_by_ecosystem_uuid[page.ecosystem_uuid].append(page)
+            if ecosystems:
+                ecosystem_uuids = [ecosystem.uuid for ecosystem in ecosystems]
 
-            ecosystem_matrix_requests = [
-               {'calculation_uuid': calculation['calculation_uuid']}
-               for ecosystem_uuid in known_ecosystem_uuids
-               for calculation in calculations_by_ecosystem_uuid[ecosystem_uuid]
-            ]
+                responses = session.query(Response).filter(
+                    Response.ecosystem_uuid.in_(ecosystem_uuids),
+                    Response.is_real_response.is_(True)
+                ).all()
+                responses_by_ecosystem_uuid = defaultdict(list)
+                for response in responses:
+                    responses_by_ecosystem_uuid[response.ecosystem_uuid].append(response)
 
-            session.upsert_models(
-                EcosystemMatrix,
-                [EcosystemMatrix.from_ecosystem_uuid_pages_responses(
-                    ecosystem_uuid=ecosystem_uuid,
-                    pages=pages_by_ecosystem_uuid[ecosystem_uuid],
-                    responses=responses_by_ecosystem_uuid[ecosystem_uuid]
-                ) for ecosystem_uuid in known_ecosystem_uuids],
-                conflict_update_columns=[
-                    'Q_ids',
-                    'C_ids',
-                    'd_data',
-                    'w_data',
-                    'w_row',
-                    'w_col',
-                    'h_mask_data',
-                    'h_mask_row',
-                    'h_mask_col'
-                ]
-            )
+                pages = session.query(Page).filter(Page.ecosystem_uuid.in_(ecosystem_uuids)).all()
+                pages_by_ecosystem_uuid = defaultdict(list)
+                for page in pages:
+                    pages_by_ecosystem_uuid[page.ecosystem_uuid].append(page)
+
+                session.upsert_models(
+                    Ecosystem,
+                    ecosystems,
+                    conflict_update_columns=['last_ecosystem_matrix_update_calculation_uuid']
+                )
+
+                session.upsert_models(
+                    EcosystemMatrix,
+                    [EcosystemMatrix.from_ecosystem_uuid_pages_responses(
+                        ecosystem_uuid=ecosystem_uuid,
+                        pages=pages_by_ecosystem_uuid[ecosystem_uuid],
+                        responses=responses_by_ecosystem_uuid[ecosystem_uuid]
+                    ) for ecosystem_uuid in ecosystem_uuids],
+                    conflict_update_columns=[
+                        'Q_ids',
+                        'C_ids',
+                        'd_data',
+                        'w_data',
+                        'w_row',
+                        'w_col',
+                        'h_mask_data',
+                        'h_mask_row',
+                        'h_mask_col'
+                    ]
+                )
 
         # There is a potential race condition here where another worker might process the same
         # ecosystem matrix update since we end the transaction and release the locks
         # before sending the update back to biglearn-scheduler
-        # To prevent this in the future, we can store the uuid of the last request
-        # in the ecosystem_matrices table and skip all the work up to this point if it matches
+        # This is why we store the last calculation_uuid in the ecosystem
+        # and skip all the work if it matches
         BLSCHED.ecosystem_matrices_updated(ecosystem_matrix_requests)
 
         calculations = BLSCHED.fetch_ecosystem_matrix_updates()

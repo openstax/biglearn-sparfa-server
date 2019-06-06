@@ -36,6 +36,7 @@ class Ecosystem(Base):
     __tablename__ = 'ecosystems'
     metadata_sequence_number = Column(INTEGER, nullable=False, index=True, unique=True)
     sequence_number = Column(INTEGER, nullable=False)
+    last_ecosystem_matrix_update_calculation_uuid = Column(UUID)
 
 
 class Page(Base):
