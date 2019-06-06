@@ -76,6 +76,9 @@ def test_load_ecosystem_events(transaction):
 
 
 def test_load_grouped_ecosystem_events(transaction):
+    with transaction() as session:
+        assert _load_grouped_ecosystem_events(session, []) == []
+
     ecosystem_1 = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=0, sequence_number=0)
     ecosystem_2 = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=1, sequence_number=0)
 
@@ -266,6 +269,9 @@ def test_load_course_events(transaction):
 
 
 def test_load_grouped_course_events(transaction):
+    with transaction() as session:
+        assert _load_grouped_course_events(session, []) == []
+
     course_1 = Course(uuid=str(uuid4()), metadata_sequence_number=0, sequence_number=1)
     course_2 = Course(uuid=str(uuid4()), metadata_sequence_number=1, sequence_number=2)
 
