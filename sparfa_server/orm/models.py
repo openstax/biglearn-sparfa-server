@@ -36,6 +36,7 @@ class Ecosystem(Base):
     __tablename__ = 'ecosystems'
     metadata_sequence_number = Column(INTEGER, nullable=False, index=True, unique=True)
     sequence_number = Column(INTEGER, nullable=False)
+    last_ecosystem_matrix_update_calculation_uuid = Column(UUID)
 
 
 class Page(Base):
@@ -54,6 +55,9 @@ class Response(Base):
     is_correct = Column(BOOLEAN, nullable=False)
     is_real_response = Column(BOOLEAN, nullable=False)
     responded_at = Column(TIMESTAMP, nullable=False)
+    __table_args__ = (Index('ix_real_responses_ecosystem_uuid',
+                            ecosystem_uuid,
+                            postgresql_where=is_real_response),)
     default_conflict_index_elements = ['trial_uuid']
     default_conflict_update_columns = ['uuid', 'is_correct', 'is_real_response', 'responded_at']
 

@@ -72,7 +72,7 @@ app.conf.update(
     redbeat_lock_timeout=5,
     accept_content=['json'],
     task_serializer='json',
-    imports=('sparfa_server.tasks.loaders', 'sparfa_server.tasks.calcs'),
+    imports='sparfa_server.tasks',
     task_queues=[
         Queue(LOAD_ECOSYSTEM_METADATA_QUEUE, routing_key=LOAD_ECOSYSTEM_METADATA_QUEUE),
         Queue(LOAD_ECOSYSTEM_EVENTS_QUEUE, routing_key=LOAD_ECOSYSTEM_EVENTS_QUEUE),

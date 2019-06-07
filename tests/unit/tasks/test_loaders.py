@@ -38,19 +38,24 @@ def test_load_ecosystem_metadata(transaction):
 
 
 def test_load_ecosystem_events(transaction):
-    ecosystem_1 = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=0, sequence_number=0)
-    ecosystem_2 = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=1, sequence_number=0)
-    ecosystem_3 = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=2, sequence_number=0)
+    ecosystem_uuids = sorted(str(uuid4()) for i in range(4))
+    ecosystem_1 = Ecosystem(uuid=ecosystem_uuids[0], metadata_sequence_number=0, sequence_number=0)
+    ecosystem_2 = Ecosystem(uuid=ecosystem_uuids[1], metadata_sequence_number=1, sequence_number=0)
+    ecosystem_3 = Ecosystem(uuid=ecosystem_uuids[2], metadata_sequence_number=2, sequence_number=0)
+    ecosystem_4 = Ecosystem(uuid=ecosystem_uuids[3], metadata_sequence_number=3, sequence_number=0)
 
     with transaction() as session:
         session.add(ecosystem_1)
         session.add(ecosystem_2)
         session.add(ecosystem_3)
+        session.add(ecosystem_4)
 
     with patch(
         'sparfa_server.tasks.loaders._load_grouped_ecosystem_events', autospec=True
     ) as load_grouped_ecosystem_events:
-        load_grouped_ecosystem_events.side_effect = [[ecosystem_1], [ecosystem_1], []]
+        load_grouped_ecosystem_events.side_effect = [
+            [ecosystem_1.uuid], [ecosystem_3.uuid], [], [ecosystem_1.uuid], []
+        ]
         load_ecosystem_events(batch_size=2)
 
     for args in load_grouped_ecosystem_events.call_args_list:
@@ -58,11 +63,22 @@ def test_load_ecosystem_events(transaction):
         assert len(args[0]) == 2
         assert isinstance(args[0][0], BiglearnSession)
         assert not args[1]
-    assert [set(args[0][1]) for args in load_grouped_ecosystem_events.call_args_list] == \
-           [set((ecosystem_1, ecosystem_2)), set((ecosystem_1, ecosystem_3)), set((ecosystem_1,))]
+    assert [
+        set(ecosystem.uuid for ecosystem in args[0][1])
+        for args in load_grouped_ecosystem_events.call_args_list
+    ] == [
+        set((ecosystem_1.uuid, ecosystem_2.uuid)),
+        set((ecosystem_3.uuid, ecosystem_4.uuid)),
+        set(),
+        set((ecosystem_1.uuid, ecosystem_3.uuid)),
+        set((ecosystem_1.uuid,))
+    ]
 
 
 def test_load_grouped_ecosystem_events(transaction):
+    with transaction() as session:
+        assert _load_grouped_ecosystem_events(session, []) == []
+
     ecosystem_1 = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=0, sequence_number=0)
     ecosystem_2 = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=1, sequence_number=0)
 
@@ -142,7 +158,7 @@ def test_load_grouped_ecosystem_events(transaction):
 
             with transaction() as session:
                 ecosystems = session.query(Ecosystem).all()
-                assert _load_grouped_ecosystem_events(session, ecosystems) == [ecosystem_2]
+                assert _load_grouped_ecosystem_events(session, ecosystems) == [ecosystem_2.uuid]
 
     fetch_ecosystem_events.assert_called_once()
     args = fetch_ecosystem_events.call_args
@@ -215,19 +231,24 @@ def test_load_course_metadata(transaction):
 
 
 def test_load_course_events(transaction):
-    course_1 = Course(uuid=str(uuid4()), metadata_sequence_number=0, sequence_number=0)
-    course_2 = Course(uuid=str(uuid4()), metadata_sequence_number=1, sequence_number=1)
-    course_3 = Course(uuid=str(uuid4()), metadata_sequence_number=2, sequence_number=2)
+    course_uuids = sorted(str(uuid4()) for i in range(4))
+    course_1 = Course(uuid=course_uuids[0], metadata_sequence_number=0, sequence_number=0)
+    course_2 = Course(uuid=course_uuids[1], metadata_sequence_number=1, sequence_number=1)
+    course_3 = Course(uuid=course_uuids[2], metadata_sequence_number=2, sequence_number=2)
+    course_4 = Course(uuid=course_uuids[3], metadata_sequence_number=3, sequence_number=3)
 
     with transaction() as session:
         session.add(course_1)
         session.add(course_2)
         session.add(course_3)
+        session.add(course_4)
 
     with patch(
         'sparfa_server.tasks.loaders._load_grouped_course_events', autospec=True
     ) as load_grouped_course_events:
-        load_grouped_course_events.side_effect = [[course_2], [course_3], []]
+        load_grouped_course_events.side_effect = [
+            [course_2.uuid], [course_3.uuid], [], [course_3.uuid], []
+        ]
         load_course_events(batch_size=2)
 
     for args in load_grouped_course_events.call_args_list:
@@ -235,11 +256,22 @@ def test_load_course_events(transaction):
         assert len(args[0]) == 2
         assert isinstance(args[0][0], BiglearnSession)
         assert not args[1]
-    assert [set(args[0][1]) for args in load_grouped_course_events.call_args_list] == \
-           [set((course_1, course_2)), set((course_2, course_3)), set((course_3,))]
+    assert [
+        set(course.uuid for course in args[0][1])
+        for args in load_grouped_course_events.call_args_list
+    ] == [
+        set((course_1.uuid, course_2.uuid)),
+        set((course_3.uuid, course_4.uuid)),
+        set(),
+        set((course_2.uuid, course_3.uuid,)),
+        set((course_3.uuid,))
+    ]
 
 
 def test_load_grouped_course_events(transaction):
+    with transaction() as session:
+        assert _load_grouped_course_events(session, []) == []
+
     course_1 = Course(uuid=str(uuid4()), metadata_sequence_number=0, sequence_number=1)
     course_2 = Course(uuid=str(uuid4()), metadata_sequence_number=1, sequence_number=2)
 
@@ -388,7 +420,7 @@ def test_load_grouped_course_events(transaction):
 
             with transaction() as session:
                 courses = session.query(Course).all()
-                assert _load_grouped_course_events(session, courses) == [course_1]
+                assert _load_grouped_course_events(session, courses) == [course_1.uuid]
 
     fetch_course_events.assert_called_once()
     args = fetch_course_events.call_args
