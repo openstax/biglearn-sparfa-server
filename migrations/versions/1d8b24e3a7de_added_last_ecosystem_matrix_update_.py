@@ -1,6 +1,6 @@
 """added last_ecosystem_matrix_update_calculation_uuid column to ecosystems table
 
-Revision ID: cd8b24e3a7de
+Revision ID: 1d8b24e3a7de
 Revises: 1c3848e662c2
 Create Date: 2019-06-06 10:20:51.904180
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = 'cd8b24e3a7de'
+revision = '1d8b24e3a7de'
 down_revision = '1c3848e662c2'
 branch_labels = None
 depends_on = None

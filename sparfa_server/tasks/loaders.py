@@ -3,7 +3,7 @@ from uuid import uuid4
 from sqlalchemy import func
 
 from ..biglearn import BLAPI
-from ..orm import transaction, Course, Ecosystem, Page, Response, EcosystemMatrix
+from ..orm import transaction, Ecosystem, EcosystemMatrix, Page, Course, Response
 from .celery import task
 
 __all__ = ('load_ecosystem_metadata', 'load_ecosystem_events',
@@ -239,7 +239,7 @@ def _load_grouped_course_events(session, courses):
 
     responses = BLAPI.fetch_course_events(event_requests)
 
-    responses_dict = {}
+    response_values_dict = {}
     course_values = []
     course_uuids_to_requery = []
     for response in responses:
@@ -250,13 +250,15 @@ def _load_grouped_course_events(session, courses):
             event_type = event['event_type']
             if event_type == 'record_response':
                 data = event['event_data']
+                ecosystem_uuid = data['ecosystem_uuid']
                 trial_uuid = data['trial_uuid']
-                responses_dict[trial_uuid] = {
+                student_uuid = data['student_uuid']
+                response_values_dict[trial_uuid] = {
                     'uuid': data['response_uuid'],
                     'course_uuid': data['course_uuid'],
-                    'ecosystem_uuid': data['ecosystem_uuid'],
+                    'ecosystem_uuid': ecosystem_uuid,
                     'trial_uuid': trial_uuid,
-                    'student_uuid': data['student_uuid'],
+                    'student_uuid': student_uuid,
                     'exercise_uuid': data['exercise_uuid'],
                     'is_correct': data['is_correct'],
                     'is_real_response': data.get('is_real_response', True),
@@ -275,8 +277,8 @@ def _load_grouped_course_events(session, courses):
         if not response['is_end'] and not response['is_gap']:
             course_uuids_to_requery.append(course.uuid)
 
-    if responses_dict:
-        session.upsert_values(Response, list(responses_dict.values()))
+    if response_values_dict:
+        session.upsert_values(Response, list(response_values_dict.values()))
 
     if course_values:
         session.upsert_values(Course, course_values, conflict_update_columns=['sequence_number'])
