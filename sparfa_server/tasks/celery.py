@@ -8,7 +8,7 @@ from celery.signals import worker_process_init
 from kombu import Queue
 from celery_once import QueueOnce
 
-from ..config import AMQP_QUEUE_PREFIX, AMQP_URL, REDIS_URL
+from ..config import AMQP_QUEUE_PREFIX, AMQP_URL, REDIS_URL, REDBEAT_KEY_PREFIX
 from ..orm.sessions import ENGINE
 from .redis import REDIS
 
@@ -69,6 +69,7 @@ app.conf.update(
     beat_scheduler='redbeat.schedulers.RedBeatScheduler',
     beat_max_loop_interval=1,
     redbeat_redis_url=REDIS_URL,
+    redbeat_key_prefix=REDBEAT_KEY_PREFIX,
     redbeat_lock_timeout=5,
     accept_content=['json'],
     task_serializer='json',
