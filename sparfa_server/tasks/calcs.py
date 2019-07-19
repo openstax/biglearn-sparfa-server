@@ -215,22 +215,22 @@ def calculate_clues():
     """Calculate all CLUes"""
     calculations = BLSCHED.fetch_clue_calculations()
     while calculations:
-        response_uuids = [response['response_uuid']
+        trial_uuids = set(response['trial_uuid']
                           for calculation in calculations
-                          for response in calculation['responses']]
+                          for response in calculation['responses'])
 
         with transaction() as session:
             # Skip calculations with unknown responses and responses that we can't lock immediately
             responses = session.query(Response).filter(
-                Response.uuid.in_(response_uuids)
+                Response.trial_uuid.in_(trial_uuids)
             ).with_for_update(key_share=True, skip_locked=True).all()
-            responses_by_uuid = {}
+            responses_by_trial_uuid = {}
             for response in responses:
-                responses_by_uuid[response.uuid] = response
+                responses_by_trial_uuid[response.trial_uuid] = response
 
             calculations_by_ecosystem_uuid = defaultdict(list)
             for calc in calculations:
-                if all(resp['response_uuid'] in responses_by_uuid for resp in calc['responses']):
+                if all(resp['trial_uuid'] in responses_by_trial_uuid for resp in calc['responses']):
                     calculations_by_ecosystem_uuid[calc['ecosystem_uuid']].append(calc)
 
             ecosystem_matrices = session.query(EcosystemMatrix).filter(
@@ -252,7 +252,7 @@ def calculate_clues():
                         for calculation in ecosystem_calculations
                         for student_uuid in calculation['student_uuids']
                     ],
-                    responses=[responses_by_uuid[response['response_uuid']]
+                    responses=[responses_by_trial_uuid[response['trial_uuid']]
                                for calculation in ecosystem_calculations
                                for response in calculation['responses']]
                 )
