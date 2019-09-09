@@ -120,8 +120,8 @@ def calculate_exercises():
             if not ecosystem_matrices:
                 break
 
-            known_exercise_uuids_by_calculation_uuid = {}
-            unknown_exercise_uuids_by_calculation_uuid = {}
+            known_exercise_uuids_by_calculation_uuid = defaultdict(set)
+            unknown_exercise_uuids_by_calculation_uuid = defaultdict(set)
             calculation_values = []
             # Skip calculations that don't have an ecosystem matrix
             for ecosystem_matrix in ecosystem_matrices:
@@ -130,42 +130,35 @@ def calculate_exercises():
 
                 calculations = calculations_by_ecosystem_uuid[ecosystem_uuid]
                 for calculation in calculations:
-                    calculation_uuid = calculation['calculation_uuid']
+                    calc_uuid = calculation['calculation_uuid']
 
                     # Partition exercise_uuids into known and unknown
-                    known_exercise_uuids = []
-                    unknown_exercise_uuids = []
                     for exercise_uuid in calculation['exercise_uuids']:
                         if exercise_uuid in Q_ids_set:
-                            known_exercise_uuids.append(exercise_uuid)
+                            known_exercise_uuids_by_calculation_uuid[calc_uuid].add(exercise_uuid)
                         else:
-                            unknown_exercise_uuids.append(exercise_uuid)
-                    known_exercise_uuids_by_calculation_uuid[calculation_uuid] = \
-                        known_exercise_uuids
-                    unknown_exercise_uuids_by_calculation_uuid[calculation_uuid] = \
-                        unknown_exercise_uuids
+                            unknown_exercise_uuids_by_calculation_uuid[calc_uuid].add(exercise_uuid)
 
-                    calculation_values.extend([
-                        "(UUID('{0}'), UUID('{1}'), UUID('{2}'), UUID('{3}'))".format(
-                            calculation_uuid,
+                    calculation_values.append(
+                        "(UUID('{0}'), UUID('{1}'), UUID('{2}'))".format(
+                            calc_uuid,
                             ecosystem_uuid,
-                            calculation['student_uuid'],
-                            exercise_uuid
-                        ) for exercise_uuid in known_exercise_uuids
-                    ])
+                            calculation['student_uuid']
+                        )
+                    )
 
             response_dicts_by_calculation_uuid = defaultdict(list)
             for result in session.query('calculation_uuid', Response).from_statement(text(dedent("""
                 SELECT "values"."calculation_uuid", "responses".*
                 FROM "responses" INNER JOIN (VALUES {}) AS "values"
-                    ("calculation_uuid", "ecosystem_uuid", "student_uuid", "exercise_uuid")
+                    ("calculation_uuid", "ecosystem_uuid", "student_uuid")
                     ON "responses"."student_uuid" = "values"."student_uuid"
                         AND "responses"."ecosystem_uuid" = "values"."ecosystem_uuid"
-                        AND "responses"."exercise_uuid" = "values"."exercise_uuid"
             """.format(', '.join(calculation_values))).strip())).all():
-                response_dicts_by_calculation_uuid[result.calculation_uuid].append(
-                    result.Response.dict_for_algs
-                )
+                calc_uuid = result.calculation_uuid
+                response = result.Response
+                if response.exercise_uuid in known_exercise_uuids_by_calculation_uuid[calc_uuid]:
+                    response_dicts_by_calculation_uuid[calc_uuid].append(response.dict_for_algs)
 
             exercise_calculation_requests = []
             for ecosystem_matrix in ecosystem_matrices:
@@ -192,8 +185,9 @@ def calculate_exercises():
                     ordered_exercise_uuids = [info.Q_id for info in ordered_Q_infos]
 
                     # Put any unknown exercise uuids at the end of the list in random order
-                    unknown_exercise_uuids = \
-                        unknown_exercise_uuids_by_calculation_uuid[calculation_uuid].copy()
+                    unknown_exercise_uuids = list(
+                        unknown_exercise_uuids_by_calculation_uuid[calculation_uuid]
+                    )
                     shuffle(unknown_exercise_uuids)
                     ordered_exercise_uuids.extend(unknown_exercise_uuids)
 
