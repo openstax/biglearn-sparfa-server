@@ -1,5 +1,4 @@
 from logging import getLogger
-from json import dumps
 from requests import Session
 
 from .. import __version__
