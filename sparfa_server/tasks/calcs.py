@@ -148,6 +148,7 @@ def calculate_exercises():
                     )
 
             response_dicts_by_calculation_uuid = defaultdict(list)
+            # Beware that uuid columns return UUID objects (not strings) when using from_statement()
             for result in session.query('calculation_uuid', Response).from_statement(text(dedent("""
                 SELECT "values"."calculation_uuid", "responses".*
                 FROM "responses" INNER JOIN (VALUES {}) AS "values"
@@ -155,9 +156,11 @@ def calculate_exercises():
                     ON "responses"."student_uuid" = "values"."student_uuid"
                         AND "responses"."ecosystem_uuid" = "values"."ecosystem_uuid"
             """.format(', '.join(calculation_values))).strip())).all():
-                calc_uuid = result.calculation_uuid
+                calc_uuid = str(result.calculation_uuid)
                 response = result.Response
-                if response.exercise_uuid in known_exercise_uuids_by_calculation_uuid[calc_uuid]:
+                if str(
+                    response.exercise_uuid
+                ) in known_exercise_uuids_by_calculation_uuid[calc_uuid]:
                     response_dicts_by_calculation_uuid[calc_uuid].append(response.dict_for_algs)
 
             exercise_calculation_requests = []

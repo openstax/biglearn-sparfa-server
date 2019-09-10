@@ -10,7 +10,12 @@ from sparfa_server.tasks.calcs import (calculate_ecosystem_matrices,
 
 
 def test_calculate_ecosystem_matrices(transaction):
-    ecosystem_1 = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=0, sequence_number=1)
+    ecosystem_1 = Ecosystem(
+      uuid=str(uuid4()),
+      metadata_sequence_number=0,
+      sequence_number=1,
+      last_ecosystem_matrix_update_calculation_uuid=str(uuid4())
+    )
 
     calculation_uuid = str(uuid4())
     ecosystem_matrix_updates = [{
