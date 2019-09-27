@@ -230,6 +230,9 @@ def calculate_clues():
                 if all(resp['trial_uuid'] in responses_by_trial_uuid for resp in calc['responses']):
                     calculations_by_ecosystem_uuid[calc['ecosystem_uuid']].append(calc)
 
+            if not calculations_by_ecosystem_uuid:
+                break
+
             ecosystem_matrices = session.query(EcosystemMatrix).filter(
                 EcosystemMatrix.uuid.in_(calculations_by_ecosystem_uuid.keys())
             ).all()
