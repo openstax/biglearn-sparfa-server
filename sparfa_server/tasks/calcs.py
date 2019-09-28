@@ -105,15 +105,20 @@ def calculate_exercises():
     """Calculate all personalized exercises"""
     calculations = BLSCHED.fetch_exercise_calculations()
     while calculations:
+        calculation_by_uuid = {}
+        for calculation in calculations:
+            calculation_by_uuid[calculation['calculation_uuid']] = calculation
+
         with transaction() as session:
             # Attempt to advisory lock calculations received
             # https://stackoverflow.com/a/3530326
             query = [func.pg_try_advisory_xact_lock(
-                (UUID(calculation['calculation_uuid']).int >> 64) - 2**63
-            ) for calculation in calculations]
-            locked_calculations = [calculations[idx]
-                                   for idx, result in enumerate(session.query(*query).all())
-                                   if result]
+                (UUID(uuid).int >> 64) - 2**63
+            ).label(uuid) for uuid in calculation_by_uuid]
+            result = session.execute(session.query(*query).statement).first()
+            locked_calculations = [
+              calculation_by_uuid[uuid] for uuid, locked in result.items() if locked
+            ]
 
             # Process only calculations that we successfully locked
             if not locked_calculations:
