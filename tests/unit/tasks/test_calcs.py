@@ -1,8 +1,13 @@
-from uuid import uuid4
+from uuid import uuid4, UUID
 from random import choice, shuffle
 from datetime import datetime
 from unittest.mock import patch
+from contextlib import closing
 
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql.expression import func
+
+from sparfa_server.orm.sessions import ENGINE
 from sparfa_server.orm import Ecosystem, Page, Response, EcosystemMatrix
 from sparfa_server.tasks.calcs import (calculate_ecosystem_matrices,
                                        calculate_exercises,
@@ -163,6 +168,13 @@ def test_calculate_exercises(transaction):
         with patch(
             'sparfa_server.tasks.calcs.BLSCHED.update_exercise_calculations', autospec=True
         ) as update_exercise_calculations:
+            with closing(sessionmaker(bind=ENGINE)()) as session:
+                query = [func.pg_try_advisory_xact_lock(
+                    (UUID(calculation['calculation_uuid']).int >> 64) - 2**63
+                ) for calculation in exercise_calculations]
+                session.query(*query).one()
+                calculate_exercises()
+
             calculate_exercises()
 
     update_exercise_calculations.assert_not_called()
