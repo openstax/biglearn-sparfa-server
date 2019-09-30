@@ -1,6 +1,7 @@
 from json import loads, dumps
 
 from sqlalchemy import Column, Index
+from sqlalchemy.sql.expression import func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import ARRAY, BOOLEAN, FLOAT, INTEGER, TIMESTAMP, UUID
 from scipy.sparse import coo_matrix
@@ -13,6 +14,13 @@ __all__ = ('Course', 'Ecosystem', 'Page', 'Response', 'EcosystemMatrix')
 
 class BaseBase(object):
     uuid = Column(UUID, primary_key=True)
+    created_at = Column(TIMESTAMP, server_default=func.clock_timestamp(), nullable=False)
+    updated_at = Column(
+      TIMESTAMP,
+      server_default=func.clock_timestamp(),
+      nullable=False,
+      onupdate=func.clock_timestamp()
+    )
     default_conflict_index_elements = ['uuid']
     default_conflict_update_columns = None
 
