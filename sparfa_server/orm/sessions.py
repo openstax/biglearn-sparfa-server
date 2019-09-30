@@ -83,8 +83,7 @@ def transaction():
     with closing(Session()) as session:
         try:
             yield session
+            session.commit()
         except BaseException:
             session.rollback()
             raise
-        else:
-            session.commit()
