@@ -144,15 +144,15 @@ def _load_grouped_ecosystem_events(session, ecosystems):
         if not response['is_end'] and not response['is_gap']:
             ecosystem_uuids_to_requery.append(ecosystem.uuid)
 
+    if ecosystem_values:
+        session.upsert_values(Ecosystem, ecosystem_values,
+                              conflict_update_columns=['sequence_number'])
+
     if page_values:
         session.upsert_values(Page, page_values)
 
     if ecosystem_matrices:
         session.upsert_models(EcosystemMatrix, ecosystem_matrices)
-
-    if ecosystem_values:
-        session.upsert_values(Ecosystem, ecosystem_values,
-                              conflict_update_columns=['sequence_number'])
 
     return ecosystem_uuids_to_requery
 
@@ -239,8 +239,8 @@ def _load_grouped_course_events(session, courses):
 
     responses = BLAPI.fetch_course_events(event_requests)
 
-    response_values_dict = {}
     course_values = []
+    response_values_dict = {}
     course_uuids_to_requery = []
     for response in responses:
         events = response['events']
@@ -277,10 +277,10 @@ def _load_grouped_course_events(session, courses):
         if not response['is_end'] and not response['is_gap']:
             course_uuids_to_requery.append(course.uuid)
 
-    if response_values_dict:
-        session.upsert_values(Response, list(response_values_dict.values()))
-
     if course_values:
         session.upsert_values(Course, course_values, conflict_update_columns=['sequence_number'])
+
+    if response_values_dict:
+        session.upsert_values(Response, list(response_values_dict.values()))
 
     return course_uuids_to_requery
