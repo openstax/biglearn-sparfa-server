@@ -1,4 +1,4 @@
-from json import loads, dumps
+from uuid import uuid4
 
 from sqlalchemy import Column, Index
 from sqlalchemy.sql.expression import func
@@ -45,6 +45,7 @@ class Ecosystem(Base):
     metadata_sequence_number = Column(INTEGER, nullable=False, index=True, unique=True)
     sequence_number = Column(INTEGER, nullable=False)
     last_ecosystem_matrix_update_calculation_uuid = Column(UUID)
+    default_conflict_update_columns = ['last_ecosystem_matrix_update_calculation_uuid']
 
 
 class Page(Base):
@@ -81,6 +82,8 @@ class Response(Base):
 
 class EcosystemMatrix(Base):
     __tablename__ = 'ecosystem_matrices'
+    ecosystem_uuid = Column(UUID, nullable=False, index=True)
+    superseded_by_uuid = Column(UUID, index=True)
     Q_ids = Column(ARRAY(UUID), nullable=False)
     C_ids = Column(ARRAY(UUID), nullable=False)
     d_data = Column(ARRAY(FLOAT), nullable=False)
@@ -90,6 +93,7 @@ class EcosystemMatrix(Base):
     h_mask_data = Column(ARRAY(BOOLEAN), nullable=False)
     h_mask_row = Column(ARRAY(INTEGER), nullable=False)
     h_mask_col = Column(ARRAY(INTEGER), nullable=False)
+    default_conflict_update_columns = ['superseded_by_uuid']
 
     @property
     def NC(self):
@@ -157,7 +161,8 @@ class EcosystemMatrix(Base):
         )
 
         return cls(
-            uuid=ecosystem_uuid,
+            uuid=str(uuid4()),
+            ecosystem_uuid=ecosystem_uuid,
             Q_ids=algs.Q_ids,
             C_ids=algs.C_ids,
             d_NQx1=algs.d_NQx1,

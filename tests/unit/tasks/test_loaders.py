@@ -189,7 +189,7 @@ def test_load_grouped_ecosystem_events(transaction):
 
     assert len(ecosystem_matrices) == 1
     ecosystem_matrix = ecosystem_matrices[0]
-    assert ecosystem_matrix.uuid == ecosystem_1.uuid
+    assert ecosystem_matrix.ecosystem_uuid == ecosystem_1.uuid
     assert set(ecosystem_matrix.C_ids) == set((page_1_uuid, page_2_uuid))
     assert set(ecosystem_matrix.Q_ids) == set(all_exercise_uuids)
     assert ecosystem_matrix.d_NQx1.shape == (ecosystem_matrix.NQ, 1)

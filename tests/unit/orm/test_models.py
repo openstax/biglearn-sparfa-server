@@ -100,7 +100,7 @@ class TestEcosystemMatrix(object):
             ecosystem_uuid=ecosystem_uuid, pages=pages, responses=responses
         )
 
-        assert ecosystem_matrix.uuid == ecosystem_uuid
+        assert ecosystem_matrix.ecosystem_uuid == ecosystem_uuid
         assert set(ecosystem_matrix.Q_ids) == set(exercise_uuids)
         assert set(ecosystem_matrix.C_ids) == set(page_uuids)
         assert ecosystem_matrix.d_NQx1.shape == (NQ, 1)

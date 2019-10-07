@@ -64,30 +64,29 @@ def calculate_ecosystem_matrices():
                 for response in responses:
                     responses_by_ecosystem_uuid[response.ecosystem_uuid].append(response)
 
-                session.upsert_models(
-                    Ecosystem,
-                    ecosystems,
-                    conflict_update_columns=['last_ecosystem_matrix_update_calculation_uuid']
-                )
+                session.upsert_models(Ecosystem, ecosystems)
+
+                old_ecosystem_matrices = session.query(EcosystemMatrix).filter(
+                    EcosystemMatrix.ecosystem_uuid.in_(ecosystem_uuids),
+                    EcosystemMatrix.superseded_by_uuid.is_(None)
+                ).all()
+
+                old_matrices_by_ecosystem_uuid = defaultdict(list)
+                for matrix in old_ecosystem_matrices:
+                    old_matrices_by_ecosystem_uuid[matrix.ecosystem_uuid].append(matrix)
+
+                new_ecosystem_matrices = [EcosystemMatrix.from_ecosystem_uuid_pages_responses(
+                    ecosystem_uuid=ecosystem_uuid,
+                    pages=pages_by_ecosystem_uuid[ecosystem_uuid],
+                    responses=responses_by_ecosystem_uuid[ecosystem_uuid]
+                ) for ecosystem_uuid in ecosystem_uuids]
+
+                for ecosystem_matrix in new_ecosystem_matrices:
+                    for matrix in old_matrices_by_ecosystem_uuid[ecosystem_matrix.ecosystem_uuid]:
+                        matrix.superseded_by_uuid = ecosystem_matrix.uuid
 
                 session.upsert_models(
-                    EcosystemMatrix,
-                    [EcosystemMatrix.from_ecosystem_uuid_pages_responses(
-                        ecosystem_uuid=ecosystem_uuid,
-                        pages=pages_by_ecosystem_uuid[ecosystem_uuid],
-                        responses=responses_by_ecosystem_uuid[ecosystem_uuid]
-                    ) for ecosystem_uuid in ecosystem_uuids],
-                    conflict_update_columns=[
-                        'Q_ids',
-                        'C_ids',
-                        'd_data',
-                        'w_data',
-                        'w_row',
-                        'w_col',
-                        'h_mask_data',
-                        'h_mask_row',
-                        'h_mask_col'
-                    ]
+                    EcosystemMatrix, old_ecosystem_matrices + new_ecosystem_matrices
                 )
 
         # There is a potential race condition where another worker might process the same
@@ -129,7 +128,8 @@ def calculate_exercises():
                 calculations_by_ecosystem_uuid[calculation['ecosystem_uuid']].append(calculation)
 
             ecosystem_matrices = session.query(EcosystemMatrix).filter(
-                EcosystemMatrix.uuid.in_(calculations_by_ecosystem_uuid.keys())
+                EcosystemMatrix.ecosystem_uuid.in_(calculations_by_ecosystem_uuid.keys()),
+                EcosystemMatrix.superseded_by_uuid.is_(None)
             ).all()
 
             if not ecosystem_matrices:
@@ -140,7 +140,7 @@ def calculate_exercises():
             calculation_values = []
             # Skip calculations that don't have an ecosystem matrix
             for ecosystem_matrix in ecosystem_matrices:
-                ecosystem_uuid = ecosystem_matrix.uuid
+                ecosystem_uuid = ecosystem_matrix.ecosystem_uuid
                 Q_ids_set = set(ecosystem_matrix.Q_ids)
 
                 ecosystem_calculations = calculations_by_ecosystem_uuid[ecosystem_uuid]
@@ -180,7 +180,7 @@ def calculate_exercises():
 
             exercise_calculation_requests = []
             for ecosystem_matrix in ecosystem_matrices:
-                ecosystem_uuid = ecosystem_matrix.uuid
+                ecosystem_uuid = ecosystem_matrix.ecosystem_uuid
                 ecosystem_calculations = calculations_by_ecosystem_uuid[ecosystem_uuid]
 
                 algs = ecosystem_matrix.to_sparfa_algs_with_student_uuids_responses(
@@ -211,6 +211,7 @@ def calculate_exercises():
 
                     exercise_calculation_requests.append({
                         'calculation_uuid': calculation_uuid,
+                        'recommendation_uuid': ecosystem_matrix.uuid,
                         'exercise_uuids': ordered_exercise_uuids
                     })
 
@@ -249,7 +250,8 @@ def calculate_clues():
                 break
 
             ecosystem_matrices = session.query(EcosystemMatrix).filter(
-                EcosystemMatrix.uuid.in_(calculations_by_ecosystem_uuid.keys())
+                EcosystemMatrix.ecosystem_uuid.in_(calculations_by_ecosystem_uuid.keys()),
+                EcosystemMatrix.superseded_by_uuid.is_(None)
             ).all()
 
             if not ecosystem_matrices:
@@ -258,7 +260,7 @@ def calculate_clues():
             clue_calculation_requests = []
             # Skip calculations that don't have an ecosystem matrix
             for ecosystem_matrix in ecosystem_matrices:
-                ecosystem_uuid = ecosystem_matrix.uuid
+                ecosystem_uuid = ecosystem_matrix.ecosystem_uuid
                 ecosystem_calculations = calculations_by_ecosystem_uuid[ecosystem_uuid]
 
                 algs = ecosystem_matrix.to_sparfa_algs_with_student_uuids_responses(

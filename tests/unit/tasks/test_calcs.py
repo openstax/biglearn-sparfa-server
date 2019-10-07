@@ -104,7 +104,7 @@ def test_calculate_ecosystem_matrices(transaction):
 
     assert len(ecosystem_matrices) == 1
     ecosystem_matrix = ecosystem_matrices[0]
-    assert ecosystem_matrix.uuid == ecosystem_1.uuid
+    assert ecosystem_matrix.ecosystem_uuid == ecosystem_1.uuid
     assert set(ecosystem_matrix.C_ids) == set(page.uuid for page in pages)
     assert set(ecosystem_matrix.Q_ids) == set(exercise_uuids)
     assert ecosystem_matrix.d_NQx1.shape == (ecosystem_matrix.NQ, 1)
