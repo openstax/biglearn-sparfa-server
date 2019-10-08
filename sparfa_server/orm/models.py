@@ -78,7 +78,7 @@ class Response(Base):
 class EcosystemMatrix(Base):
     __tablename__ = 'ecosystem_matrices'
     ecosystem_uuid = Column(UUID, nullable=False, index=True)
-    assignment_uuids = Column(ARRAY(UUID), default=list, nullable=False, index=True)
+    is_used_in_assignments = Column(BOOLEAN, default=False, nullable=False, index=True)
     superseded_by_uuid = Column(UUID, index=True)
     Q_ids = Column(ARRAY(UUID), nullable=False)
     C_ids = Column(ARRAY(UUID), nullable=False)

@@ -241,7 +241,7 @@ def _load_grouped_course_events(session, courses):
     responses = BLAPI.fetch_course_events(event_requests)
 
     course_values = []
-    assignment_uuids_by_ecosystem_matrix_uuid = defaultdict(set)
+    used_ecosystem_matrix_uuids = set()
     response_values_dict = {}
     course_uuids_to_requery = []
     for response in responses:
@@ -257,11 +257,11 @@ def _load_grouped_course_events(session, courses):
 
                 pe_matrix_uuid = data.get('pes', {}).get('ecosystem_matrix_uuid', None)
                 if pe_matrix_uuid:
-                    assignment_uuids_by_ecosystem_matrix_uuid[pe_matrix_uuid].add(assignment_uuid)
+                    used_ecosystem_matrix_uuids.add(pe_matrix_uuid)
 
                 spe_matrix_uuid = data.get('spes', {}).get('ecosystem_matrix_uuid', None)
                 if spe_matrix_uuid:
-                    assignment_uuids_by_ecosystem_matrix_uuid[spe_matrix_uuid].add(assignment_uuid)
+                    used_ecosystem_matrix_uuids.add(spe_matrix_uuid)
 
             if event_type == 'record_response':
                 data = event['event_data']
@@ -295,21 +295,10 @@ def _load_grouped_course_events(session, courses):
     if course_values:
         session.upsert_values(Course, course_values, conflict_update_columns=['sequence_number'])
 
-    if assignment_uuids_by_ecosystem_matrix_uuid:
-        ecosystem_matrices = session.query(EcosystemMatrix).filter(
-            EcosystemMatrix.uuid.in_(assignment_uuids_by_ecosystem_matrix_uuid.keys())
-        ).all()
-
-        if ecosystem_matrices:
-            for ecosystem_matrix in ecosystem_matrices:
-                assignment_uuids = assignment_uuids_by_ecosystem_matrix_uuid[ecosystem_matrix.uuid]
-                ecosystem_matrix.assignment_uuids = list(
-                    set(ecosystem_matrix.assignment_uuids) | assignment_uuids
-                )
-
-            session.upsert_models(
-                EcosystemMatrix, ecosystem_matrices, conflict_update_columns=['assignment_uuids']
-            )
+    if used_ecosystem_matrix_uuids:
+        session.query(EcosystemMatrix).filter(
+            EcosystemMatrix.uuid.in_(list(used_ecosystem_matrix_uuids))
+        ).update({EcosystemMatrix.is_used_in_assignments: True}, synchronize_session=False)
 
     if response_values_dict:
         session.upsert_values(Response, list(response_values_dict.values()))

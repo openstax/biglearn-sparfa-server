@@ -288,6 +288,8 @@ def test_load_grouped_course_events(transaction):
         h_mask_col=[]
     )
 
+    assert not ecosystem_matrix_1.is_used_in_assignments
+
     with transaction() as session:
         session.add(course_1)
         session.add(course_2)
@@ -561,7 +563,7 @@ def test_load_grouped_course_events(transaction):
     assert len(ecosystem_matrices) == 1
     ecosystem_matrix = ecosystem_matrices[0]
     assert ecosystem_matrix.uuid == ecosystem_matrix_1.uuid
-    assert ecosystem_matrix.assignment_uuids == [assignment_1_uuid]
+    assert ecosystem_matrix.is_used_in_assignments
 
     assert len(responses) == 4
     for response in responses:
