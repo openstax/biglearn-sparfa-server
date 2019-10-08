@@ -22,6 +22,20 @@ def test_calculate_ecosystem_matrices(transaction):
       last_ecosystem_matrix_update_calculation_uuid=str(uuid4())
     )
 
+    ecosystem_matrix_1 = EcosystemMatrix(
+        uuid=str(uuid4()),
+        ecosystem_uuid=ecosystem_1.uuid,
+        Q_ids=[],
+        C_ids=[],
+        d_data=[],
+        w_data=[],
+        w_row=[],
+        w_col=[],
+        h_mask_data=[],
+        h_mask_row=[],
+        h_mask_col=[]
+    )
+
     calculation_uuid = str(uuid4())
     ecosystem_matrix_updates = [{
         'calculation_uuid': calculation_uuid, 'ecosystem_uuid': ecosystem_1.uuid
@@ -38,9 +52,6 @@ def test_calculate_ecosystem_matrices(transaction):
             calculate_ecosystem_matrices()
 
     ecosystem_matrices_updated.assert_not_called()
-
-    with transaction() as session:
-        assert not session.query(EcosystemMatrix).all()
 
     ecosystem_2 = Ecosystem(uuid=str(uuid4()), metadata_sequence_number=1, sequence_number=0)
 
@@ -75,16 +86,18 @@ def test_calculate_ecosystem_matrices(transaction):
     )
 
     with transaction() as session:
+        assert not session.query(EcosystemMatrix).all()
+
         session.add(ecosystem_1)
         session.add(ecosystem_2)
+
+        session.add(ecosystem_matrix_1)
 
         session.add(page_1)
         session.add(page_2)
 
         session.add(response_1)
         session.add(response_2)
-
-        assert not session.query(EcosystemMatrix).all()
 
     with patch(
         'sparfa_server.tasks.calcs.BLSCHED.fetch_ecosystem_matrix_updates', autospec=True
@@ -100,16 +113,29 @@ def test_calculate_ecosystem_matrices(transaction):
     ecosystem_matrices_updated.assert_called_once_with([{'calculation_uuid': calculation_uuid}])
 
     with transaction() as session:
-        ecosystem_matrices = session.query(EcosystemMatrix).all()
+        ecosystem_matrices = session.query(EcosystemMatrix).order_by(
+            EcosystemMatrix.created_at
+        ).all()
 
-    assert len(ecosystem_matrices) == 1
-    ecosystem_matrix = ecosystem_matrices[0]
-    assert ecosystem_matrix.ecosystem_uuid == ecosystem_1.uuid
-    assert set(ecosystem_matrix.C_ids) == set(page.uuid for page in pages)
-    assert set(ecosystem_matrix.Q_ids) == set(exercise_uuids)
-    assert ecosystem_matrix.d_NQx1.shape == (ecosystem_matrix.NQ, 1)
-    assert ecosystem_matrix.W_NCxNQ.shape == (ecosystem_matrix.NC, ecosystem_matrix.NQ)
-    assert ecosystem_matrix.H_mask_NCxNQ.shape == (ecosystem_matrix.NC, ecosystem_matrix.NQ)
+    assert len(ecosystem_matrices) == 2
+    old_eco_matrix = ecosystem_matrices[0]
+    new_eco_matrix = ecosystem_matrices[1]
+
+    assert old_eco_matrix.ecosystem_uuid == ecosystem_1.uuid
+    assert len(old_eco_matrix.C_ids) == 0
+    assert len(old_eco_matrix.Q_ids) == 0
+    assert len(old_eco_matrix.d_NQx1) == 0
+    assert len(old_eco_matrix.W_NCxNQ) == 0
+    assert len(old_eco_matrix.H_mask_NCxNQ) == 0
+    assert old_eco_matrix.superseded_by_uuid == new_eco_matrix.uuid
+
+    assert new_eco_matrix.ecosystem_uuid == ecosystem_1.uuid
+    assert set(new_eco_matrix.C_ids) == set(page.uuid for page in pages)
+    assert set(new_eco_matrix.Q_ids) == set(exercise_uuids)
+    assert new_eco_matrix.d_NQx1.shape == (new_eco_matrix.NQ, 1)
+    assert new_eco_matrix.W_NCxNQ.shape == (new_eco_matrix.NC, new_eco_matrix.NQ)
+    assert new_eco_matrix.H_mask_NCxNQ.shape == (new_eco_matrix.NC, new_eco_matrix.NQ)
+    assert new_eco_matrix.superseded_by_uuid is None
 
 
 def test_calculate_exercises(transaction):
@@ -263,6 +289,27 @@ def test_calculate_clues(transaction):
         'responses': response_dicts
     }]
 
+    with transaction() as session:
+        session.add(ecosystem)
+
+        session.add(page_1)
+        session.add(page_2)
+
+    with patch(
+        'sparfa_server.tasks.calcs.BLSCHED.fetch_clue_calculations', autospec=True
+    ) as fetch_clue_calculations:
+        fetch_clue_calculations.return_value = clue_calculations
+
+        with patch(
+            'sparfa_server.tasks.calcs.BLSCHED.update_clue_calculations', autospec=True
+        ) as update_clue_calculations:
+            calculate_clues()
+
+    update_clue_calculations.assert_not_called()
+
+    with transaction() as session:
+        session.upsert_models(Response, responses)
+
     with patch(
         'sparfa_server.tasks.calcs.BLSCHED.fetch_clue_calculations', autospec=True
     ) as fetch_clue_calculations:
@@ -280,27 +327,7 @@ def test_calculate_clues(transaction):
     )
 
     with transaction() as session:
-        session.add(ecosystem)
-
-        session.add(page_1)
-        session.add(page_2)
-
         session.add(ecosystem_matrix)
-
-    with patch(
-        'sparfa_server.tasks.calcs.BLSCHED.fetch_clue_calculations', autospec=True
-    ) as fetch_clue_calculations:
-        fetch_clue_calculations.return_value = clue_calculations
-
-        with patch(
-            'sparfa_server.tasks.calcs.BLSCHED.update_clue_calculations', autospec=True
-        ) as update_clue_calculations:
-            calculate_clues()
-
-    update_clue_calculations.assert_not_called()
-
-    with transaction() as session:
-        session.upsert_models(Response, responses)
 
     with patch(
         'sparfa_server.tasks.calcs.BLSCHED.fetch_clue_calculations', autospec=True

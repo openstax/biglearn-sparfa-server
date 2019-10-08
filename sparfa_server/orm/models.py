@@ -1,7 +1,7 @@
+from datetime import datetime
 from uuid import uuid4
 
 from sqlalchemy import Column, Index
-from sqlalchemy.sql.expression import func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import ARRAY, BOOLEAN, FLOAT, INTEGER, TIMESTAMP, UUID
 from scipy.sparse import coo_matrix
@@ -14,13 +14,8 @@ __all__ = ('Course', 'Ecosystem', 'Page', 'Response', 'EcosystemMatrix')
 
 class BaseBase(object):
     uuid = Column(UUID, primary_key=True)
-    created_at = Column(TIMESTAMP, server_default=func.clock_timestamp(), nullable=False)
-    updated_at = Column(
-      TIMESTAMP,
-      server_default=func.clock_timestamp(),
-      nullable=False,
-      onupdate=func.clock_timestamp()
-    )
+    created_at = Column(TIMESTAMP, default=datetime.now, nullable=False)
+    updated_at = Column(TIMESTAMP, default=datetime.now, nullable=False, onupdate=datetime.now)
     default_conflict_index_elements = ['uuid']
     default_conflict_update_columns = None
 
@@ -28,7 +23,7 @@ class BaseBase(object):
     def dict(self):
         return {column.key: getattr(self, column.key)
                 for column in self.__table__.columns
-                if getattr(self, column.key) is not None}
+                if getattr(self, column.key) is not None or column.default is None}
 
 
 Base = declarative_base(cls=BaseBase)
@@ -83,7 +78,7 @@ class Response(Base):
 class EcosystemMatrix(Base):
     __tablename__ = 'ecosystem_matrices'
     ecosystem_uuid = Column(UUID, nullable=False, index=True)
-    assignment_uuids = Column(ARRAY(UUID), server_default='{}', nullable=False, index=True)
+    assignment_uuids = Column(ARRAY(UUID), default=list, nullable=False, index=True)
     superseded_by_uuid = Column(UUID, index=True)
     Q_ids = Column(ARRAY(UUID), nullable=False)
     C_ids = Column(ARRAY(UUID), nullable=False)
@@ -163,6 +158,7 @@ class EcosystemMatrix(Base):
         return cls(
             uuid=str(uuid4()),
             ecosystem_uuid=ecosystem_uuid,
+            superseded_by_uuid=None,
             Q_ids=algs.Q_ids,
             C_ids=algs.C_ids,
             d_NQx1=algs.d_NQx1,
