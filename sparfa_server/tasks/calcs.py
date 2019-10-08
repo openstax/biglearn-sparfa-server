@@ -86,7 +86,9 @@ def calculate_ecosystem_matrices():
                         matrix.superseded_by_uuid = ecosystem_matrix.uuid
 
                 session.upsert_models(
-                    EcosystemMatrix, old_ecosystem_matrices + new_ecosystem_matrices
+                    EcosystemMatrix,
+                    old_ecosystem_matrices + new_ecosystem_matrices,
+                    conflict_update_columns=['superseded_by_uuid']
                 )
 
         # There is a potential race condition where another worker might process the same

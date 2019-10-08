@@ -83,6 +83,7 @@ class Response(Base):
 class EcosystemMatrix(Base):
     __tablename__ = 'ecosystem_matrices'
     ecosystem_uuid = Column(UUID, nullable=False, index=True)
+    assignment_uuids = Column(ARRAY(UUID), server_default='{}', nullable=False, index=True)
     superseded_by_uuid = Column(UUID, index=True)
     Q_ids = Column(ARRAY(UUID), nullable=False)
     C_ids = Column(ARRAY(UUID), nullable=False)
@@ -93,7 +94,6 @@ class EcosystemMatrix(Base):
     h_mask_data = Column(ARRAY(BOOLEAN), nullable=False)
     h_mask_row = Column(ARRAY(INTEGER), nullable=False)
     h_mask_col = Column(ARRAY(INTEGER), nullable=False)
-    default_conflict_update_columns = ['superseded_by_uuid']
 
     @property
     def NC(self):

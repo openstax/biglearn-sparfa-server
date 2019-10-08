@@ -274,10 +274,24 @@ def test_load_grouped_course_events(transaction):
 
     course_1 = Course(uuid=str(uuid4()), metadata_sequence_number=0, sequence_number=1)
     course_2 = Course(uuid=str(uuid4()), metadata_sequence_number=1, sequence_number=2)
+    ecosystem_matrix_1 = EcosystemMatrix(
+        uuid=str(uuid4()),
+        ecosystem_uuid=str(uuid4()),
+        Q_ids=[],
+        C_ids=[],
+        d_data=[],
+        w_data=[],
+        w_row=[],
+        w_col=[],
+        h_mask_data=[],
+        h_mask_row=[],
+        h_mask_col=[]
+    )
 
     with transaction() as session:
         session.add(course_1)
         session.add(course_2)
+        session.add(ecosystem_matrix_1)
 
     request_uuid_1 = str(uuid4())
     request_uuid_2 = str(uuid4())
@@ -285,12 +299,22 @@ def test_load_grouped_course_events(transaction):
     with patch('sparfa_server.tasks.loaders.uuid4', autospec=True) as uuid:
         uuid.side_effect = [request_uuid_1, request_uuid_2]
 
+        course_1_uuid = str(uuid4())
+        assignment_1_uuid = str(uuid4())
+        assignment_1_type = 'reading'
+        assigned_book_container_uuids_1 = [str(uuid4())]
+        goal_num_tutor_assigned_pes_1 = 3
+        goal_num_tutor_assigned_spes_1 = 3
+        assigned_exercises_1 = [str(uuid4())]
+        created_at_1 = datetime.now()
+
         response_1_uuid = str(uuid4())
-        ecosystem_1_uuid = str(uuid4())
         trial_1_uuid = str(uuid4())
         student_1_uuid = str(uuid4())
         exercise_uuid = str(uuid4())
         responded_at_1 = datetime.now()
+
+        calculation_1_uuid = str(uuid4())
 
         response_2_uuid = str(uuid4())
         responded_at_2 = datetime.now()
@@ -322,11 +346,38 @@ def test_load_grouped_course_events(transaction):
                         {
                             'sequence_number': 1,
                             'event_uuid': uuid4(),
+                            'event_type': 'create_update_assignment',
+                            'event_data': {
+                                'request_uuid': str(uuid4()),
+                                'course_uuid': course_1_uuid,
+                                'sequence_number': 1,
+                                'assignment_uuid': assignment_1_uuid,
+                                'is_deleted': False,
+                                'ecosystem_uuid': ecosystem_matrix_1.ecosystem_uuid,
+                                'student_uuid': student_1_uuid,
+                                'assignment_type': assignment_1_type,
+                                'exclusion_info': {},
+                                'pes': {},
+                                'spes': {},
+                                'assigned_book_container_uuids': assigned_book_container_uuids_1,
+                                'goal_num_tutor_assigned_spes': goal_num_tutor_assigned_spes_1,
+                                'spes_are_assigned': False,
+                                'goal_num_tutor_assigned_pes': goal_num_tutor_assigned_pes_1,
+                                'pes_are_assigned': False,
+                                'assigned_exercises': assigned_exercises_1,
+                                'created_at': created_at_1,
+                                'updated_at': datetime.now()
+                            }
+                        },
+                        {
+                            'sequence_number': 2,
+                            'event_uuid': uuid4(),
                             'event_type': 'record_response',
                             'event_data': {
                                 'response_uuid': response_1_uuid,
+                                'sequence_number': 2,
                                 'course_uuid': course_1.uuid,
-                                'ecosystem_uuid': ecosystem_1_uuid,
+                                'ecosystem_uuid': ecosystem_matrix_1.ecosystem_uuid,
                                 'trial_uuid': trial_1_uuid,
                                 'student_uuid': student_1_uuid,
                                 'exercise_uuid': exercise_uuid,
@@ -337,13 +388,43 @@ def test_load_grouped_course_events(transaction):
                             }
                         },
                         {
-                            'sequence_number': 2,
+                            'sequence_number': 3,
+                            'event_uuid': uuid4(),
+                            'event_type': 'create_update_assignment',
+                            'event_data': {
+                                'request_uuid': str(uuid4()),
+                                'course_uuid': course_1_uuid,
+                                'sequence_number': 3,
+                                'assignment_uuid': assignment_1_uuid,
+                                'is_deleted': False,
+                                'ecosystem_uuid': ecosystem_matrix_1.ecosystem_uuid,
+                                'student_uuid': student_1_uuid,
+                                'assignment_type': assignment_1_type,
+                                'exclusion_info': {},
+                                'pes': {
+                                  'calculation_uuid': calculation_1_uuid,
+                                  'ecosystem_matrix_uuid': ecosystem_matrix_1.uuid
+                                },
+                                'spes': {},
+                                'assigned_book_container_uuids': assigned_book_container_uuids_1,
+                                'goal_num_tutor_assigned_spes': goal_num_tutor_assigned_spes_1,
+                                'spes_are_assigned': False,
+                                'goal_num_tutor_assigned_pes': goal_num_tutor_assigned_pes_1,
+                                'pes_are_assigned': True,
+                                'assigned_exercises': assigned_exercises_1,
+                                'created_at': created_at_1,
+                                'updated_at': datetime.now()
+                            }
+                        },
+                        {
+                            'sequence_number': 4,
                             'event_uuid': uuid4(),
                             'event_type': 'record_response',
                             'event_data': {
                                 'response_uuid': response_2_uuid,
+                                'sequence_number': 4,
                                 'course_uuid': course_1.uuid,
-                                'ecosystem_uuid': ecosystem_1_uuid,
+                                'ecosystem_uuid': ecosystem_matrix_1.ecosystem_uuid,
                                 'trial_uuid': trial_1_uuid,
                                 'student_uuid': student_1_uuid,
                                 'exercise_uuid': exercise_uuid,
@@ -354,11 +435,12 @@ def test_load_grouped_course_events(transaction):
                             }
                         },
                         {
-                            'sequence_number': 3,
+                            'sequence_number': 5,
                             'event_uuid': uuid4(),
                             'event_type': 'record_response',
                             'event_data': {
                                 'response_uuid': response_3_uuid,
+                                'sequence_number': 5,
                                 'course_uuid': course_1.uuid,
                                 'ecosystem_uuid': ecosystem_2_uuid,
                                 'trial_uuid': trial_2_uuid,
@@ -368,6 +450,38 @@ def test_load_grouped_course_events(transaction):
                                 'is_real_response': True,
                                 'responded_at': responded_at_3
 
+                            }
+                        },
+                        {
+                            'sequence_number': 6,
+                            'event_uuid': uuid4(),
+                            'event_type': 'create_update_assignment',
+                            'event_data': {
+                                'request_uuid': str(uuid4()),
+                                'course_uuid': course_1_uuid,
+                                'sequence_number': 6,
+                                'assignment_uuid': assignment_1_uuid,
+                                'is_deleted': False,
+                                'ecosystem_uuid': ecosystem_matrix_1.ecosystem_uuid,
+                                'student_uuid': student_1_uuid,
+                                'assignment_type': assignment_1_type,
+                                'exclusion_info': {},
+                                'pes': {
+                                  'calculation_uuid': calculation_1_uuid,
+                                  'ecosystem_matrix_uuid': ecosystem_matrix_1.uuid
+                                },
+                                'spes': {
+                                  'calculation_uuid': str(uuid4()),
+                                  'ecosystem_matrix_uuid': ecosystem_matrix_1.uuid
+                                },
+                                'assigned_book_container_uuids': assigned_book_container_uuids_1,
+                                'goal_num_tutor_assigned_spes': goal_num_tutor_assigned_spes_1,
+                                'spes_are_assigned': True,
+                                'goal_num_tutor_assigned_pes': goal_num_tutor_assigned_pes_1,
+                                'pes_are_assigned': True,
+                                'assigned_exercises': assigned_exercises_1,
+                                'created_at': created_at_1,
+                                'updated_at': datetime.now()
                             }
                         }
                     ],
@@ -384,6 +498,7 @@ def test_load_grouped_course_events(transaction):
                             'event_type': 'record_response',
                             'event_data': {
                                 'response_uuid': response_4_uuid,
+                                'sequence_number': 2,
                                 'course_uuid': course_2.uuid,
                                 'ecosystem_uuid': ecosystem_3_uuid,
                                 'trial_uuid': trial_3_uuid,
@@ -401,6 +516,7 @@ def test_load_grouped_course_events(transaction):
                             'event_type': 'record_response',
                             'event_data': {
                                 'response_uuid': response_5_uuid,
+                                'sequence_number': 3,
                                 'course_uuid': course_2.uuid,
                                 'ecosystem_uuid': ecosystem_3_uuid,
                                 'trial_uuid': trial_4_uuid,
@@ -432,14 +548,20 @@ def test_load_grouped_course_events(transaction):
         assert request['sequence_number_offset'] == (
             1 if request['course_uuid'] == course_1.uuid else 2
         )
-        assert request['event_types'] == ['record_response']
+        assert request['event_types'] == ['create_update_assignment', 'record_response']
         assert UUID_REGEX.match(request['request_uuid'])
     assert set(request['course_uuid'] for request in requests) == \
         set(course.uuid for course in courses)
 
     with transaction() as session:
+        ecosystem_matrices = session.query(EcosystemMatrix).all()
         responses = session.query(Response).all()
         courses = session.query(Course).all()
+
+    assert len(ecosystem_matrices) == 1
+    ecosystem_matrix = ecosystem_matrices[0]
+    assert ecosystem_matrix.uuid == ecosystem_matrix_1.uuid
+    assert ecosystem_matrix.assignment_uuids == [assignment_1_uuid]
 
     assert len(responses) == 4
     for response in responses:
@@ -448,7 +570,7 @@ def test_load_grouped_course_events(transaction):
             assert response.trial_uuid in [trial_1_uuid, trial_2_uuid]
             if response.trial_uuid == trial_1_uuid:
                 assert response.uuid == response_2_uuid
-                assert response.ecosystem_uuid == ecosystem_1_uuid
+                assert response.ecosystem_uuid == ecosystem_matrix_1.ecosystem_uuid
                 assert response.is_correct
                 assert response.responded_at == responded_at_2
             else:
@@ -480,4 +602,4 @@ def test_load_grouped_course_events(transaction):
     assert len(courses) == 2
     for course in courses:
         assert course.uuid in [course_1.uuid, course_2.uuid]
-        assert course.sequence_number == 4
+        assert course.sequence_number == 7 if course == course_1 else 4
