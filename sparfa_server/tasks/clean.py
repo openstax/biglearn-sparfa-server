@@ -13,9 +13,8 @@ def cleanup_ecosystem_matrices():
     while True:
         with transaction() as session:
             ecosystem_matrices = session.query(EcosystemMatrix.uuid).filter(
-                EcosystemMatrix.superseded_by_uuid.isnot(None),
                 EcosystemMatrix.is_used_in_assignments.is_(False),
-                EcosystemMatrix.updated_at <= datetime.now() - CLEANUP_AFTER
+                EcosystemMatrix.superseded_at <= datetime.now() - CLEANUP_AFTER
             ).with_for_update(skip_locked=True).limit(BATCH_SIZE).all()
 
             if ecosystem_matrices:

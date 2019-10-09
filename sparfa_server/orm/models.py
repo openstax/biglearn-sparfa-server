@@ -4,6 +4,7 @@ from uuid import uuid4
 from sqlalchemy import Column, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import ARRAY, BOOLEAN, FLOAT, INTEGER, TIMESTAMP, UUID
+from sqlalchemy.sql.expression import not_
 from scipy.sparse import coo_matrix
 from numpy import array
 
@@ -78,8 +79,8 @@ class Response(Base):
 class EcosystemMatrix(Base):
     __tablename__ = 'ecosystem_matrices'
     ecosystem_uuid = Column(UUID, nullable=False, index=True)
-    is_used_in_assignments = Column(BOOLEAN, default=False, nullable=False, index=True)
-    superseded_by_uuid = Column(UUID, index=True)
+    is_used_in_assignments = Column(BOOLEAN, default=False, nullable=False)
+    superseded_at = Column(TIMESTAMP)
     Q_ids = Column(ARRAY(UUID), nullable=False)
     C_ids = Column(ARRAY(UUID), nullable=False)
     d_data = Column(ARRAY(FLOAT), nullable=False)
@@ -89,6 +90,9 @@ class EcosystemMatrix(Base):
     h_mask_data = Column(ARRAY(BOOLEAN), nullable=False)
     h_mask_row = Column(ARRAY(INTEGER), nullable=False)
     h_mask_col = Column(ARRAY(INTEGER), nullable=False)
+    __table_args__ = (Index('ix_deletable_ecosystem_matrices_superseded_at',
+                            superseded_at,
+                            postgresql_where=not_(is_used_in_assignments)),)
 
     @property
     def NC(self):
@@ -158,7 +162,6 @@ class EcosystemMatrix(Base):
         return cls(
             uuid=str(uuid4()),
             ecosystem_uuid=ecosystem_uuid,
-            superseded_by_uuid=None,
             Q_ids=algs.Q_ids,
             C_ids=algs.C_ids,
             d_NQx1=algs.d_NQx1,

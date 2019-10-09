@@ -127,7 +127,7 @@ def test_calculate_ecosystem_matrices(transaction):
     assert len(old_eco_matrix.d_NQx1) == 0
     assert len(old_eco_matrix.W_NCxNQ) == 0
     assert len(old_eco_matrix.H_mask_NCxNQ) == 0
-    assert old_eco_matrix.superseded_by_uuid == new_eco_matrix.uuid
+    assert old_eco_matrix.superseded_at is not None
 
     assert new_eco_matrix.ecosystem_uuid == ecosystem_1.uuid
     assert set(new_eco_matrix.C_ids) == set(page.uuid for page in pages)
@@ -135,7 +135,7 @@ def test_calculate_ecosystem_matrices(transaction):
     assert new_eco_matrix.d_NQx1.shape == (new_eco_matrix.NQ, 1)
     assert new_eco_matrix.W_NCxNQ.shape == (new_eco_matrix.NC, new_eco_matrix.NQ)
     assert new_eco_matrix.H_mask_NCxNQ.shape == (new_eco_matrix.NC, new_eco_matrix.NQ)
-    assert new_eco_matrix.superseded_by_uuid is None
+    assert new_eco_matrix.superseded_at is None
 
 
 def test_calculate_exercises(transaction):

@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import datetime
 from uuid import UUID
 from textwrap import dedent
 from random import shuffle
@@ -66,29 +67,18 @@ def calculate_ecosystem_matrices():
 
                 session.upsert_models(Ecosystem, ecosystems)
 
-                old_ecosystem_matrices = session.query(EcosystemMatrix).filter(
+                session.query(EcosystemMatrix).filter(
                     EcosystemMatrix.ecosystem_uuid.in_(ecosystem_uuids),
-                    EcosystemMatrix.superseded_by_uuid.is_(None)
-                ).all()
-
-                old_matrices_by_ecosystem_uuid = defaultdict(list)
-                for matrix in old_ecosystem_matrices:
-                    old_matrices_by_ecosystem_uuid[matrix.ecosystem_uuid].append(matrix)
-
-                new_ecosystem_matrices = [EcosystemMatrix.from_ecosystem_uuid_pages_responses(
-                    ecosystem_uuid=ecosystem_uuid,
-                    pages=pages_by_ecosystem_uuid[ecosystem_uuid],
-                    responses=responses_by_ecosystem_uuid[ecosystem_uuid]
-                ) for ecosystem_uuid in ecosystem_uuids]
-
-                for ecosystem_matrix in new_ecosystem_matrices:
-                    for matrix in old_matrices_by_ecosystem_uuid[ecosystem_matrix.ecosystem_uuid]:
-                        matrix.superseded_by_uuid = ecosystem_matrix.uuid
+                    EcosystemMatrix.superseded_at.is_(None)
+                ).update({EcosystemMatrix.superseded_at: datetime.now()}, synchronize_session=False)
 
                 session.upsert_models(
                     EcosystemMatrix,
-                    old_ecosystem_matrices + new_ecosystem_matrices,
-                    conflict_update_columns=['superseded_by_uuid']
+                    [EcosystemMatrix.from_ecosystem_uuid_pages_responses(
+                        ecosystem_uuid=ecosystem_uuid,
+                        pages=pages_by_ecosystem_uuid[ecosystem_uuid],
+                        responses=responses_by_ecosystem_uuid[ecosystem_uuid]
+                    ) for ecosystem_uuid in ecosystem_uuids]
                 )
 
         # There is a potential race condition where another worker might process the same
@@ -131,7 +121,7 @@ def calculate_exercises():
 
             ecosystem_matrices = session.query(EcosystemMatrix).filter(
                 EcosystemMatrix.ecosystem_uuid.in_(calculations_by_ecosystem_uuid.keys()),
-                EcosystemMatrix.superseded_by_uuid.is_(None)
+                EcosystemMatrix.superseded_at.is_(None)
             ).all()
 
             if not ecosystem_matrices:
@@ -253,7 +243,7 @@ def calculate_clues():
 
             ecosystem_matrices = session.query(EcosystemMatrix).filter(
                 EcosystemMatrix.ecosystem_uuid.in_(calculations_by_ecosystem_uuid.keys()),
-                EcosystemMatrix.superseded_by_uuid.is_(None)
+                EcosystemMatrix.superseded_at.is_(None)
             ).all()
 
             if not ecosystem_matrices:
