@@ -31,6 +31,8 @@ setup(
         'celery-once',
         'celery-redbeat',
         'click',
+        'flask',
+        'gunicorn',
         'honcho',
         'kombu',
         'numpy',

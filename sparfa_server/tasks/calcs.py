@@ -4,7 +4,7 @@ from uuid import UUID
 from textwrap import dedent
 from random import shuffle
 
-from sqlalchemy import text
+from sqlalchemy import literal_column, text
 from sqlalchemy.sql.expression import func
 
 from ..biglearn import BLSCHED
@@ -156,7 +156,9 @@ def calculate_exercises():
 
             response_dicts_by_calculation_uuid = defaultdict(list)
             # Beware that uuid columns return UUID objects (not strings) when using from_statement()
-            for result in session.query('calculation_uuid', Response).from_statement(text(dedent("""
+            for result in session.query(
+                literal_column('calculation_uuid'), Response
+            ).from_statement(text(dedent("""
                 SELECT "values"."calculation_uuid", "responses".*
                 FROM "responses" INNER JOIN (VALUES {}) AS "values"
                     ("calculation_uuid", "ecosystem_uuid", "student_uuid")
