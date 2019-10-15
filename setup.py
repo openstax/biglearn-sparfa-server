@@ -32,6 +32,7 @@ setup(
         'celery-redbeat',
         'click',
         'flask',
+        'gevent',
         'gunicorn',
         'honcho',
         'kombu',

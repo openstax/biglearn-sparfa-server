@@ -1,7 +1,7 @@
 .PHONY: dotenv python uninstall-python virtualenv venv uninstall-virtualenv uninstall-venv \
 	      reset-virtualenv reset-venv install install-dev reinstall reinstall-dev update \
 				requirements freeze abort-if-production create-user drop-user create-db setup-db drop-db \
-				reset-db test clean-build clean-pyc clean-test clean help
+				reset-db serve server test clean-build clean-pyc clean-test clean help
 .DEFAULT_GOAL := help
 
 PYTHON_VERSION := 3.6.6
@@ -82,6 +82,11 @@ drop-db: .python.env abort-if-production
 
 reset-db: drop-db setup-db
 
+serve: .python.env .python-version
+	gunicorn --reload --worker-class gevent sparfa_server.app
+
+server: serve
+
 test: .python.env install-dev
 	pytest
 	pycodestyle
@@ -124,6 +129,7 @@ help:
 	@echo "setup-db               Create the database and run all migrations"
 	@echo "drop-db                Drop the database"
 	@echo "reset-db               Drop and recreate the database and run all migrations"
+	@echo "serve[r]               Run gunicorn in development mode"
 	@echo "test                   Run tests using pytest"
 	@echo "clean-build            Remove build artifacts"
 	@echo "clean-pycache          Remove pycache artifacts"
