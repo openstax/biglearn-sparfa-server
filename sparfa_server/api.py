@@ -1,6 +1,7 @@
-from flask import jsonify, Blueprint, request, render_template
+from flask import Blueprint, request, render_template
 from werkzeug.exceptions import BadRequest
 
+from .config import BIGLEARN_SPARFA_TOKEN
 from .orm import transaction, EcosystemMatrix
 
 
@@ -17,21 +18,21 @@ class ApiException(Exception):
             self.payload = payload
         self.payload['errors'] = [message]
 
-    @property
-    def response(self):
-        resp = jsonify(self.payload)
-        resp.status_code = self.status_code
-        return resp
-
 
 api_blueprint = Blueprint('API', __name__, template_folder='templates')
 
 
 @api_blueprint.route('/fetch_ecosystem_matrices', methods=['POST'])
 def show():
+    if 'Biglearn-Sparfa-Token' not in request.headers:
+        raise ApiException('Request missing the Biglearn-Sparfa-Token header')
+
+    if request.headers['Biglearn-Sparfa-Token'] != BIGLEARN_SPARFA_TOKEN:
+        raise ApiException('Invalid Biglearn-Sparfa-Token header')
+
     request_data = request.get_json(force=True)
     if 'ecosystem_matrix_uuids' not in request_data:
-        raise ApiException('Request data is missing the ecosystem_matrix_uuids key')
+        raise ApiException('Request data missing the ecosystem_matrix_uuids key')
 
     ecosystem_matrix_uuids = request_data['ecosystem_matrix_uuids']
     if not ecosystem_matrix_uuids:
@@ -40,7 +41,7 @@ def show():
                ), {'Content-Type': 'application/json'}
 
     if len(ecosystem_matrix_uuids) > 10:
-        raise ApiException('The number of ecosystem_matrix_uuids per request is limited to 10')
+        raise ApiException('The number of ecosystem_matrix_uuids is limited to 10 per request')
 
     with transaction() as session:
         ecosystem_matrices_attributes = [{
