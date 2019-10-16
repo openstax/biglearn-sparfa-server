@@ -70,7 +70,7 @@ def test_calculate_ecosystem_matrices(transaction):
         student_uuid=str(uuid4()),
         exercise_uuid=page_1.exercise_uuids[0],
         is_correct=choice((True, False)),
-        is_real_response=choice((True, False)),
+        is_real_response=True,
         responded_at=datetime.now()
     )
     response_2 = Response(
@@ -81,7 +81,7 @@ def test_calculate_ecosystem_matrices(transaction):
         student_uuid=str(uuid4()),
         exercise_uuid=page_2.exercise_uuids[1],
         is_correct=choice((True, False)),
-        is_real_response=choice((True, False)),
+        is_real_response=False,
         responded_at=datetime.now()
     )
 

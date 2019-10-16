@@ -11,15 +11,11 @@ application.url_map.strict_slashes = False
 
 
 def jsonify_exception(code, exception):
+    payload = {}
     if hasattr(exception, 'description') and exception.description:
-        payload = {'errors': [exception.description]}
-    else:
-        payload = {}
+        payload['errors'] = [exception.description]
     response = jsonify(payload)
-    if hasattr(exception, 'code') and exception.code:
-        response.status_code = exception.code
-    else:
-        response.status_code = code
+    response.status_code = exception.code if hasattr(exception, 'code') and exception.code else code
     return response
 
 
