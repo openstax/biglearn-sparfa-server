@@ -83,7 +83,7 @@ drop-db: .python.env abort-if-production
 reset-db: drop-db setup-db
 
 serve: .python.env .python-version
-	gunicorn --reload --worker-class gevent sparfa_server.app
+	gunicorn --reload --worker-class gevent sparfa_server.flask
 
 server: serve
 
