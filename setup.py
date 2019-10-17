@@ -31,6 +31,7 @@ setup(
         'celery-once',
         'celery-redbeat',
         'click',
+        'fastjsonschema',
         'flask',
         'gevent',
         'gunicorn',

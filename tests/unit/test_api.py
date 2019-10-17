@@ -37,26 +37,31 @@ def test_fetch_ecosystem_matrices_no_body(flask):
     assert 'sent a request that this server could not understand' in response.json['errors'][0]
 
 
-def test_fetch_ecosystem_matrices_no_ecosystem_matrix_uuids_key(flask):
+def test_fetch_ecosystem_matrices_no_ecosystem_matrix_requests_key(flask):
     response = flask.post('/fetch_ecosystem_matrices',
                           headers={'Biglearn-Sparfa-Token': BIGLEARN_SPARFA_TOKEN},
                           json={})
     assert response.status_code == 400
-    assert 'missing the ecosystem_matrix_uuids' in response.json['errors'][0]
+    assert "must contain ['ecosystem_matrix_requests']" in response.json['errors'][0]
 
 
-def test_fetch_ecosystem_matrices_too_many_ecosystem_matrix_uuids(flask):
-    response = flask.post('/fetch_ecosystem_matrices',
-                          headers={'Biglearn-Sparfa-Token': BIGLEARN_SPARFA_TOKEN},
-                          json={'ecosystem_matrix_uuids': [str(uuid4()) for i in range(11)]})
+def test_fetch_ecosystem_matrices_too_many_ecosystem_matrix_requests(flask):
+    response = flask.post(
+        '/fetch_ecosystem_matrices',
+        headers={'Biglearn-Sparfa-Token': BIGLEARN_SPARFA_TOKEN},
+        json={'ecosystem_matrix_requests': [
+            {'ecosystem_matrix_uuid': str(uuid4()), 'student_uuids': []} for i in range(11)
+        ]}
+    )
     assert response.status_code == 400
-    assert 'number of ecosystem_matrix_uuids is limited to 10' in response.json['errors'][0]
+    assert 'ecosystem_matrix_requests must contain less than or equal to 10 items' \
+        in response.json['errors'][0]
 
 
-def test_fetch_ecosystem_matrices_no_ecosystem_matrix_uuids(flask):
+def test_fetch_ecosystem_matrices_no_ecosystem_matrix_requests(flask):
     response = flask.post('/fetch_ecosystem_matrices',
                           headers={'Biglearn-Sparfa-Token': BIGLEARN_SPARFA_TOKEN},
-                          json={'ecosystem_matrix_uuids': []})
+                          json={'ecosystem_matrix_requests': []})
     assert response.status_code == 200
     assert not response.json['ecosystem_matrices']
 
@@ -66,6 +71,8 @@ def test_fetch_ecosystem_matrices(flask):
     question_2_uuid = str(uuid4())
     concept_1_uuid = str(uuid4())
     concept_2_uuid = str(uuid4())
+    student_1_uuid = str(uuid4())
+    student_2_uuid = str(uuid4())
 
     ecosystem_matrix_1 = EcosystemMatrix(
         uuid=str(uuid4()),
@@ -115,11 +122,16 @@ def test_fetch_ecosystem_matrices(flask):
         session.add(ecosystem_matrix_2)
         session.add(ecosystem_matrix_3)
 
-    response = flask.post('/fetch_ecosystem_matrices',
-                          headers={'Biglearn-Sparfa-Token': BIGLEARN_SPARFA_TOKEN},
-                          json={'ecosystem_matrix_uuids': [
-                              ecosystem_matrix_1.uuid, ecosystem_matrix_2.uuid, str(uuid4())
-                          ]})
+    response = flask.post(
+        '/fetch_ecosystem_matrices',
+        headers={'Biglearn-Sparfa-Token': BIGLEARN_SPARFA_TOKEN},
+        json={'ecosystem_matrix_requests': [
+            {'ecosystem_matrix_uuid': ecosystem_matrix_1.uuid, 'student_uuids': []},
+            {'ecosystem_matrix_uuid': ecosystem_matrix_2.uuid,
+             'student_uuids': [student_1_uuid, student_2_uuid]},
+            {'ecosystem_matrix_uuid': str(uuid4()), 'student_uuids': []}
+        ]}
+    )
     assert response.status_code == 200
 
     ecosystem_matrix_responses = response.json['ecosystem_matrices']

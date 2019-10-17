@@ -21,6 +21,7 @@ uninstall-python:
 virtualenv: python
 	pyenv virtualenv --force ${PYTHON_VERSION} ${VIRTUALENV_NAME}
 	pyenv local ${VIRTUALENV_NAME}
+	pip install --upgrade pip
 
 venv: virtualenv
 
