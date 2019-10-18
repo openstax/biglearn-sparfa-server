@@ -151,20 +151,33 @@ def test_fetch_ecosystem_matrices(flask):
         session.add(response_1)
         session.add(response_2)
 
+    requests = [
+        {
+            'request_uuid': str(uuid4()),
+            'ecosystem_matrix_uuid': ecosystem_matrix_1.uuid,
+            'student_uuids': []
+        },
+        {
+            'request_uuid': str(uuid4()),
+            'ecosystem_matrix_uuid': ecosystem_matrix_2.uuid,
+            'student_uuids': [student_1_uuid, student_2_uuid],
+            'responded_before': responded_before.isoformat() + 'Z'
+        },
+        {
+            'request_uuid': str(uuid4()),
+            'ecosystem_matrix_uuid': ecosystem_matrix_2.uuid
+        },
+        {
+            'request_uuid': str(uuid4()),
+            'ecosystem_matrix_uuid': str(uuid4())
+        }
+    ]
+    requests_by_uuid = {request['request_uuid']: request for request in requests}
+
     response = flask.post(
         '/fetch_ecosystem_matrices',
         headers={'Biglearn-Sparfa-Token': BIGLEARN_SPARFA_TOKEN},
-        json={'ecosystem_matrix_requests': [
-            {'request_uuid': str(uuid4()),
-             'ecosystem_matrix_uuid': ecosystem_matrix_1.uuid,
-             'student_uuids': []},
-            {'request_uuid': str(uuid4()),
-             'ecosystem_matrix_uuid': ecosystem_matrix_2.uuid,
-             'student_uuids': [student_1_uuid, student_2_uuid],
-             'responded_before': responded_before.isoformat() + 'Z'},
-            {'request_uuid': str(uuid4()), 'ecosystem_matrix_uuid': ecosystem_matrix_2.uuid},
-            {'request_uuid': str(uuid4()), 'ecosystem_matrix_uuid': str(uuid4())}
-        ]}
+        json={'ecosystem_matrix_requests': requests}
     )
     assert response.status_code == 200
 
@@ -176,14 +189,24 @@ def test_fetch_ecosystem_matrices(flask):
         ecosystem_matrix_by_uuid[ecosystem_matrix.uuid] = ecosystem_matrix
 
     for ecosystem_matrix_response in ecosystem_matrix_responses:
+        request = requests_by_uuid[ecosystem_matrix_response['request_uuid']]
+
         ecosystem_matrix_uuid = ecosystem_matrix_response['ecosystem_matrix_uuid']
+        assert ecosystem_matrix_uuid == request['ecosystem_matrix_uuid']
+
         ecosystem_matrix = ecosystem_matrix_by_uuid.get(ecosystem_matrix_uuid)
+
+        if request.get('student_uuids') is not None:
+            assert ecosystem_matrix_response['L_ids'] == request['student_uuids']
+        elif ecosystem_matrix:
+            assert isinstance(ecosystem_matrix_response['L_ids'], list)
+        else:
+            assert ecosystem_matrix_response['L_ids'] == []
 
         if ecosystem_matrix:
             assert ecosystem_matrix_response['ecosystem_uuid'] == ecosystem_matrix.ecosystem_uuid
             assert ecosystem_matrix_response['Q_ids'] == ecosystem_matrix.Q_ids
             assert ecosystem_matrix_response['C_ids'] == ecosystem_matrix.C_ids
-            assert isinstance(ecosystem_matrix_response['L_ids'], list)
             assert ecosystem_matrix_response['d_data'] == ecosystem_matrix.d_data
             assert ecosystem_matrix_response['W_data'] == ecosystem_matrix.W_data
             assert ecosystem_matrix_response['W_row'] == ecosystem_matrix.W_row
@@ -209,7 +232,6 @@ def test_fetch_ecosystem_matrices(flask):
             assert ecosystem_matrix_response['ecosystem_uuid'] is None
             assert ecosystem_matrix_response['Q_ids'] == []
             assert ecosystem_matrix_response['C_ids'] == []
-            assert ecosystem_matrix_response['L_ids'] == []
             assert ecosystem_matrix_response['d_data'] == []
             assert ecosystem_matrix_response['W_data'] == []
             assert ecosystem_matrix_response['W_row'] == []

@@ -96,6 +96,7 @@ def show():
             ecosystem_matrix_response = {
                 'request_uuid': request_uuid,
                 'ecosystem_matrix_uuid': ecosystem_matrix_uuid,
+                'responded_before': ecosystem_matrix_request.get('responded_before'),
                 'ecosystem_uuid': None,
                 'L_ids': [] if student_uuids is None else student_uuids,
                 'Q_ids': [],
