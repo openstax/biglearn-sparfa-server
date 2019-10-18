@@ -16,6 +16,7 @@ from sparfa_server.config import PY_ENV, PG_HOST, PG_PORT, PG_USER, PG_PASSWORD,
 from sparfa_server.orm import transaction as xaction
 from sparfa_server.orm.sessions import Session
 from sparfa_server.tasks import REDIS, app
+from sparfa_server.flask import application
 
 from constants import VCR_REQUESTS_DISABLED_REGEX
 
@@ -108,3 +109,9 @@ def pytest_runtest_makereport(item, call):
                 ),
                 excinfo.tb
             ))
+
+
+@fixture(scope='session')
+def flask():
+    application.config['TESTING'] = True
+    return application.test_client()

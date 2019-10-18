@@ -31,6 +31,7 @@ BIGLEARN_SCHED_URL = environ.get('BIGLEARN_SCHED_URL',
                                  'https://biglearn-scheduler-dev.openstax.org')
 BIGLEARN_SCHED_TOKEN = environ.get('BIGLEARN_SCHED_TOKEN', '')
 BIGLEARN_SCHED_ALGORITHM_NAME = environ.get('BIGLEARN_SCHED_ALGORITHM_NAME', 'biglearn_sparfa')
+BIGLEARN_SPARFA_TOKEN = environ.get('BIGLEARN_SPARFA_TOKEN', '')
 
 # Environment-specific overrides
 if PY_ENV == 'test':

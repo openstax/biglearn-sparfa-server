@@ -30,6 +30,13 @@ def upgrade():
     op.alter_column('responses', 'created_at', server_default=None)
     op.alter_column('responses', 'updated_at', server_default=None)
 
+    op.alter_column('ecosystem_matrices', 'w_data', new_column_name='W_data')
+    op.alter_column('ecosystem_matrices', 'w_row', new_column_name='W_row')
+    op.alter_column('ecosystem_matrices', 'w_col', new_column_name='W_col')
+    op.alter_column('ecosystem_matrices', 'h_mask_data', new_column_name='H_mask_data')
+    op.alter_column('ecosystem_matrices', 'h_mask_row', new_column_name='H_mask_row')
+    op.alter_column('ecosystem_matrices', 'h_mask_col', new_column_name='H_mask_col')
+
     op.add_column('ecosystem_matrices', sa.Column('ecosystem_uuid', postgresql.UUID(), nullable=True))
     op.add_column('ecosystem_matrices', sa.Column('is_used_in_assignments', sa.BOOLEAN(), server_default='FALSE', nullable=False))
     op.alter_column('ecosystem_matrices', 'is_used_in_assignments', server_default=None)
@@ -48,6 +55,13 @@ def downgrade():
     op.drop_column('ecosystem_matrices', 'superseded_at')
     op.drop_column('ecosystem_matrices', 'is_used_in_assignments')
     op.drop_column('ecosystem_matrices', 'ecosystem_uuid')
+
+    op.alter_column('ecosystem_matrices', 'H_mask_col', new_column_name='h_mask_col')
+    op.alter_column('ecosystem_matrices', 'H_mask_row', new_column_name='h_mask_row')
+    op.alter_column('ecosystem_matrices', 'H_mask_data', new_column_name='h_mask_data')
+    op.alter_column('ecosystem_matrices', 'W_col', new_column_name='w_col')
+    op.alter_column('ecosystem_matrices', 'W_row', new_column_name='w_row')
+    op.alter_column('ecosystem_matrices', 'W_data', new_column_name='w_data')
 
     op.alter_column('courses', 'created_at', server_default=sa.text('clock_timestamp()'))
     op.alter_column('courses', 'updated_at', server_default=sa.text('clock_timestamp()'))
