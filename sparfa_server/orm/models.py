@@ -84,12 +84,12 @@ class EcosystemMatrix(Base):
     Q_ids = Column(ARRAY(UUID), nullable=False)
     C_ids = Column(ARRAY(UUID), nullable=False)
     d_data = Column(ARRAY(FLOAT), nullable=False)
-    w_data = Column(ARRAY(FLOAT), nullable=False)
-    w_row = Column(ARRAY(INTEGER), nullable=False)
-    w_col = Column(ARRAY(INTEGER), nullable=False)
-    h_mask_data = Column(ARRAY(BOOLEAN), nullable=False)
-    h_mask_row = Column(ARRAY(INTEGER), nullable=False)
-    h_mask_col = Column(ARRAY(INTEGER), nullable=False)
+    W_data = Column(ARRAY(FLOAT), nullable=False)
+    W_row = Column(ARRAY(INTEGER), nullable=False)
+    W_col = Column(ARRAY(INTEGER), nullable=False)
+    H_mask_data = Column(ARRAY(BOOLEAN), nullable=False)
+    H_mask_row = Column(ARRAY(INTEGER), nullable=False)
+    H_mask_col = Column(ARRAY(INTEGER), nullable=False)
     __table_args__ = (Index('ix_deletable_ecosystem_matrices_superseded_at',
                             superseded_at,
                             postgresql_where=not_(is_used_in_assignments)),)
@@ -105,30 +105,30 @@ class EcosystemMatrix(Base):
     @property
     def W_NCxNQ(self):
         return coo_matrix(
-            (self.w_data, (self.w_row, self.w_col)),
+            (self.W_data, (self.W_row, self.W_col)),
             shape=(self.NC, self.NQ)
         ).toarray()
 
     @W_NCxNQ.setter
     def W_NCxNQ(self, matrix):
         sparse_matrix = coo_matrix(matrix)
-        self.w_data = sparse_matrix.data.tolist()
-        self.w_row = sparse_matrix.row.tolist()
-        self.w_col = sparse_matrix.col.tolist()
+        self.W_data = sparse_matrix.data.tolist()
+        self.W_row = sparse_matrix.row.tolist()
+        self.W_col = sparse_matrix.col.tolist()
 
     @property
     def H_mask_NCxNQ(self):
         return coo_matrix(
-            (self.h_mask_data, (self.h_mask_row, self.h_mask_col)),
+            (self.H_mask_data, (self.H_mask_row, self.H_mask_col)),
             shape=(self.NC, self.NQ)
         ).toarray()
 
     @H_mask_NCxNQ.setter
     def H_mask_NCxNQ(self, matrix):
         sparse_matrix = coo_matrix(matrix)
-        self.h_mask_data = sparse_matrix.data.tolist()
-        self.h_mask_row = sparse_matrix.row.tolist()
-        self.h_mask_col = sparse_matrix.col.tolist()
+        self.H_mask_data = sparse_matrix.data.tolist()
+        self.H_mask_row = sparse_matrix.row.tolist()
+        self.H_mask_col = sparse_matrix.col.tolist()
 
     @property
     def d_NQx1(self):

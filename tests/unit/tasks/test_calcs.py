@@ -28,12 +28,12 @@ def test_calculate_ecosystem_matrices(transaction):
         Q_ids=[],
         C_ids=[],
         d_data=[],
-        w_data=[],
-        w_row=[],
-        w_col=[],
-        h_mask_data=[],
-        h_mask_row=[],
-        h_mask_col=[]
+        W_data=[],
+        W_row=[],
+        W_col=[],
+        H_mask_data=[],
+        H_mask_row=[],
+        H_mask_col=[]
     )
 
     calculation_uuid = str(uuid4())
