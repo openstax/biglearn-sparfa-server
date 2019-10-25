@@ -1,4 +1,5 @@
 from uuid import uuid4
+from collections import defaultdict
 
 from sqlalchemy import func
 
@@ -233,13 +234,14 @@ def _load_grouped_course_events(session, courses):
     event_requests = [{
         'course_uuid': course.uuid,
         'sequence_number_offset': course.sequence_number,
-        'event_types': ['record_response'],
+        'event_types': ['create_update_assignment', 'record_response'],
         'request_uuid': request_uuid
     } for request_uuid, course in courses_by_req_uuid.items()]
 
     responses = BLAPI.fetch_course_events(event_requests)
 
     course_values = []
+    used_ecosystem_matrix_uuids = set()
     response_values_dict = {}
     course_uuids_to_requery = []
     for response in responses:
@@ -248,6 +250,19 @@ def _load_grouped_course_events(session, courses):
 
         for event in events:
             event_type = event['event_type']
+
+            if event_type == 'create_update_assignment':
+                data = event['event_data']
+                assignment_uuid = data['assignment_uuid']
+
+                pe_matrix_uuid = data.get('pes', {}).get('ecosystem_matrix_uuid', None)
+                if pe_matrix_uuid:
+                    used_ecosystem_matrix_uuids.add(pe_matrix_uuid)
+
+                spe_matrix_uuid = data.get('spes', {}).get('ecosystem_matrix_uuid', None)
+                if spe_matrix_uuid:
+                    used_ecosystem_matrix_uuids.add(spe_matrix_uuid)
+
             if event_type == 'record_response':
                 data = event['event_data']
                 ecosystem_uuid = data['ecosystem_uuid']
@@ -279,6 +294,11 @@ def _load_grouped_course_events(session, courses):
 
     if course_values:
         session.upsert_values(Course, course_values, conflict_update_columns=['sequence_number'])
+
+    if used_ecosystem_matrix_uuids:
+        session.query(EcosystemMatrix).filter(
+            EcosystemMatrix.uuid.in_(list(used_ecosystem_matrix_uuids))
+        ).update({EcosystemMatrix.is_used_in_assignments: True}, synchronize_session=False)
 
     if response_values_dict:
         session.upsert_values(Response, list(response_values_dict.values()))

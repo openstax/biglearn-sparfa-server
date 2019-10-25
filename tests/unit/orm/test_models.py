@@ -4,15 +4,17 @@ from datetime import datetime
 
 from numpy import array
 
-from sparfa_server.orm.models import Ecosystem, BaseBase, Response, EcosystemMatrix, Page
+from sparfa_server.orm.models import Course, BaseBase, Response, EcosystemMatrix, Page
 
 
 class TestBaseBase(object):
     def test_dict(self):
-        ecosystem = Ecosystem(uuid=uuid4(), sequence_number=1)
-        assert isinstance(ecosystem, BaseBase)
-        assert ecosystem.dict == {
-            'uuid': ecosystem.uuid, 'sequence_number': ecosystem.sequence_number
+        course = Course(uuid=uuid4(), sequence_number=1)
+        assert isinstance(course, BaseBase)
+        assert course.dict == {
+            'uuid': course.uuid,
+            'metadata_sequence_number': None,
+            'sequence_number': course.sequence_number
         }
 
 
@@ -100,7 +102,7 @@ class TestEcosystemMatrix(object):
             ecosystem_uuid=ecosystem_uuid, pages=pages, responses=responses
         )
 
-        assert ecosystem_matrix.uuid == ecosystem_uuid
+        assert ecosystem_matrix.ecosystem_uuid == ecosystem_uuid
         assert set(ecosystem_matrix.Q_ids) == set(exercise_uuids)
         assert set(ecosystem_matrix.C_ids) == set(page_uuids)
         assert ecosystem_matrix.d_NQx1.shape == (NQ, 1)

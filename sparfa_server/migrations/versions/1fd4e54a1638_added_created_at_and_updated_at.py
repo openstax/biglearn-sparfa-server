@@ -1,4 +1,4 @@
-"""added created_at and updated_at to all tables
+"""added created_at and updated_at columns to all tables
 
 Revision ID: 1fd4e54a1638
 Revises: 1e42162388df

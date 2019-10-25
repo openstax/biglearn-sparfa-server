@@ -21,6 +21,7 @@ LOAD_COURSE_EVENTS_QUEUE = '{}load.course.events'.format(AMQP_QUEUE_PREFIX)
 CALCULATE_ECOSYSTEM_MATRICES_QUEUE = '{}calculate.ecosystem-matrices'.format(AMQP_QUEUE_PREFIX)
 CALCULATE_EXERCISES_QUEUE = '{}calculate.exercises'.format(AMQP_QUEUE_PREFIX)
 CALCULATE_CLUES_QUEUE = '{}calculate.clues'.format(AMQP_QUEUE_PREFIX)
+CLEANUP_ECOSYSTEM_MATRICES_QUEUE = '{}cleanup.ecosystem-matrices'.format(AMQP_QUEUE_PREFIX)
 
 app = Celery('sparfa_server')
 app.conf.update(
@@ -64,6 +65,11 @@ app.conf.update(
             'task': 'sparfa_server.tasks.calcs.calculate_clues',
             'schedule': timedelta(seconds=1),
             'options': {'queue': CALCULATE_CLUES_QUEUE}
+        },
+        'cleanup_ecosystem_matrices': {
+            'task': 'sparfa_server.tasks.clean.cleanup_ecosystem_matrices',
+            'schedule': timedelta(days=1),
+            'options': {'queue': CLEANUP_ECOSYSTEM_MATRICES_QUEUE}
         }
     },
     beat_scheduler='redbeat.schedulers.RedBeatScheduler',
@@ -81,7 +87,8 @@ app.conf.update(
         Queue(LOAD_COURSE_EVENTS_QUEUE, routing_key=LOAD_COURSE_EVENTS_QUEUE),
         Queue(CALCULATE_ECOSYSTEM_MATRICES_QUEUE, routing_key=CALCULATE_ECOSYSTEM_MATRICES_QUEUE),
         Queue(CALCULATE_EXERCISES_QUEUE, routing_key=CALCULATE_EXERCISES_QUEUE),
-        Queue(CALCULATE_CLUES_QUEUE, routing_key=CALCULATE_CLUES_QUEUE)
+        Queue(CALCULATE_CLUES_QUEUE, routing_key=CALCULATE_CLUES_QUEUE),
+        Queue(CLEANUP_ECOSYSTEM_MATRICES_QUEUE, routing_key=CLEANUP_ECOSYSTEM_MATRICES_QUEUE)
     ],
     ONCE={
         'backend': 'celery_once.backends.Redis',

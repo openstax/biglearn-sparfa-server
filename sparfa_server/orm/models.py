@@ -1,9 +1,10 @@
-from json import loads, dumps
+from datetime import datetime
+from uuid import uuid4
 
 from sqlalchemy import Column, Index
-from sqlalchemy.sql.expression import func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import ARRAY, BOOLEAN, FLOAT, INTEGER, TIMESTAMP, UUID
+from sqlalchemy.sql.expression import not_
 from scipy.sparse import coo_matrix
 from numpy import array
 
@@ -14,13 +15,8 @@ __all__ = ('Course', 'Ecosystem', 'Page', 'Response', 'EcosystemMatrix')
 
 class BaseBase(object):
     uuid = Column(UUID, primary_key=True)
-    created_at = Column(TIMESTAMP, server_default=func.clock_timestamp(), nullable=False)
-    updated_at = Column(
-      TIMESTAMP,
-      server_default=func.clock_timestamp(),
-      nullable=False,
-      onupdate=func.clock_timestamp()
-    )
+    created_at = Column(TIMESTAMP, default=datetime.now, nullable=False)
+    updated_at = Column(TIMESTAMP, default=datetime.now, nullable=False, onupdate=datetime.now)
     default_conflict_index_elements = ['uuid']
     default_conflict_update_columns = None
 
@@ -28,7 +24,7 @@ class BaseBase(object):
     def dict(self):
         return {column.key: getattr(self, column.key)
                 for column in self.__table__.columns
-                if getattr(self, column.key) is not None}
+                if getattr(self, column.key) is not None or column.default is None}
 
 
 Base = declarative_base(cls=BaseBase)
@@ -45,6 +41,7 @@ class Ecosystem(Base):
     metadata_sequence_number = Column(INTEGER, nullable=False, index=True, unique=True)
     sequence_number = Column(INTEGER, nullable=False)
     last_ecosystem_matrix_update_calculation_uuid = Column(UUID)
+    default_conflict_update_columns = ['last_ecosystem_matrix_update_calculation_uuid']
 
 
 class Page(Base):
@@ -81,15 +78,21 @@ class Response(Base):
 
 class EcosystemMatrix(Base):
     __tablename__ = 'ecosystem_matrices'
+    ecosystem_uuid = Column(UUID, nullable=False, index=True)
+    is_used_in_assignments = Column(BOOLEAN, default=False, nullable=False)
+    superseded_at = Column(TIMESTAMP)
     Q_ids = Column(ARRAY(UUID), nullable=False)
     C_ids = Column(ARRAY(UUID), nullable=False)
     d_data = Column(ARRAY(FLOAT), nullable=False)
-    w_data = Column(ARRAY(FLOAT), nullable=False)
-    w_row = Column(ARRAY(INTEGER), nullable=False)
-    w_col = Column(ARRAY(INTEGER), nullable=False)
-    h_mask_data = Column(ARRAY(BOOLEAN), nullable=False)
-    h_mask_row = Column(ARRAY(INTEGER), nullable=False)
-    h_mask_col = Column(ARRAY(INTEGER), nullable=False)
+    W_data = Column(ARRAY(FLOAT), nullable=False)
+    W_row = Column(ARRAY(INTEGER), nullable=False)
+    W_col = Column(ARRAY(INTEGER), nullable=False)
+    H_mask_data = Column(ARRAY(BOOLEAN), nullable=False)
+    H_mask_row = Column(ARRAY(INTEGER), nullable=False)
+    H_mask_col = Column(ARRAY(INTEGER), nullable=False)
+    __table_args__ = (Index('ix_deletable_ecosystem_matrices_superseded_at',
+                            superseded_at,
+                            postgresql_where=not_(is_used_in_assignments)),)
 
     @property
     def NC(self):
@@ -102,30 +105,30 @@ class EcosystemMatrix(Base):
     @property
     def W_NCxNQ(self):
         return coo_matrix(
-            (self.w_data, (self.w_row, self.w_col)),
+            (self.W_data, (self.W_row, self.W_col)),
             shape=(self.NC, self.NQ)
         ).toarray()
 
     @W_NCxNQ.setter
     def W_NCxNQ(self, matrix):
         sparse_matrix = coo_matrix(matrix)
-        self.w_data = sparse_matrix.data.tolist()
-        self.w_row = sparse_matrix.row.tolist()
-        self.w_col = sparse_matrix.col.tolist()
+        self.W_data = sparse_matrix.data.tolist()
+        self.W_row = sparse_matrix.row.tolist()
+        self.W_col = sparse_matrix.col.tolist()
 
     @property
     def H_mask_NCxNQ(self):
         return coo_matrix(
-            (self.h_mask_data, (self.h_mask_row, self.h_mask_col)),
+            (self.H_mask_data, (self.H_mask_row, self.H_mask_col)),
             shape=(self.NC, self.NQ)
         ).toarray()
 
     @H_mask_NCxNQ.setter
     def H_mask_NCxNQ(self, matrix):
         sparse_matrix = coo_matrix(matrix)
-        self.h_mask_data = sparse_matrix.data.tolist()
-        self.h_mask_row = sparse_matrix.row.tolist()
-        self.h_mask_col = sparse_matrix.col.tolist()
+        self.H_mask_data = sparse_matrix.data.tolist()
+        self.H_mask_row = sparse_matrix.row.tolist()
+        self.H_mask_col = sparse_matrix.col.tolist()
 
     @property
     def d_NQx1(self):
@@ -157,7 +160,8 @@ class EcosystemMatrix(Base):
         )
 
         return cls(
-            uuid=ecosystem_uuid,
+            uuid=str(uuid4()),
+            ecosystem_uuid=ecosystem_uuid,
             Q_ids=algs.Q_ids,
             C_ids=algs.C_ids,
             d_NQx1=algs.d_NQx1,
