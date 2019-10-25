@@ -205,7 +205,7 @@ def calculate_exercises():
 
                     exercise_calculation_requests.append({
                         'calculation_uuid': calculation_uuid,
-                        'recommendation_uuid': ecosystem_matrix.uuid,
+                        'ecosystem_matrix_uuid': ecosystem_matrix.uuid,
                         'exercise_uuids': ordered_exercise_uuids
                     })
 
