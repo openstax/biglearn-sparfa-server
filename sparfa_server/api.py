@@ -123,7 +123,7 @@ def show():
             ecosystem_matrix = ecosystem_matrices_by_uuid.get(ecosystem_matrix_uuid)
             if ecosystem_matrix:
                 ecosystem_matrix_response.update({
-                    key: value if not hasattr(value, 'isoformat') else value.isoformat() + 'Z'
+                    key: value.isoformat() + 'Z' if hasattr(value, 'isoformat') else value
                     for (key, value) in ecosystem_matrix.dict.items()
                     if key != 'uuid' and key != 'is_used_in_assignments'
                 })
@@ -167,7 +167,7 @@ def show():
 
     return jsonify({'ecosystem_matrices': [{
         key if key != 'uuid' else 'ecosystem_matrix_uuid':
-            value if not hasattr(value, 'isoformat') else value.isoformat() + 'Z'
+            value.isoformat() + 'Z' if hasattr(value, 'isoformat') else value
         for (key, value) in ecosystem_matrix_response.items()
         if key != 'is_used_in_assignments'
     } for ecosystem_matrix_response in ecosystem_matrix_responses]})
