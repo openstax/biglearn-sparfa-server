@@ -6,12 +6,6 @@ from sparfa_server.config import BIGLEARN_SPARFA_TOKEN
 from sparfa_server.orm import EcosystemMatrix, Response, transaction
 
 
-def test_root_not_found(flask):
-    response = flask.get('/')
-    assert response.status_code == 404
-    assert 'not found' in response.json['errors'][0]
-
-
 def test_fetch_ecosystem_matrices_get_not_allowed(flask):
     response = flask.get('/fetch_ecosystem_matrices')
     assert response.status_code == 405

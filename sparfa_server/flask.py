@@ -28,7 +28,7 @@ for code, exception in default_exceptions.items():
 
 @application.route('/')
 def home():
-    return 'Biglearn SPARFA API'
+    return 'Biglearn SPARFA'
 
 
 @application.route('/ping')
