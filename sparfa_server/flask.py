@@ -25,6 +25,17 @@ def jsonify_exception(code, exception):
 for code, exception in default_exceptions.items():
     application.errorhandler(exception)(partial(jsonify_exception, code))
 
+
+@application.route('/')
+def home():
+    return 'Biglearn SPARFA'
+
+
+@application.route('/ping')
+def ping():
+    return ''
+
+
 application.errorhandler(JsonSchemaException)(partial(jsonify_exception, 400))
 
 application.register_blueprint(blueprint)
