@@ -35,7 +35,7 @@ requests==2.22.0
 scipy==1.3.1
 sentry-sdk==0.13.1
 six==1.12.0
--e git+git@github.com:openstax/biglearn-sparfa-algs@f8a52a5751f39ede61728b5091c31d558fb9a913#egg=sparfa_algs
+-e git+git@github.com:openstax/biglearn-sparfa-algs@56b83c56d5fa6164f91cb4e1db368be1aef04d40#egg=sparfa_algs
 -e .
 SQLAlchemy==1.3.10
 tenacity==5.1.1
