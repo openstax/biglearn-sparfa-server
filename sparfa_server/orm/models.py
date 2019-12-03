@@ -152,7 +152,7 @@ class EcosystemMatrix(Base):
         } for page in page_dicts for exercise_uuid in page['exercise_uuids']]
 
         algs, __ = SparfaAlgs.from_Ls_Qs_Cs_Hs_Rs(
-            L_ids=[response['L_id'] for response in response_dicts],
+            L_ids=list(set(response['L_id'] for response in response_dicts)),
             Q_ids=[hint['Q_id'] for hint in hints],
             C_ids=[page['uuid'] for page in page_dicts],
             hints=hints,
@@ -170,9 +170,11 @@ class EcosystemMatrix(Base):
         )
 
     def to_sparfa_algs_with_student_uuids_responses(self, student_uuids, responses):
+        L_ids = list(set(student_uuids))
+
         G_NQxNL, G_mask_NQxNL = SparfaAlgs.convert_Rs(
             responses=self._response_dicts_for_algs_from_responses(responses),
-            L_ids=student_uuids,
+            L_ids=L_ids,
             Q_ids=self.Q_ids
         )
 
@@ -184,7 +186,7 @@ class EcosystemMatrix(Base):
             H_mask_NCxNQ=self.H_mask_NCxNQ,
             G_NQxNL=G_NQxNL,
             G_mask_NQxNL=G_mask_NQxNL,
-            L_ids=student_uuids,
+            L_ids=L_ids,
             Q_ids=self.Q_ids,
             C_ids=self.C_ids
         )
