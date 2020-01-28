@@ -3,6 +3,8 @@ from datetime import timedelta, datetime
 from ..orm import transaction, EcosystemMatrix
 from .celery import task
 
+__all__ = ('cleanup_ecosystem_matrices',)
+
 CLEANUP_AFTER = timedelta(days=30)
 BATCH_SIZE = 1000
 
